@@ -6,6 +6,7 @@ from pathlib import Path
 
 from jobagent.evals.runner import run_eval_suite
 from jobagent.graph.workflow import resume_job_workflow, run_job_workflow
+from jobagent.integrations import list_learning_integrations
 from jobagent.memory import load_story_bank
 
 
@@ -28,6 +29,8 @@ def main(argv: list[str] | None = None) -> int:
     eval_cmd.add_argument("--suite", default="samples/eval_suite.json")
     eval_cmd.add_argument("--story-bank", default="samples/story_bank.json")
 
+    subcommands.add_parser("integrations", help="Show optional Project 1 production-stack learning paths.")
+
     args = parser.parse_args(argv)
     if args.command == "demo":
         return _run_demo(args)
@@ -35,6 +38,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run_resume(args)
     if args.command == "eval":
         return _run_eval(args)
+    if args.command == "integrations":
+        return _run_integrations()
     return 1
 
 
@@ -63,6 +68,12 @@ def _run_resume(args: argparse.Namespace) -> int:
         raise SystemExit("Choose exactly one: --approve or --reject")
     state = resume_job_workflow(args.run_id, approved=args.approve)
     print(json.dumps(_summary(state), indent=2, ensure_ascii=False))
+    return 0
+
+
+def _run_integrations() -> int:
+    result = [status.to_dict() for status in list_learning_integrations()]
+    print(json.dumps(result, indent=2, ensure_ascii=False))
     return 0
 
 

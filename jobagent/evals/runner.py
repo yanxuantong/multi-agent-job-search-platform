@@ -3,34 +3,59 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from jobagent.agents.jd_extract import extract_jd
 from jobagent.graph.workflow import run_job_workflow
+from jobagent.models import JobSearchState
 
 
 def run_eval_suite(path: str | Path, story_bank: list[dict]) -> dict:
     cases = json.loads(Path(path).read_text(encoding="utf-8"))
     results = []
     passed = 0
+    by_type: dict[str, dict[str, int]] = {}
     for case in cases:
-        state = run_job_workflow(
-            case["job_text"],
-            story_bank,
-            approved=case.get("approved", False),
-            run_id=f"eval-{case['id']}",
-        )
-        checks = _check_case(case, state)
+        eval_type = case.get("eval_type", "trajectory")
+        if eval_type == "single_turn_jd_extract":
+            state = JobSearchState(
+                run_id=f"eval-{case['id']}",
+                user_goal="eval_jd_extract",
+                raw_job_text=case["job_text"],
+                story_bank=story_bank,
+            )
+            extract_jd(state)
+            checks = _check_extraction_case(case, state)
+        else:
+            state = run_job_workflow(
+                case["job_text"],
+                story_bank,
+                approved=case.get("approved", False),
+                run_id=f"eval-{case['id']}",
+            )
+            checks = _check_trajectory_case(case, state)
         ok = all(check["passed"] for check in checks)
         passed += int(ok)
-        results.append({"id": case["id"], "passed": ok, "checks": checks})
+        type_counts = by_type.setdefault(eval_type, {"total": 0, "passed": 0, "failed": 0})
+        type_counts["total"] += 1
+        type_counts["passed"] += int(ok)
+        type_counts["failed"] += int(not ok)
+        results.append({"id": case["id"], "eval_type": eval_type, "passed": ok, "checks": checks})
     return {
         "total": len(cases),
         "passed": passed,
         "failed": len(cases) - passed,
         "pass_rate": round(passed / len(cases), 3) if cases else 0,
+        "by_type": {
+            eval_type: {
+                **counts,
+                "pass_rate": round(counts["passed"] / counts["total"], 3) if counts["total"] else 0,
+            }
+            for eval_type, counts in by_type.items()
+        },
         "results": results,
     }
 
 
-def _check_case(case: dict, state) -> list[dict]:
+def _check_extraction_case(case: dict, state) -> list[dict]:
     checks = []
     if expected_company := case.get("expected_company"):
         checks.append(
@@ -51,6 +76,11 @@ def _check_case(case: dict, state) -> list[dict]:
                 "expected": skill,
             }
         )
+    return checks
+
+
+def _check_trajectory_case(case: dict, state) -> list[dict]:
+    checks = _check_extraction_case(case, state)
     if stop_reason := case.get("expected_stop_reason"):
         actual_stop = state.stop_reason.value if state.stop_reason else None
         checks.append(
@@ -72,4 +102,3 @@ def _check_case(case: dict, state) -> list[dict]:
             }
         )
     return checks
-

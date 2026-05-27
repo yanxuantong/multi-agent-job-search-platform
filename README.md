@@ -45,10 +45,18 @@ Run offline evals:
 python3 -m jobagent.cli eval
 ```
 
+The sample suite contains 15 cases and reports both single-turn extraction evals and full trajectory evals.
+
 Run tests:
 
 ```bash
 python3 -m unittest discover -s tests
+```
+
+Inspect the optional production-stack learning paths:
+
+```bash
+python3 -m jobagent.cli integrations
 ```
 
 Local runtime artifacts are written under `.jobagent/` and ignored by git:
@@ -108,6 +116,21 @@ The intended production migration is:
 - replace heuristic nodes with Anthropic/OpenAI structured-output calls
 - replace JSONL tracker with Postgres plus optional Notion/Google Sheets MCP
 - replace the teaching MCP stub with the official MCP Python SDK
+
+## Optional Production-Stack Learning Paths
+
+The default path stays zero-cost and dependency-free. The original Project 1 stack is represented through optional extras and code entrypoints:
+
+| Stack item | Code entrypoint | Install hint | Cost note |
+| --- | --- | --- | --- |
+| Local RAG | `jobagent/retrieval/local_rag.py` | Built in | Local keyword retrieval is free; hosted embeddings/rerankers may cost money. |
+| LangGraph | `jobagent/graph/langgraph_reference.py` | `python3 -m pip install -e '.[langgraph]'` | Local library is free; production checkpointers may need Postgres. |
+| Claude/OpenAI SDKs | `jobagent/llm/anthropic_provider.py`, `jobagent/llm/openai_provider.py` | `python3 -m pip install -e '.[llm]'` | API usage is usually billed per token. |
+| Langfuse | `jobagent/observability/langfuse_exporter.py` | `python3 -m pip install -e '.[observability]'` | Self-host can be free; hosted tiers may be paid. |
+| Postgres/pgvector | `jobagent/storage/postgres_memory.py`, `docker-compose.yml` | `docker compose up postgres -d` | Local Docker is free; managed databases are paid. |
+| External MCP consumer | `jobagent/integrations/external_mcp_tracker.py` | Connect after choosing Notion or Sheets MCP credentials | Local payload construction is free; workspace features may cost money. |
+| MCP SDK server | `mcp_server/career_research_sdk_server.py` | `python3 -m pip install -e '.[mcp]'` | SDK is free; connected tools may have API costs. |
+| Docker | `Dockerfile`, `docker-compose.yml` | `docker compose run --rm app` | Local Docker is free; cloud deploy may require billing. |
 
 ## Example Output Shape
 

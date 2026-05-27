@@ -183,6 +183,7 @@
         <a href="#doc-map">文档融合</a>
         <a href="#original">原规格回放</a>
         <a href="#coverage">覆盖矩阵</a>
+        <a href="#code-entrypoints">代码入口</a>
         <a href="#infra-map">Infra 映射</a>
         <a href="#cost">本地与成本</a>
         <a href="#roadmap">实施路线</a>
@@ -417,10 +418,10 @@
           </tr>
           <tr>
             <td>Eval harness 15-20 cases</td>
-            <td><span class="pill partial">部分覆盖</span></td>
-            <td><code>jobagent/evals/runner.py</code>, <code>samples/evals/*.json</code></td>
-            <td>当前 eval shape 对，但数量不够。</td>
-            <td>扩到 15-20，拆 single-turn extractor eval 和 trajectory eval。</td>
+            <td><span class="pill done">已覆盖第一版</span></td>
+            <td><code>jobagent/evals/runner.py</code>, <code>samples/eval_suite.json</code></td>
+            <td>已有 15 条 sample eval，并区分 single-turn JD extraction 和 trajectory workflow。</td>
+            <td>下一步加 human labels、source grounding、LLM-as-judge rubric 和趋势 dashboard。</td>
           </tr>
           <tr>
             <td>Docker/deploy touchpoint</td>
@@ -433,8 +434,83 @@
       </table>
     </section>
 
+    <section id="code-entrypoints">
+      <h2>5. 原技术栈的代码学习入口</h2>
+      <p>
+        现在项目不只是“文档里提到”这些技术栈，而是给每个原始 stack item 都放了一个可读、可扩展的代码入口。
+        默认路径仍然零成本；真实 API、云服务和第三方账号都通过 optional extras 打开。
+      </p>
+      <pre><code>python3 -m jobagent.cli integrations</code></pre>
+      <table>
+        <thead>
+          <tr>
+            <th>原计划技术栈</th>
+            <th>当前代码入口</th>
+            <th>你能学到什么</th>
+            <th>启用方式</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Eval harness</td>
+            <td><code>jobagent/evals/runner.py</code>, <code>samples/eval_suite.json</code></td>
+            <td>15 条 offline cases，区分 single-turn extractor eval 和完整 trajectory eval。</td>
+            <td><code>python3 -m jobagent.cli eval</code></td>
+          </tr>
+          <tr>
+            <td>RAG retrieval</td>
+            <td><code>jobagent/retrieval/local_rag.py</code></td>
+            <td>先用 deterministic chunking/ranking 学 retrieval 边界，再替换成 embeddings、pgvector 或 reranker。</td>
+            <td>默认内置，不需要 API key。</td>
+          </tr>
+          <tr>
+            <td>LangGraph</td>
+            <td><code>jobagent/graph/langgraph_reference.py</code></td>
+            <td>把当前 <code>GraphEngine</code> 迁移到 <code>StateGraph</code>、conditional edges、checkpointer 的路径。</td>
+            <td><code>python3 -m pip install -e '.[langgraph]'</code></td>
+          </tr>
+          <tr>
+            <td>Claude/OpenAI SDK</td>
+            <td><code>jobagent/llm/anthropic_provider.py</code>, <code>jobagent/llm/openai_provider.py</code></td>
+            <td>真实 model adapter 应该如何实现 <code>generate_structured</code>，并返回 token usage。</td>
+            <td><code>python3 -m pip install -e '.[llm]'</code>，再设置 API key。</td>
+          </tr>
+          <tr>
+            <td>Langfuse</td>
+            <td><code>jobagent/observability/langfuse_exporter.py</code></td>
+            <td>如何把本地 JSONL trace 转成可上传的 per-agent observability event。</td>
+            <td><code>python3 -m pip install -e '.[observability]'</code></td>
+          </tr>
+          <tr>
+            <td>Postgres + pgvector</td>
+            <td><code>jobagent/storage/postgres_memory.py</code>, <code>docker-compose.yml</code></td>
+            <td>semantic memory 和 episodic memory 的 schema 分层，以及 vector search 的位置。</td>
+            <td><code>docker compose up postgres -d</code></td>
+          </tr>
+          <tr>
+            <td>MCP consumer</td>
+            <td><code>jobagent/integrations/external_mcp_tracker.py</code></td>
+            <td>把 Application Tracker 写入建模成 MCP <code>tools/call</code>，先学 idempotency 和 schema，再接 Notion/Sheets。</td>
+            <td>默认可读；真实连接需要第三方账号和 MCP client。</td>
+          </tr>
+          <tr>
+            <td>MCP server</td>
+            <td><code>mcp_server/career_research_sdk_server.py</code></td>
+            <td>用官方 SDK 暴露 tools/resources，让 career research 能被外部 agent client 调用。</td>
+            <td><code>python3 -m pip install -e '.[mcp]'</code></td>
+          </tr>
+          <tr>
+            <td>Docker/deploy</td>
+            <td><code>Dockerfile</code>, <code>docker-compose.yml</code>, <code>deploy/langfuse/README.md</code></td>
+            <td>把 app、Postgres/pgvector、observability 的部署边界拆开，不让学习路径一开始就依赖云账号。</td>
+            <td><code>docker compose run --rm app</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
     <section id="infra-map">
-      <h2>5. 从传统 Infra 到 AI Infra 的迁移映射</h2>
+      <h2>6. 从传统 Infra 到 AI Infra 的迁移映射</h2>
       <p>你的优势不是“我会写 prompt”，而是“我知道一个不稳定智能系统也需要工程边界”。这张表是面试时可以反复使用的语言。</p>
       <table>
         <thead>
@@ -519,7 +595,7 @@
     </section>
 
     <section id="cost">
-      <h2>6. 本地运行可行性与成本</h2>
+      <h2>7. 本地运行可行性与成本</h2>
       <p>按 2026-05-27 当前官方文档核对，最稳妥的策略是：先保持当前仓库完全免费可运行，再逐步引入需要账号或可能收费的组件。</p>
       <table>
         <thead>
@@ -591,7 +667,7 @@
     </section>
 
     <section id="roadmap">
-      <h2>7. 下一步技术实施路线</h2>
+      <h2>8. 下一步技术实施路线</h2>
       <p>如果目标是“积累 agent 经验 + 面向 AI infra 转型”，我建议按下面三轮做，每轮都有可展示的产物。</p>
       <table>
         <thead>
@@ -630,7 +706,7 @@
     </section>
 
     <section id="reading">
-      <h2>8. 代码阅读路径</h2>
+      <h2>9. 代码阅读路径</h2>
       <p>这部分把 <code>docs/LEARNING_GUIDE.md</code> 的阅读路线融合进来。你可以按这个顺序给自己做 code walkthrough。</p>
       <ol>
         <li>
@@ -657,6 +733,9 @@
         <li>
           <strong>看 MCP stub:</strong> <code>mcp_server/career_research_server.py</code>。下一步用官方 SDK 重写时，保留 tool schema 和错误语义。
         </li>
+        <li>
+          <strong>看 optional integrations:</strong> 运行 <code>python3 -m jobagent.cli integrations</code>，再逐个打开 LangGraph、Langfuse、pgvector、MCP、LLM provider 的代码入口。
+        </li>
       </ol>
       <h3>本地验证命令</h3>
       <pre><code>python3 -m unittest discover -s tests
@@ -665,7 +744,7 @@ python3 -m jobagent.cli demo --auto-approve</code></pre>
     </section>
 
     <section id="references">
-      <h2>9. 官方参考链接</h2>
+      <h2>10. 官方参考链接</h2>
       <p>这些链接会随时间变化，涉及价格和 SDK API 时请以官方页面为准。</p>
       <ul>
         <li><a href="https://developers.openai.com/api/docs/pricing">OpenAI API Pricing</a></li>

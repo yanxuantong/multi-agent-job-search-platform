@@ -1,6 +1,7 @@
 [
   {
     "id": "anthropic-agent-reliability",
+    "eval_type": "trajectory",
     "job_text": "Company: Anthropic\nRole: Applied AI Engineer\nWe need Python engineers to build RAG, LLM, agents, evaluation, observability, and Postgres-backed workflows.",
     "expected_company": "Anthropic",
     "expected_required_skills": ["python", "rag", "llm", "agents", "evaluation", "observability", "postgres"],
@@ -9,11 +10,128 @@
   },
   {
     "id": "infra-ai-platform",
+    "eval_type": "trajectory",
     "job_text": "Company: Northstar AI\nRole: Forward Deployed Engineer\nBuild enterprise AI workflows using Python, distributed systems, AWS, RAG, LLM evaluations, and customer-facing deployment patterns.",
     "expected_company": "Northstar AI",
     "expected_required_skills": ["python", "distributed systems", "aws", "rag", "llm"],
     "expected_stop_reason": "NEED_USER_APPROVAL",
     "min_fit_score": 15
+  },
+  {
+    "id": "langgraph-platform-engineer",
+    "eval_type": "single_turn_jd_extract",
+    "job_text": "Company: LangSmith Labs\nRole: AI Platform Engineer\nDesign LangGraph agent workflows with Python, Postgres checkpointing, evaluation, and observability for developer tools.",
+    "expected_company": "LangSmith Labs",
+    "expected_required_skills": ["langgraph", "python", "postgres", "evaluation", "observability"],
+    "expected_stop_reason": "NEED_USER_APPROVAL",
+    "min_fit_score": 15
+  },
+  {
+    "id": "mcp-tooling-engineer",
+    "eval_type": "single_turn_jd_extract",
+    "job_text": "Company: ToolBridge AI\nRole: Developer Tools Engineer\nBuild MCP servers and agents for enterprise search workflows using Python, LLM tool calling, and observability.",
+    "expected_company": "ToolBridge AI",
+    "expected_required_skills": ["mcp", "agents", "python", "llm", "observability"],
+    "expected_stop_reason": "NEED_USER_APPROVAL",
+    "min_fit_score": 15
+  },
+  {
+    "id": "rag-backend-engineer",
+    "eval_type": "single_turn_jd_extract",
+    "job_text": "Company: SearchForge\nRole: Backend Engineer\nOwn RAG services, Python APIs, distributed systems, AWS deployment, and Postgres data models for AI search.",
+    "expected_company": "SearchForge",
+    "expected_required_skills": ["rag", "python", "distributed systems", "aws", "postgres"],
+    "expected_stop_reason": "NEED_USER_APPROVAL",
+    "min_fit_score": 15
+  },
+  {
+    "id": "eval-infra-engineer",
+    "eval_type": "trajectory",
+    "job_text": "Company: EvalWorks\nRole: Evaluation Infrastructure Engineer\nDevelop LLM evaluation, observability, Python agents, and reliability dashboards for AI infra teams.",
+    "expected_company": "EvalWorks",
+    "expected_required_skills": ["llm", "evaluation", "observability", "python", "agents"],
+    "expected_stop_reason": "NEED_USER_APPROVAL",
+    "min_fit_score": 16
+  },
+  {
+    "id": "ai-sre-kubernetes",
+    "eval_type": "trajectory",
+    "job_text": "Company: ClusterMind\nRole: AI Infrastructure SRE\nDeploy Kubernetes services for LLM agents, observability pipelines, distributed systems, and AWS reliability.",
+    "expected_company": "ClusterMind",
+    "expected_required_skills": ["kubernetes", "llm", "agents", "observability", "distributed systems", "aws"],
+    "expected_stop_reason": "NEED_USER_APPROVAL",
+    "min_fit_score": 15
+  },
+  {
+    "id": "postgres-memory-engineer",
+    "eval_type": "trajectory",
+    "job_text": "Company: MemoryGrid\nRole: AI Memory Platform Engineer\nBuild Postgres and pgvector-backed memory for Python RAG agents with evaluation and observability.",
+    "expected_company": "MemoryGrid",
+    "expected_required_skills": ["postgres", "python", "rag", "agents", "evaluation", "observability"],
+    "expected_stop_reason": "NEED_USER_APPROVAL",
+    "min_fit_score": 16
+  },
+  {
+    "id": "customer-ai-fde",
+    "eval_type": "trajectory",
+    "job_text": "Company: FieldOps AI\nRole: Forward Deployed AI Engineer\nPartner with enterprise customers to ship Python LLM workflows, RAG, evaluation, AWS deployment, and agent reliability.",
+    "expected_company": "FieldOps AI",
+    "expected_required_skills": ["python", "llm", "rag", "evaluation", "aws", "agent"],
+    "expected_stop_reason": "NEED_USER_APPROVAL",
+    "min_fit_score": 16
+  },
+  {
+    "id": "java-infra-ai-platform",
+    "eval_type": "trajectory",
+    "job_text": "Company: EnterpriseFlow\nRole: AI Platform Backend Engineer\nUse Java, Python, distributed systems, Postgres, observability, and Kubernetes to support LLM-powered internal tools.",
+    "expected_company": "EnterpriseFlow",
+    "expected_required_skills": ["java", "python", "distributed systems", "postgres", "observability", "kubernetes", "llm"],
+    "expected_stop_reason": "NEED_USER_APPROVAL",
+    "min_fit_score": 15
+  },
+  {
+    "id": "spark-rag-data-platform",
+    "eval_type": "single_turn_jd_extract",
+    "job_text": "Company: DataAgentic\nRole: Data Platform Engineer\nOwn Spark pipelines for RAG indexing, Python services, Postgres metadata, and LLM evaluation workflows.",
+    "expected_company": "DataAgentic",
+    "expected_required_skills": ["spark", "rag", "python", "postgres", "llm", "evaluation"],
+    "expected_stop_reason": "NEED_USER_APPROVAL",
+    "min_fit_score": 15
+  },
+  {
+    "id": "agent-observability-platform",
+    "eval_type": "trajectory",
+    "job_text": "Company: TraceLayer\nRole: Observability Engineer\nBuild observability for LangGraph agents, LLM latency, token cost tracking, Python services, and evaluation dashboards.",
+    "expected_company": "TraceLayer",
+    "expected_required_skills": ["observability", "langgraph", "agents", "llm", "python", "evaluation"],
+    "expected_stop_reason": "NEED_USER_APPROVAL",
+    "min_fit_score": 16
+  },
+  {
+    "id": "mcp-application-tracker",
+    "eval_type": "single_turn_jd_extract",
+    "job_text": "Company: WorkflowKit\nRole: Integrations Engineer\nCreate MCP integrations for application tracking, Google Sheets style workflows, Python agents, and Postgres storage.",
+    "expected_company": "WorkflowKit",
+    "expected_required_skills": ["mcp", "python", "agents", "postgres"],
+    "expected_stop_reason": "NEED_USER_APPROVAL",
+    "min_fit_score": 14
+  },
+  {
+    "id": "deployment-ai-infra",
+    "eval_type": "trajectory",
+    "job_text": "Company: ShipAgent\nRole: AI Infra Deployment Engineer\nDeploy Dockerized Python RAG agents on AWS with Kubernetes, distributed systems, evaluation, and observability.",
+    "expected_company": "ShipAgent",
+    "expected_required_skills": ["python", "rag", "agents", "aws", "kubernetes", "distributed systems", "evaluation", "observability"],
+    "expected_stop_reason": "NEED_USER_APPROVAL",
+    "min_fit_score": 16
+  },
+  {
+    "id": "llm-product-infra",
+    "eval_type": "trajectory",
+    "job_text": "Company: ProductMind\nRole: Applied AI Product Engineer\nBuild LLM agents for developer tools using Python, RAG, MCP, LangGraph, evaluation, observability, and Postgres.",
+    "expected_company": "ProductMind",
+    "expected_required_skills": ["llm", "agents", "python", "rag", "mcp", "langgraph", "evaluation", "observability", "postgres"],
+    "expected_stop_reason": "NEED_USER_APPROVAL",
+    "min_fit_score": 17
   }
 ]
-
