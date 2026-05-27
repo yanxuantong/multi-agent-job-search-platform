@@ -15,7 +15,9 @@ This repo is intentionally a learning codebase first. It demonstrates the operat
 
 The production design lives in [TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md).
 The guided code-reading path lives in [docs/LEARNING_GUIDE.md](docs/LEARNING_GUIDE.md).
-Chinese HTML docs are available at [docs/usage_zh.html](docs/usage_zh.html) and [docs/architecture_zh.html](docs/architecture_zh.html).
+Chinese HTML docs are available at [docs/usage_zh.html](docs/usage_zh.html), [docs/architecture_zh.html](docs/architecture_zh.html), and [docs/project1_ai_infra_tutorial_zh.html](docs/project1_ai_infra_tutorial_zh.html).
+
+The Project 1 AI infra tutorial explains how this zero-cost reference implementation maps to the original LangGraph, MCP, Langfuse, pgvector, eval, and deployment plan, including what is implemented now, what remains missing, and which next steps may require paid APIs or hosted accounts.
 
 ## Quickstart
 
