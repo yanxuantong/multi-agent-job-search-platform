@@ -1,0 +1,24 @@
+[
+  {
+    "title": "Amazon production RAG Slack bot",
+    "summary": "Built a production RAG assistant for internal support workflows with retrieval, context assembly, and reliability constraints.",
+    "impact": "Reduced repeated support investigation and created a reusable pattern for internal knowledge retrieval.",
+    "skills": ["RAG", "LLM", "Python", "distributed systems", "observability"],
+    "tags": ["ai", "infra", "production"]
+  },
+  {
+    "title": "Service consolidation and capacity planning",
+    "summary": "Owned backend infrastructure simplification and capacity planning across services.",
+    "impact": "Improved operational reliability and clarified scaling ownership.",
+    "skills": ["distributed systems", "AWS", "Java", "observability"],
+    "tags": ["infra", "scale", "reliability"]
+  },
+  {
+    "title": "CalPal AI calendar command parser",
+    "summary": "Built and verified an AI-assisted command parser with fallback paths and simulator-based regression checks.",
+    "impact": "Created a deterministic product workflow around ambiguous natural-language inputs.",
+    "skills": ["LLM", "evaluation", "agent", "Python"],
+    "tags": ["product", "eval", "ai"]
+  }
+]
+

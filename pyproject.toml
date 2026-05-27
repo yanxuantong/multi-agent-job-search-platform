@@ -1,0 +1,12 @@
+[project]
+name = "jobagent"
+version = "0.1.0"
+description = "Reference multi-agent job-search platform for learning orchestration, HITL, evals, and tracing."
+requires-python = ">=3.9"
+dependencies = []
+
+[project.scripts]
+jobagent = "jobagent.cli:main"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]

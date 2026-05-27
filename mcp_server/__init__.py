@@ -1,0 +1,2 @@
+"""MCP-shaped teaching servers."""
+

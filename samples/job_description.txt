@@ -1,0 +1,25 @@
+Company: Anthropic
+Role: Applied AI Engineer, Agent Reliability
+Location: San Francisco or New York hybrid
+
+We are looking for an engineer to build and evaluate production LLM and agent systems for enterprise customers.
+
+Responsibilities:
+- Design and deploy multi-agent workflows for customer-facing AI products.
+- Build RAG pipelines, evaluation suites, and observability for long-running agent trajectories.
+- Partner with product and customer teams to ship reliable systems.
+- Own Python services, Postgres-backed state, and production debugging.
+
+Required skills:
+- Python
+- distributed systems
+- RAG
+- LLM
+- agents
+- evaluation
+- observability
+- Postgres
+
+Preferred:
+- LangGraph, MCP, Kubernetes, AWS, or experience with customer-facing deployments.
+

@@ -1,0 +1,19 @@
+[
+  {
+    "id": "anthropic-agent-reliability",
+    "job_text": "Company: Anthropic\nRole: Applied AI Engineer\nWe need Python engineers to build RAG, LLM, agents, evaluation, observability, and Postgres-backed workflows.",
+    "expected_company": "Anthropic",
+    "expected_required_skills": ["python", "rag", "llm", "agents", "evaluation", "observability", "postgres"],
+    "expected_stop_reason": "NEED_USER_APPROVAL",
+    "min_fit_score": 16
+  },
+  {
+    "id": "infra-ai-platform",
+    "job_text": "Company: Northstar AI\nRole: Forward Deployed Engineer\nBuild enterprise AI workflows using Python, distributed systems, AWS, RAG, LLM evaluations, and customer-facing deployment patterns.",
+    "expected_company": "Northstar AI",
+    "expected_required_skills": ["python", "distributed systems", "aws", "rag", "llm"],
+    "expected_stop_reason": "NEED_USER_APPROVAL",
+    "min_fit_score": 15
+  }
+]
+
