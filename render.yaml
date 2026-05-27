@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: jobagent-demo
+    runtime: docker
+    plan: starter
+    autoDeploy: true
+    healthCheckPath: /healthz
+    envVars:
+      - key: JOBAGENT_PUBLIC_DEMO_MODE
+        value: "true"
+      - key: JOBAGENT_DATABASE_URL
+        fromDatabase:
+          name: jobagent-postgres
+          property: connectionString
+
+databases:
+  - name: jobagent-postgres
+    plan: basic-256mb
+    databaseName: jobagent
+    user: jobagent

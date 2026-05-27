@@ -9,4 +9,4 @@ COPY tests ./tests
 
 RUN python -m pip install --no-cache-dir -e .
 
-CMD ["python", "-m", "jobagent.cli", "integrations"]
+CMD ["sh", "-c", "uvicorn jobagent.web.app:app --host 0.0.0.0 --port ${PORT:-8000}"]

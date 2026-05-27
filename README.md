@@ -2,7 +2,7 @@
 
 Reference implementation for a multi-agent job-search platform.
 
-This repo is intentionally a learning codebase first. It demonstrates the operating pattern behind a production agent system without requiring API keys or network access:
+This repo is intentionally a learning codebase first. It demonstrates the operating pattern behind a production agent system without requiring API keys or network access for the default mock workflow:
 
 - supervisor-style graph orchestration
 - typed shared state
@@ -12,6 +12,7 @@ This repo is intentionally a learning codebase first. It demonstrates the operat
 - offline evals
 - application tracker write after approval
 - an MCP-shaped tool boundary
+- a minimal FastAPI web demo for production-style deployment
 
 The canonical learning guide lives in [docs/project1_ai_infra_tutorial_zh.html](docs/project1_ai_infra_tutorial_zh.html).
 
@@ -57,11 +58,32 @@ Inspect the optional production-stack learning paths:
 python3 -m jobagent.cli integrations
 ```
 
+Run the minimal web demo locally:
+
+```bash
+uvicorn jobagent.web.app:app --reload
+```
+
+Open <http://localhost:8000>, paste a job description, and approve the paused run from the result page.
+
 Local runtime artifacts are written under `.jobagent/` and ignored by git:
 
 - `.jobagent/checkpoints/<run_id>.json`
 - `.jobagent/runs/<run_id>/trace.jsonl`
 - `.jobagent/applications.jsonl`
+
+When `JOBAGENT_DATABASE_URL` or `DATABASE_URL` is set, the web demo stores run state in Postgres instead of relying only on local checkpoint files.
+
+## Render Deployment
+
+This repo includes a Render Blueprint at [render.yaml](render.yaml). The Blueprint provisions:
+
+- `jobagent-demo`: Docker web service running `uvicorn jobagent.web.app:app`
+- `jobagent-postgres`: Render Postgres database used by the web run store
+
+Deploy from Render by creating a new Blueprint from this GitHub repository. Render reads `render.yaml`, builds the Docker image, sets `JOBAGENT_DATABASE_URL` from the database connection string, and checks `/healthz`.
+
+[Deploy to Render](https://render.com/deploy?repo=https://github.com/yanxuantong/multi-agent-job-search-platform)
 
 ## How To Read The Code
 

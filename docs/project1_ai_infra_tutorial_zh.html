@@ -290,6 +290,8 @@
         <span class="badge done">默认零成本可运行</span>
         <span class="badge done">15 条 eval cases</span>
         <span class="badge done">HITL checkpoint</span>
+        <span class="badge done">FastAPI Web Demo</span>
+        <span class="badge done">Render Blueprint</span>
         <span class="badge done">Docker + Postgres/pgvector</span>
         <span class="badge optional">真实 LLM 调用 opt-in</span>
       </div>
@@ -326,7 +328,7 @@
         </div>
         <div class="card">
           <strong>当前完成度</strong>
-          <p>默认路径已经可运行；optional integrations 覆盖 LangGraph、MCP SDK、LLM providers、Langfuse exporter、Postgres/pgvector、Docker。</p>
+          <p>默认路径已经可运行；生产 demo 路径提供 FastAPI/Jinja UI、Render Blueprint、Postgres run store；optional integrations 覆盖 LangGraph、MCP SDK、LLM providers、Langfuse exporter、Postgres/pgvector、Docker。</p>
         </div>
       </div>
       <div class="callout">
@@ -383,6 +385,26 @@ docker compose build app
 docker compose run --rm app python -m jobagent.cli eval
 docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[all]' &amp;&amp; python -m unittest discover -s tests"</code></pre>
 
+      <h3>Minimal production Web UI</h3>
+      <pre><code>uvicorn jobagent.web.app:app --reload</code></pre>
+      <p>
+        打开 <code>http://localhost:8000</code> 后，你会看到一个很轻的操作界面：粘贴 JD、启动 run、查看 fit/resume proposal、
+        点击 approve 继续 tracker 和 interview prep。它不是完整 SaaS UI，而是一个可以部署到 production 平台的 portfolio demo。
+      </p>
+
+      <h3>Render Blueprint deploy</h3>
+      <pre><code>git push origin main
+# Render Dashboard -&gt; New -&gt; Blueprint -&gt; select this GitHub repo
+# Render reads render.yaml and provisions:
+#   jobagent-demo      Docker web service
+#   jobagent-postgres  Postgres database
+</code></pre>
+      <p>
+        <code>render.yaml</code> 会把 Render Postgres 的 private connection string 注入为 <code>JOBAGENT_DATABASE_URL</code>。
+        Web demo 检测到这个环境变量后，会把 run state 存进 Postgres；本地没有 DB 时则退回 <code>.jobagent/checkpoints</code>。
+        也可以从 README 里的 <code>Deploy to Render</code> 链接进入 Render Blueprint 创建流程。
+      </p>
+
       <table>
         <thead>
           <tr><th>运行结果</th><th>你应该看到什么</th><th>说明</th></tr>
@@ -392,6 +414,7 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
           <tr><td>全依赖单测</td><td><code>14 tests OK</code></td><td>安装 <code>.[all]</code> 且提供 Postgres 后，optional tests 全部执行。</td></tr>
           <tr><td>Eval</td><td><code>15/15 passed</code></td><td>覆盖 10 条 trajectory eval 和 5 条 single-turn JD extraction eval。</td></tr>
           <tr><td>Demo</td><td><code>COMPLETED</code> 或 <code>NEED_USER_APPROVAL</code></td><td>取决于是否传入 <code>--auto-approve</code>。</td></tr>
+          <tr><td>Web health</td><td><code>GET /healthz -&gt; {"status":"ok"}</code></td><td>Render 用它判断服务是否启动成功。</td></tr>
         </tbody>
       </table>
     </section>
@@ -452,7 +475,7 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
           <rect x="826" y="188" width="164" height="36" rx="7" fill="#fff" stroke="#d9dde3"/>
           <text x="908" y="211" text-anchor="middle" fill="#1f2328">LLM Provider</text>
           <rect x="826" y="236" width="164" height="36" rx="7" fill="#fff" stroke="#d9dde3"/>
-          <text x="908" y="259" text-anchor="middle" fill="#1f2328">MCP + Postgres</text>
+          <text x="908" y="259" text-anchor="middle" fill="#1f2328">FastAPI + Postgres</text>
         </svg>
       </div>
 
@@ -467,6 +490,13 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
   -&gt; tracker
   -&gt; interview_prep
   -&gt; COMPLETED</code></pre>
+
+      <h3>Production demo 外壳</h3>
+      <pre><code>Browser
+  -&gt; FastAPI / Jinja minimal UI
+  -&gt; existing jobagent graph workflow
+  -&gt; Postgres web_runs table when JOBAGENT_DATABASE_URL exists
+  -&gt; local checkpoint fallback when running without DB</code></pre>
     </section>
 
     <section id="state">
@@ -558,6 +588,18 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
             <td>semantic memory、episodic memory、JSONB metadata、vector search。</td>
           </tr>
           <tr>
+            <td>FastAPI production demo</td>
+            <td><span class="badge done">已实现</span></td>
+            <td><code>jobagent/web/app.py</code>, <code>jobagent/web/templates/</code>, <code>jobagent/web/store.py</code></td>
+            <td>把 CLI/agent workflow 包成可公开访问的极简 UI，同时保留 HITL approve/resume。</td>
+          </tr>
+          <tr>
+            <td>Render deployment</td>
+            <td><span class="badge done">Blueprint ready</span></td>
+            <td><code>render.yaml</code>, <code>Dockerfile</code></td>
+            <td>Render 会构建 Docker web service、注入 Postgres connection string、用 <code>/healthz</code> 做健康检查。</td>
+          </tr>
+          <tr>
             <td>Langfuse</td>
             <td><span class="badge partial">exporter scaffold</span></td>
             <td><code>jobagent/observability/tracer.py</code>, <code>jobagent/observability/langfuse_exporter.py</code></td>
@@ -604,6 +646,7 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
           <tr><td>Offline eval</td><td><code>python3 -m jobagent.cli eval</code></td><td>15 条样例，检查 company、skills、stop reason、fit score。</td></tr>
           <tr><td>Demo smoke</td><td><code>python3 -m jobagent.cli demo --auto-approve</code></td><td>端到端 run、tracker write、interview pack、trace/checkpoint artifacts。</td></tr>
           <tr><td>Docker smoke</td><td><code>docker compose run --rm app python -m jobagent.cli eval</code></td><td>容器构建、compose 网络、Postgres service readiness。</td></tr>
+          <tr><td>Web smoke</td><td><code>uvicorn jobagent.web.app:app --host 127.0.0.1 --port 8000</code></td><td>打开首页、提交 JD、查看 paused run、approve 后完成。</td></tr>
           <tr><td>Static sanity</td><td><code>python3 -m py_compile $(find jobagent mcp_server tests -name '*.py' -print)</code></td><td>语法和 import-time 基础检查。</td></tr>
         </tbody>
       </table>
@@ -659,6 +702,12 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
         </thead>
         <tbody>
           <tr>
+            <td>0. Production demo shell</td>
+            <td>先有一个能公开打开的最小 UI</td>
+            <td>FastAPI/Jinja form、run detail page、approve button、Render Blueprint、Postgres run store。</td>
+            <td>Render 上可访问首页和 <code>/healthz</code>，本地 Web smoke 通过。</td>
+          </tr>
+          <tr>
             <td>1. Eval depth</td>
             <td>让质量证明更强</td>
             <td>加入 source-grounding fixture、resume rubric、failure table、human labels。</td>
@@ -701,6 +750,7 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
         <tbody>
           <tr><td>默认 demo/eval/trace</td><td><span class="badge done">免费</span></td><td>不会，标准库路径不需要 API。</td><td>永远保留为 baseline。</td></tr>
           <tr><td>Docker Postgres/pgvector</td><td><span class="badge done">本地免费</span></td><td>云数据库或托管服务会收费。</td><td>本地 compose 先跑通。</td></tr>
+          <tr><td>Render web + Postgres</td><td><span class="badge optional">需要 Render 账号</span></td><td><code>render.yaml</code> 使用 web starter 和 Postgres basic-256mb，适合更接近 production 的 demo，通常需要付费。</td><td>用于 public portfolio demo；不要放真实个人隐私数据。</td></tr>
           <tr><td>OpenAI/Anthropic</td><td><span class="badge optional">需要 key</span></td><td>按 token 计费，多 agent 容易放大成本。</td><td>默认 mock；真实 provider 必须 opt-in 并记录 budget。</td></tr>
           <tr><td>Langfuse</td><td><span class="badge optional">可自托管</span></td><td>Hosted plan 或自托管运维会有成本。</td><td>先 JSONL，再 exporter，再 dashboard。</td></tr>
           <tr><td>Notion/Sheets MCP</td><td><span class="badge optional">可能免费试用</span></td><td>workspace 权限、OAuth、API quota 可能受限。</td><td>先本地 JSONL tracker，再接外部 MCP。</td></tr>

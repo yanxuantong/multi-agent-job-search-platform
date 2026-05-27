@@ -3,7 +3,12 @@ name = "jobagent"
 version = "0.1.0"
 description = "Reference multi-agent job-search platform for learning orchestration, HITL, evals, and tracing."
 requires-python = ">=3.9"
-dependencies = []
+dependencies = [
+  "fastapi",
+  "jinja2",
+  "psycopg[binary]",
+  "uvicorn[standard]",
+]
 
 [project.optional-dependencies]
 langgraph = [
@@ -46,3 +51,6 @@ pythonpath = ["."]
 
 [tool.setuptools.packages.find]
 include = ["jobagent*", "mcp_server*"]
+
+[tool.setuptools.package-data]
+"jobagent.web" = ["templates/*.html", "static/*.css"]

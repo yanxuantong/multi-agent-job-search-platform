@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JobAgent Demo</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="eyebrow">Production demo</div>
+      <h1>Multi-Agent Job Search Platform</h1>
+      <p class="lead">Paste a job description, run the agent workflow, review the resume proposal, and approve the tracker/interview-prep continuation.</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="grid">
+      <section class="panel">
+        <div class="section-head">
+          <h2>Start a run</h2>
+          {% if public_demo_mode %}<span class="pill info">public demo mode</span>{% endif %}
+        </div>
+        <form method="post" action="/runs">
+          <label for="job_url">Job URL</label>
+          <input id="job_url" name="job_url" type="url" placeholder="https://company.com/careers/job-id">
+
+          <label for="job_text">Job description</label>
+          <textarea id="job_text" name="job_text">{{ sample_text }}</textarea>
+
+          <div class="row">
+            <label class="row small" for="auto_approve">
+              <input id="auto_approve" name="auto_approve" type="checkbox">
+              Auto-approve this demo run
+            </label>
+            <button type="submit">Run workflow</button>
+          </div>
+        </form>
+      </section>
+
+      <aside class="stack">
+        <section class="card">
+          <h2>What this demo shows</h2>
+          <ul class="small">
+            <li>Typed shared state across bounded agent nodes.</li>
+            <li>Human approval before tracker side effects.</li>
+            <li>Checkpoint/resume behavior suitable for a production shell.</li>
+            <li>Offline evals remain the quality gate for agent changes.</li>
+          </ul>
+        </section>
+
+        <section class="card">
+          <h2>Recent runs</h2>
+          <div class="run-list">
+            {% for run in runs %}
+              <a class="run-item" href="/runs/{{ run.run_id }}">
+                <strong>{{ run.company }} - {{ run.role }}</strong>
+                <span class="small muted">{{ run.run_id }}</span>
+                <span>
+                  <span class="pill {% if run.stop_reason == 'COMPLETED' %}complete{% elif run.stop_reason == 'NEED_USER_APPROVAL' %}paused{% else %}error{% endif %}">
+                    {{ run.stop_reason }}
+                  </span>
+                  {% if run.fit_score is not none %}<span class="pill info">fit {{ run.fit_score }}/25</span>{% endif %}
+                </span>
+              </a>
+            {% else %}
+              <p class="small muted">No runs yet.</p>
+            {% endfor %}
+          </div>
+        </section>
+      </aside>
+    </div>
+  </main>
+</body>
+</html>

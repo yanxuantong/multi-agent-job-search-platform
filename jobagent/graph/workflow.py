@@ -47,7 +47,7 @@ def run_job_workflow(
         story_bank=story_bank,
         approved=approved,
     )
-    graph = build_graph(JsonlTracer(run_id))
+    graph = build_graph(JsonlTracer(state.run_id))
     state = graph.run(state, "ingest")
     JsonCheckpointStore().save(state)
     return state
@@ -56,11 +56,16 @@ def run_job_workflow(
 def resume_job_workflow(run_id: str, *, approved: bool) -> JobSearchState:
     store = JsonCheckpointStore()
     state = store.load(run_id)
+    state = resume_job_state(state, approved=approved)
+    store.save(state)
+    return state
+
+
+def resume_job_state(state: JobSearchState, *, approved: bool) -> JobSearchState:
     if not state.pending_node:
         return state
     state.approved = approved
     state.stop_reason = None
-    graph = build_graph(JsonlTracer(run_id))
+    graph = build_graph(JsonlTracer(state.run_id))
     state = graph.run(state, state.pending_node)
-    store.save(state)
     return state
