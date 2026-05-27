@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi-Agent Job Search Platform 使用文档</title>
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #202124;
+      --muted: #687076;
+      --line: #ded8cb;
+      --accent: #2f6f73;
+      --accent-2: #8a5a16;
+      --soft: #edf5f3;
+      --code: #f0ece4;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
+      line-height: 1.75;
+      font-size: 16px;
+    }
+
+    .page {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 32px 22px 80px;
+    }
+
+    header {
+      padding: 34px 0 24px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 26px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 34px;
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      max-width: 760px;
+      margin: 0;
+    }
+
+    h2 {
+      margin: 42px 0 14px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--line);
+      font-size: 23px;
+    }
+
+    h3 {
+      margin: 28px 0 10px;
+      font-size: 18px;
+    }
+
+    p { margin: 0 0 14px; }
+    ul, ol { padding-left: 22px; margin: 0 0 16px; }
+    li { margin-bottom: 7px; }
+
+    code {
+      background: var(--code);
+      padding: 2px 6px;
+      border-radius: 5px;
+      font-family: "SF Mono", Menlo, Consolas, monospace;
+      font-size: 13.5px;
+    }
+
+    pre {
+      background: #1f2528;
+      color: #f6f3ec;
+      padding: 16px 18px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.55;
+    }
+
+    pre code {
+      background: transparent;
+      color: inherit;
+      padding: 0;
+    }
+
+    a { color: var(--accent); }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin: 18px 0;
+    }
+
+    .card {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .card strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--accent);
+    }
+
+    .callout {
+      background: var(--soft);
+      border-left: 4px solid var(--accent);
+      padding: 14px 16px;
+      margin: 18px 0;
+      border-radius: 6px;
+    }
+
+    .warning {
+      background: #fff7e8;
+      border-left-color: var(--accent-2);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th, td {
+      text-align: left;
+      vertical-align: top;
+      padding: 11px 13px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    th {
+      background: #ece7db;
+      font-weight: 700;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+
+    .diagram {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      overflow-x: auto;
+      margin: 18px 0;
+    }
+
+    svg text {
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", sans-serif;
+      fill: #202124;
+      font-size: 13px;
+    }
+
+    .footer {
+      margin-top: 44px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    @media (max-width: 760px) {
+      h1 { font-size: 28px; }
+      .grid { grid-template-columns: 1fr; }
+      .page { padding: 24px 16px 64px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <h1>Multi-Agent Job Search Platform 使用文档</h1>
+      <p class="subtitle">这是一份中文使用说明，帮助你把这个项目当作 multi-agent 编排学习样板来跑、看、改。项目当前是零外部依赖的教学版本，不需要 API key，也不会联网或自动投递申请。</p>
+    </header>
+
+    <section>
+      <h2>1. 这个项目能做什么</h2>
+      <p>输入一份职位描述后，系统会按固定的 agent workflow 依次完成：</p>
+      <div class="grid">
+        <div class="card"><strong>职位理解</strong>提取公司、岗位、技能、地点、职责等结构化信息。</div>
+        <div class="card"><strong>公司研究</strong>基于本地 JD 生成公司简报，并保留未来接入外部来源的位置。</div>
+        <div class="card"><strong>匹配分析</strong>把 JD 技能和你的 story bank 做匹配，给出 0 到 25 的 fit score。</div>
+        <div class="card"><strong>简历建议</strong>生成 bullet rewrite、cover letter outline、recruiter note。</div>
+        <div class="card"><strong>人工审批</strong>默认停在 <code>NEED_USER_APPROVAL</code>，写入 checkpoint，等待你决定是否继续。</div>
+        <div class="card"><strong>投递跟踪和面试准备</strong>审批后写 tracker，并生成 technical、behavioral、company prep questions。</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>2. 安装和环境要求</h2>
+      <p>当前版本只依赖 Python 标准库。你可以直接在项目根目录运行：</p>
+      <pre><code>cd "/Users/xuantongyan/Documents/jobAgent 2"
+python3 -m unittest discover -s tests</code></pre>
+      <p>如果测试输出类似下面这样，说明环境可用：</p>
+      <pre><code>Ran 4 tests in 0.012s
+
+OK</code></pre>
+      <div class="callout">
+        <strong>为什么不用 pip install?</strong>
+        <p>这个版本刻意不引入 LangGraph、Anthropic SDK、OpenAI SDK 或 MCP SDK。目的是先把 state、graph、HITL、eval、trace 的基本操作模式看清楚。</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>3. 最常用命令</h2>
+      <table>
+        <thead>
+          <tr><th>目标</th><th>命令</th><th>预期结果</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>跑到人工审批点</td>
+            <td><code>python3 -m jobagent.cli demo</code></td>
+            <td>输出 <code>NEED_USER_APPROVAL</code>，生成 resume proposal、checkpoint、trace。</td>
+          </tr>
+          <tr>
+            <td>从 checkpoint 继续</td>
+            <td><code>python3 -m jobagent.cli resume &lt;run_id&gt; --approve</code></td>
+            <td>继续执行 tracker 和 interview prep，最终输出 <code>COMPLETED</code>。</td>
+          </tr>
+          <tr>
+            <td>直接跑完整流程</td>
+            <td><code>python3 -m jobagent.cli demo --auto-approve</code></td>
+            <td>跳过人工停顿，完成 tracker 写入和 interview pack 生成。</td>
+          </tr>
+          <tr>
+            <td>跑离线评测</td>
+            <td><code>python3 -m jobagent.cli eval</code></td>
+            <td>运行 sample eval suite，检查公司名、技能提取、stop reason、fit score。</td>
+          </tr>
+          <tr>
+            <td>测试 MCP-shaped 工具边界</td>
+            <td><code>printf ... | python3 mcp_server/career_research_server.py</code></td>
+            <td>用 JSON stdin/stdout 模拟 MCP tool 调用。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>4. 一次完整使用流程</h2>
+      <h3>步骤 1：运行 demo</h3>
+      <pre><code>python3 -m jobagent.cli demo</code></pre>
+      <p>你会看到类似输出：</p>
+      <pre><code>{
+  "stop_reason": "NEED_USER_APPROVAL",
+  "company": "Anthropic",
+  "role": "Applied AI Engineer, Agent Reliability",
+  "fit_score": 21,
+  "pending_node": "tracker",
+  "checkpoint_path": ".jobagent/checkpoints/&lt;run_id&gt;.json",
+  "trace_path": ".jobagent/runs/&lt;run_id&gt;/trace.jsonl"
+}</code></pre>
+
+      <h3>步骤 2：查看生成物</h3>
+      <ul>
+        <li><code>resume_proposal</code>：简历 bullet rewrite、cover letter outline、recruiter note。</li>
+        <li><code>.jobagent/checkpoints/&lt;run_id&gt;.json</code>：暂停时保存的完整 state。</li>
+        <li><code>.jobagent/runs/&lt;run_id&gt;/trace.jsonl</code>：每个 graph node 的执行 trace。</li>
+      </ul>
+
+      <h3>步骤 3：审批后继续</h3>
+      <pre><code>python3 -m jobagent.cli resume &lt;run_id&gt; --approve</code></pre>
+      <p>完成后会新增：</p>
+      <ul>
+        <li><code>tracker_update</code>：投递跟踪记录。</li>
+        <li><code>interview_pack</code>：技术题、行为题、公司研究题和 story matches。</li>
+        <li><code>.jobagent/applications.jsonl</code>：本地 tracker 写入结果。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>5. 流程图</h2>
+      <div class="diagram">
+        <svg width="920" height="270" viewBox="0 0 920 270" role="img" aria-label="使用流程图">
+          <defs>
+            <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+              <path d="M0,0 L0,6 L9,3 z" fill="#2f6f73"></path>
+            </marker>
+          </defs>
+          <rect x="20" y="36" width="130" height="54" rx="8" fill="#edf5f3" stroke="#2f6f73"></rect>
+          <text x="85" y="59" text-anchor="middle">JD 文本</text>
+          <text x="85" y="78" text-anchor="middle">samples/job_description</text>
+
+          <line x1="150" y1="63" x2="205" y2="63" stroke="#2f6f73" stroke-width="2" marker-end="url(#arrow)"></line>
+          <rect x="205" y="36" width="130" height="54" rx="8" fill="#fff" stroke="#ded8cb"></rect>
+          <text x="270" y="59" text-anchor="middle">graph runner</text>
+          <text x="270" y="78" text-anchor="middle">依次调度节点</text>
+
+          <line x1="335" y1="63" x2="390" y2="63" stroke="#2f6f73" stroke-width="2" marker-end="url(#arrow)"></line>
+          <rect x="390" y="36" width="150" height="54" rx="8" fill="#fff" stroke="#ded8cb"></rect>
+          <text x="465" y="59" text-anchor="middle">多个 agent node</text>
+          <text x="465" y="78" text-anchor="middle">提取、研究、评分</text>
+
+          <line x1="540" y1="63" x2="595" y2="63" stroke="#2f6f73" stroke-width="2" marker-end="url(#arrow)"></line>
+          <rect x="595" y="36" width="145" height="54" rx="8" fill="#fff7e8" stroke="#8a5a16"></rect>
+          <text x="667" y="59" text-anchor="middle">HITL 审批</text>
+          <text x="667" y="78" text-anchor="middle">NEED_USER_APPROVAL</text>
+
+          <line x1="667" y1="90" x2="667" y2="137" stroke="#8a5a16" stroke-width="2" marker-end="url(#arrow)"></line>
+          <rect x="592" y="137" width="150" height="54" rx="8" fill="#fff" stroke="#ded8cb"></rect>
+          <text x="667" y="160" text-anchor="middle">checkpoint</text>
+          <text x="667" y="179" text-anchor="middle">保存 state</text>
+
+          <line x1="742" y1="164" x2="800" y2="164" stroke="#2f6f73" stroke-width="2" marker-end="url(#arrow)"></line>
+          <rect x="800" y="137" width="100" height="54" rx="8" fill="#edf5f3" stroke="#2f6f73"></rect>
+          <text x="850" y="160" text-anchor="middle">resume</text>
+          <text x="850" y="179" text-anchor="middle">继续执行</text>
+
+          <line x1="850" y1="137" x2="850" y2="95" stroke="#2f6f73" stroke-width="2" marker-end="url(#arrow)"></line>
+          <rect x="780" y="36" width="120" height="54" rx="8" fill="#edf5f3" stroke="#2f6f73"></rect>
+          <text x="840" y="59" text-anchor="middle">完成输出</text>
+          <text x="840" y="78" text-anchor="middle">tracker + prep</text>
+
+          <line x1="740" y1="63" x2="780" y2="63" stroke="#2f6f73" stroke-width="2" marker-end="url(#arrow)"></line>
+          <text x="145" y="232" fill="#687076">运行时副产物：.jobagent/checkpoints、.jobagent/runs、.jobagent/applications.jsonl</text>
+        </svg>
+      </div>
+    </section>
+
+    <section>
+      <h2>6. 主要输入文件</h2>
+      <table>
+        <thead>
+          <tr><th>文件</th><th>用途</th><th>你可以怎么改</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>samples/job_description.txt</code></td>
+            <td>默认职位描述</td>
+            <td>换成你真实想分析的 JD 文本。</td>
+          </tr>
+          <tr>
+            <td><code>samples/story_bank.json</code></td>
+            <td>你的经历库</td>
+            <td>加入 Amazon、CalPal、agent 项目、infra 项目等故事。</td>
+          </tr>
+          <tr>
+            <td><code>samples/eval_suite.json</code></td>
+            <td>离线评测集</td>
+            <td>为不同岗位添加 expected company、skills、stop reason、fit score。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>7. 如何判断它按预期运行</h2>
+      <table>
+        <thead>
+          <tr><th>检查项</th><th>通过标准</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>单元测试</td><td><code>python3 -m unittest discover -s tests</code> 输出 OK。</td></tr>
+          <tr><td>Eval</td><td><code>python3 -m jobagent.cli eval</code> 输出 <code>failed: 0</code>。</td></tr>
+          <tr><td>HITL</td><td><code>demo</code> 默认停在 <code>NEED_USER_APPROVAL</code>，且 <code>pending_node</code> 是 <code>tracker</code>。</td></tr>
+          <tr><td>Resume</td><td><code>resume &lt;run_id&gt; --approve</code> 输出 <code>COMPLETED</code>。</td></tr>
+          <tr><td>Trace</td><td><code>.jobagent/runs/&lt;run_id&gt;/trace.jsonl</code> 存在，并包含各节点记录。</td></tr>
+          <tr><td>Tracker</td><td><code>--auto-approve</code> 或 resume approve 后，<code>.jobagent/applications.jsonl</code> 有新记录。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>8. 当前版本边界</h2>
+      <div class="callout warning">
+        <p>当前项目是 learning reference，不是生产求职自动化工具。它不会自动申请职位，不会登录 LinkedIn，也不会调用真实 LLM。</p>
+      </div>
+      <ul>
+        <li>公司研究目前只使用本地 JD 文本，未来可接 web search 或公司官网 source。</li>
+        <li><code>MockLLMProvider</code> 只是 provider 边界示范，未来可以替换为 Anthropic/OpenAI structured output。</li>
+        <li><code>mcp_server/career_research_server.py</code> 是 MCP-shaped stub，不是官方 MCP SDK 实现。</li>
+        <li>tracker 当前写 JSONL，未来可替换为 Postgres、Notion 或 Google Sheets。</li>
+      </ul>
+    </section>
+
+    <p class="footer">建议阅读顺序：先跑本页命令，再读 architecture_zh.html，最后读 docs/LEARNING_GUIDE.md 和 TECHNICAL_DESIGN.md。</p>
+  </main>
+</body>
+</html>
+
