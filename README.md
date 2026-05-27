@@ -78,12 +78,13 @@ When `JOBAGENT_DATABASE_URL` or `DATABASE_URL` is set, the web demo stores run s
 
 This repo includes a Render Blueprint at [render.yaml](render.yaml). The Blueprint provisions:
 
-- `jobagent-demo`: Docker web service running `uvicorn jobagent.web.app:app`
-- `jobagent-postgres`: Render Postgres database used by the web run store
+- `jobagent-demo`: Docker web service running `uvicorn jobagent.web.app:app` on Render's free web plan
 
-Deploy from Render by creating a new Blueprint from this GitHub repository. Render reads `render.yaml`, builds the Docker image, sets `JOBAGENT_DATABASE_URL` from the database connection string, and checks `/healthz`.
+Deploy from Render by creating a new Blueprint from this GitHub repository. Render reads `render.yaml`, builds the Docker image, and checks `/healthz`.
 
 [Deploy to Render](https://render.com/deploy?repo=https://github.com/yanxuantong/multi-agent-job-search-platform)
+
+The default hosted demo intentionally avoids managed Postgres so it can be launched before adding Render billing details. In that mode, run state uses the local checkpoint store inside the web instance and should be treated as ephemeral. For a more production-like deployment, add a Render Postgres database and set `JOBAGENT_DATABASE_URL` to its private connection string; the app will automatically switch to the Postgres run store.
 
 ## How To Read The Code
 

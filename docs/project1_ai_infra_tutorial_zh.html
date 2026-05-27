@@ -396,12 +396,13 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
       <pre><code>git push origin main
 # Render Dashboard -&gt; New -&gt; Blueprint -&gt; select this GitHub repo
 # Render reads render.yaml and provisions:
-#   jobagent-demo      Docker web service
-#   jobagent-postgres  Postgres database
+#   jobagent-demo      Docker web service on the free web plan
 </code></pre>
       <p>
-        <code>render.yaml</code> 会把 Render Postgres 的 private connection string 注入为 <code>JOBAGENT_DATABASE_URL</code>。
-        Web demo 检测到这个环境变量后，会把 run state 存进 Postgres；本地没有 DB 时则退回 <code>.jobagent/checkpoints</code>。
+        默认 <code>render.yaml</code> 不创建 managed Postgres，因为当前 workspace 在 paid web/database plan 上需要先补 payment info。
+        这版先部署一个可公开访问、可操作的 free demo；run state 使用实例内的本地 checkpoint store，应该视为 ephemeral。
+        如果之后要更接近 production，再添加 Render Postgres，并把 private connection string 设置为 <code>JOBAGENT_DATABASE_URL</code>；
+        Web demo 检测到这个环境变量后会自动切到 Postgres run store。
         也可以从 README 里的 <code>Deploy to Render</code> 链接进入 Render Blueprint 创建流程。
       </p>
 
@@ -597,7 +598,7 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
             <td>Render deployment</td>
             <td><span class="badge done">Blueprint ready</span></td>
             <td><code>render.yaml</code>, <code>Dockerfile</code></td>
-            <td>Render 会构建 Docker web service、注入 Postgres connection string、用 <code>/healthz</code> 做健康检查。</td>
+            <td>Render 会构建 Docker web service，并用 <code>/healthz</code> 做健康检查；Postgres 是后续 production upgrade。</td>
           </tr>
           <tr>
             <td>Langfuse</td>
@@ -750,7 +751,8 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
         <tbody>
           <tr><td>默认 demo/eval/trace</td><td><span class="badge done">免费</span></td><td>不会，标准库路径不需要 API。</td><td>永远保留为 baseline。</td></tr>
           <tr><td>Docker Postgres/pgvector</td><td><span class="badge done">本地免费</span></td><td>云数据库或托管服务会收费。</td><td>本地 compose 先跑通。</td></tr>
-          <tr><td>Render web + Postgres</td><td><span class="badge optional">需要 Render 账号</span></td><td><code>render.yaml</code> 使用 web starter 和 Postgres basic-256mb，适合更接近 production 的 demo，通常需要付费。</td><td>用于 public portfolio demo；不要放真实个人隐私数据。</td></tr>
+          <tr><td>Render free web demo</td><td><span class="badge done">可先免费</span></td><td>默认无 managed DB；实例重启后本地 run state 可能丢失。</td><td>先用于 public portfolio demo；不要放真实个人隐私数据。</td></tr>
+          <tr><td>Render web + Postgres</td><td><span class="badge optional">需要 billing</span></td><td>加 managed Postgres 或 paid web plan 时通常需要 payment info。</td><td>等 demo 价值明确后再升级，并设置 <code>JOBAGENT_DATABASE_URL</code>。</td></tr>
           <tr><td>OpenAI/Anthropic</td><td><span class="badge optional">需要 key</span></td><td>按 token 计费，多 agent 容易放大成本。</td><td>默认 mock；真实 provider 必须 opt-in 并记录 budget。</td></tr>
           <tr><td>Langfuse</td><td><span class="badge optional">可自托管</span></td><td>Hosted plan 或自托管运维会有成本。</td><td>先 JSONL，再 exporter，再 dashboard。</td></tr>
           <tr><td>Notion/Sheets MCP</td><td><span class="badge optional">可能免费试用</span></td><td>workspace 权限、OAuth、API quota 可能受限。</td><td>先本地 JSONL tracker，再接外部 MCP。</td></tr>
