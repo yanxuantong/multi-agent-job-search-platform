@@ -84,6 +84,8 @@ Deploy from Render by creating a new Blueprint from this GitHub repository. Rend
 
 [Deploy to Render](https://render.com/deploy?repo=https://github.com/yanxuantong/multi-agent-job-search-platform)
 
+Live demo: [https://jobagent-demo.onrender.com](https://jobagent-demo.onrender.com)
+
 The default hosted demo intentionally avoids managed Postgres so it can be launched before adding Render billing details. In that mode, run state uses the local checkpoint store inside the web instance and should be treated as ephemeral. For a more production-like deployment, add a Render Postgres database and set `JOBAGENT_DATABASE_URL` to its private connection string; the app will automatically switch to the Postgres run store.
 
 ## How To Read The Code

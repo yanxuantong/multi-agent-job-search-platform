@@ -404,6 +404,7 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
         如果之后要更接近 production，再添加 Render Postgres，并把 private connection string 设置为 <code>JOBAGENT_DATABASE_URL</code>；
         Web demo 检测到这个环境变量后会自动切到 Postgres run store。
         也可以从 README 里的 <code>Deploy to Render</code> 链接进入 Render Blueprint 创建流程。
+        当前 live demo 已发布在 <a href="https://jobagent-demo.onrender.com">https://jobagent-demo.onrender.com</a>。
       </p>
 
       <table>
@@ -416,6 +417,7 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
           <tr><td>Eval</td><td><code>15/15 passed</code></td><td>覆盖 10 条 trajectory eval 和 5 条 single-turn JD extraction eval。</td></tr>
           <tr><td>Demo</td><td><code>COMPLETED</code> 或 <code>NEED_USER_APPROVAL</code></td><td>取决于是否传入 <code>--auto-approve</code>。</td></tr>
           <tr><td>Web health</td><td><code>GET /healthz -&gt; {"status":"ok"}</code></td><td>Render 用它判断服务是否启动成功。</td></tr>
+          <tr><td>Render live smoke</td><td><code>POST /runs -&gt; 303 /runs/&lt;id&gt;</code></td><td>公网 demo 已验证首页、health check、run 创建和 detail page。</td></tr>
         </tbody>
       </table>
     </section>
