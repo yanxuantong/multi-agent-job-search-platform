@@ -180,6 +180,7 @@
       </p>
       <nav aria-label="Table of contents">
         <a href="#positioning">项目定位</a>
+        <a href="#doc-map">文档融合</a>
         <a href="#original">原规格回放</a>
         <a href="#coverage">覆盖矩阵</a>
         <a href="#infra-map">Infra 映射</a>
@@ -218,8 +219,54 @@
       </div>
     </section>
 
+    <section id="doc-map">
+      <h2>2. 文档融合地图</h2>
+      <p>
+        这份 HTML 是为了替代“打开好几个 Markdown 文件来回跳”的阅读体验。它没有删除原文件，而是把它们的核心内容合并成一条学习路线。
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>原 Markdown / 文档</th>
+            <th>已融合到本 HTML 的位置</th>
+            <th>阅读目的</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>README.md</code></td>
+            <td>项目定位、本地验证命令、本地与成本</td>
+            <td>先知道项目怎么跑、当前为什么零依赖、哪些能力已经可演示。</td>
+          </tr>
+          <tr>
+            <td><code>TECHNICAL_DESIGN.md</code></td>
+            <td>原规格回放、覆盖矩阵、实施路线、Infra 映射</td>
+            <td>把 production design 拆成可执行的技术栈、缺口和下一轮 milestone。</td>
+          </tr>
+          <tr>
+            <td><code>docs/LEARNING_GUIDE.md</code></td>
+            <td>代码阅读路径、HITL、eval、provider boundary、MCP stub</td>
+            <td>按传统 infra engineer 能理解的顺序学习 agent system 的核心边界。</td>
+          </tr>
+          <tr>
+            <td><code>docs/architecture_zh.html</code></td>
+            <td>覆盖矩阵、Infra 映射、路线图</td>
+            <td>保留架构说明的系统视角，但补上“还缺什么技术经验”。</td>
+          </tr>
+          <tr>
+            <td><code>docs/usage_zh.html</code></td>
+            <td>本地验证命令、本地与成本、阅读路径</td>
+            <td>把操作说明放进更大的学习上下文里，而不是只作为命令清单。</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        <strong>怎么读：</strong>如果只想学习项目一，就优先读这份 HTML；如果要改代码，再回到原 Markdown 和源码文件看更细的实现约束。
+      </div>
+    </section>
+
     <section id="original">
-      <h2>2. 原始 Project 1 规格回放</h2>
+      <h2>3. 原始 Project 1 规格回放</h2>
       <p>原计划中的技术信号很明确：CLI-first，不做漂亮 UI，重点是让 hiring manager 看出你理解 agent productionization。</p>
       <div class="diagram" role="img" aria-label="Original target stack diagram">
         <svg width="1040" height="250" viewBox="0 0 1040 250">
@@ -292,7 +339,7 @@
     </section>
 
     <section id="coverage">
-      <h2>3. 当前实现覆盖矩阵</h2>
+      <h2>4. 当前实现覆盖矩阵</h2>
       <p>下面是“原计划 vs 当前仓库”的诚实对照。它可以直接指导下一轮 issue 或 milestone。</p>
       <table>
         <thead>
@@ -387,7 +434,7 @@
     </section>
 
     <section id="infra-map">
-      <h2>4. 从传统 Infra 到 AI Infra 的迁移映射</h2>
+      <h2>5. 从传统 Infra 到 AI Infra 的迁移映射</h2>
       <p>你的优势不是“我会写 prompt”，而是“我知道一个不稳定智能系统也需要工程边界”。这张表是面试时可以反复使用的语言。</p>
       <table>
         <thead>
@@ -472,7 +519,7 @@
     </section>
 
     <section id="cost">
-      <h2>5. 本地运行可行性与成本</h2>
+      <h2>6. 本地运行可行性与成本</h2>
       <p>按 2026-05-27 当前官方文档核对，最稳妥的策略是：先保持当前仓库完全免费可运行，再逐步引入需要账号或可能收费的组件。</p>
       <table>
         <thead>
@@ -544,7 +591,7 @@
     </section>
 
     <section id="roadmap">
-      <h2>6. 下一步技术实施路线</h2>
+      <h2>7. 下一步技术实施路线</h2>
       <p>如果目标是“积累 agent 经验 + 面向 AI infra 转型”，我建议按下面三轮做，每轮都有可展示的产物。</p>
       <table>
         <thead>
@@ -583,7 +630,7 @@
     </section>
 
     <section id="reading">
-      <h2>7. 代码阅读路径</h2>
+      <h2>8. 代码阅读路径</h2>
       <p>这部分把 <code>docs/LEARNING_GUIDE.md</code> 的阅读路线融合进来。你可以按这个顺序给自己做 code walkthrough。</p>
       <ol>
         <li>
@@ -618,7 +665,7 @@ python3 -m jobagent.cli demo --auto-approve</code></pre>
     </section>
 
     <section id="references">
-      <h2>8. 官方参考链接</h2>
+      <h2>9. 官方参考链接</h2>
       <p>这些链接会随时间变化，涉及价格和 SDK API 时请以官方页面为准。</p>
       <ul>
         <li><a href="https://developers.openai.com/api/docs/pricing">OpenAI API Pricing</a></li>
