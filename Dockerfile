@@ -5,6 +5,7 @@ COPY pyproject.toml README.md ./
 COPY jobagent ./jobagent
 COPY mcp_server ./mcp_server
 COPY samples ./samples
+COPY tests ./tests
 
 RUN python -m pip install --no-cache-dir -e .
 

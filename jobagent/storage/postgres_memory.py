@@ -50,14 +50,20 @@ class PostgresMemoryStore:
     def __init__(self, dsn: str) -> None:
         try:
             import psycopg
+            from pgvector.psycopg import register_vector
+            from psycopg.types.json import Jsonb
         except ImportError as exc:  # pragma: no cover - optional dependency.
-            raise RuntimeError("psycopg is not installed. Run: python3 -m pip install -e '.[postgres]'") from exc
+            raise RuntimeError(
+                "psycopg/pgvector is not installed. Run: python3 -m pip install -e '.[postgres]'"
+            ) from exc
 
         self._psycopg = psycopg
+        self._register_vector = register_vector
+        self._jsonb = Jsonb
         self.dsn = dsn
 
     def ensure_schema(self) -> None:
-        with self._psycopg.connect(self.dsn) as conn:
+        with self._connect() as conn:
             conn.execute(MEMORY_SCHEMA_SQL)
 
     def upsert_semantic(
@@ -69,7 +75,7 @@ class PostgresMemoryStore:
         embedding: list[float],
         metadata: dict[str, Any],
     ) -> None:
-        with self._psycopg.connect(self.dsn) as conn:
+        with self._connect() as conn:
             conn.execute(
                 """
                 INSERT INTO semantic_memory (id, namespace, content, embedding, metadata, updated_at)
@@ -81,7 +87,7 @@ class PostgresMemoryStore:
                     metadata = EXCLUDED.metadata,
                     updated_at = now()
                 """,
-                (record_id, namespace, content, embedding, metadata),
+                (record_id, namespace, content, embedding, self._jsonb(metadata)),
             )
 
     def append_episode(
@@ -93,25 +99,30 @@ class PostgresMemoryStore:
         content: str,
         metadata: dict[str, Any],
     ) -> None:
-        with self._psycopg.connect(self.dsn) as conn:
+        with self._connect() as conn:
             conn.execute(
                 """
                 INSERT INTO episodic_memory (id, run_id, event_type, content, metadata)
                 VALUES (%s, %s, %s, %s, %s)
                 """,
-                (record_id, run_id, event_type, content, metadata),
+                (record_id, run_id, event_type, content, self._jsonb(metadata)),
             )
 
     def search_semantic(self, *, namespace: str, embedding: list[float], limit: int = 5) -> list[MemoryRecord]:
-        with self._psycopg.connect(self.dsn) as conn:
+        with self._connect() as conn:
             rows = conn.execute(
                 """
                 SELECT id, content, metadata
                 FROM semantic_memory
                 WHERE namespace = %s
-                ORDER BY embedding <=> %s
+                ORDER BY embedding <=> %s::vector
                 LIMIT %s
                 """,
                 (namespace, embedding, limit),
             ).fetchall()
         return [MemoryRecord(id=row[0], content=row[1], metadata=row[2]) for row in rows]
+
+    def _connect(self):
+        conn = self._psycopg.connect(self.dsn)
+        self._register_vector(conn)
+        return conn
