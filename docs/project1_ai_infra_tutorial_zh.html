@@ -3,104 +3,177 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Project 1 AI Infra Tutorial - Multi-Agent Job Search Platform</title>
+  <title>Multi-Agent Job Search Platform Mega Guide</title>
   <style>
     :root {
-      --ink: #202124;
-      --muted: #5f6368;
-      --line: #dadce0;
-      --bg: #fbfbf8;
+      --bg: #f7f7f3;
       --paper: #ffffff;
-      --blue: #2563eb;
+      --ink: #1f2328;
+      --muted: #626b74;
+      --line: #d9dde3;
+      --blue: #2457c5;
       --teal: #0f766e;
-      --red: #b42318;
-      --amber: #b45309;
       --green: #15803d;
+      --amber: #b45309;
+      --red: #b42318;
       --violet: #6d28d9;
+      --code-bg: #f1f5f9;
+      --dark: #111827;
     }
+
     * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
     body {
       margin: 0;
-      color: var(--ink);
       background: var(--bg);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      line-height: 1.65;
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      line-height: 1.72;
+      font-size: 16px;
     }
+
     a { color: var(--blue); text-decoration: none; }
     a:hover { text-decoration: underline; }
+
     header {
+      background: var(--paper);
       border-bottom: 1px solid var(--line);
-      background: #ffffff;
     }
+
     .wrap {
-      width: min(1120px, calc(100% - 32px));
+      width: min(1160px, calc(100% - 32px));
       margin: 0 auto;
     }
+
     .hero {
+      padding: 42px 0 28px;
       display: grid;
-      gap: 20px;
-      padding: 42px 0 30px;
+      gap: 16px;
     }
+
     .eyebrow {
       color: var(--teal);
-      font-weight: 700;
-      text-transform: uppercase;
+      font-weight: 800;
       font-size: 12px;
       letter-spacing: .08em;
+      text-transform: uppercase;
     }
-    h1, h2, h3 { line-height: 1.18; margin: 0; }
-    h1 { font-size: clamp(30px, 5vw, 52px); max-width: 880px; }
-    h2 { font-size: 28px; margin-top: 34px; }
-    h3 { font-size: 20px; margin-top: 24px; }
+
+    h1, h2, h3 { margin: 0; line-height: 1.18; letter-spacing: 0; }
+    h1 { max-width: 920px; font-size: clamp(32px, 5vw, 54px); }
+    h2 { margin-top: 36px; font-size: 28px; }
+    h3 { margin-top: 24px; font-size: 20px; }
+
     p { margin: 10px 0 0; }
-    .lead { max-width: 860px; color: var(--muted); font-size: 18px; }
-    nav {
+    ul, ol { padding-left: 22px; margin: 12px 0 0; }
+    li { margin: 6px 0; }
+
+    .lead {
+      max-width: 900px;
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    .meta {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
-      padding: 14px 0 24px;
+      gap: 8px;
+      margin-top: 8px;
     }
-    nav a {
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      border-radius: 999px;
+      border: 1px solid currentColor;
+      padding: 3px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .done { color: var(--green); }
+    .partial { color: var(--amber); }
+    .missing { color: var(--red); }
+    .optional { color: var(--violet); }
+    .info { color: var(--blue); }
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(255,255,255,.94);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .toc {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 12px 0;
+    }
+
+    .toc a {
+      flex: 0 0 auto;
+      color: var(--ink);
+      background: #f8fafc;
       border: 1px solid var(--line);
       border-radius: 999px;
-      padding: 6px 12px;
-      background: #ffffff;
-      color: var(--ink);
+      padding: 6px 11px;
       font-size: 14px;
     }
-    main { padding: 24px 0 48px; }
+
+    main { padding: 18px 0 56px; }
+
     section {
       border-bottom: 1px solid var(--line);
       padding: 0 0 34px;
     }
+
     .grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 14px;
-      margin-top: 18px;
+      margin-top: 16px;
     }
+
+    .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
     .card {
       background: var(--paper);
       border: 1px solid var(--line);
       border-radius: 8px;
       padding: 16px;
     }
-    .card strong { display: block; margin-bottom: 6px; }
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      min-height: 26px;
-      border-radius: 999px;
-      padding: 2px 9px;
-      font-size: 13px;
-      font-weight: 700;
-      border: 1px solid currentColor;
-      white-space: nowrap;
+
+    .card strong {
+      display: block;
+      margin-bottom: 5px;
+      color: #111827;
     }
-    .done { color: var(--green); }
-    .partial { color: var(--amber); }
-    .missing { color: var(--red); }
-    .optional { color: var(--violet); }
+
+    .callout {
+      margin-top: 16px;
+      border-left: 4px solid var(--teal);
+      border-radius: 0 8px 8px 0;
+      background: #ecfeff;
+      padding: 14px 16px;
+    }
+
+    .callout.warning {
+      border-left-color: var(--amber);
+      background: #fffbeb;
+    }
+
+    .callout.danger {
+      border-left-color: var(--red);
+      background: #fef2f2;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -110,6 +183,7 @@
       border-radius: 8px;
       overflow: hidden;
     }
+
     th, td {
       border-bottom: 1px solid var(--line);
       padding: 12px;
@@ -117,648 +191,566 @@
       text-align: left;
       font-size: 14px;
     }
-    th { background: #f3f4f6; font-size: 13px; color: #374151; }
-    tr:last-child td { border-bottom: 0; }
-    code {
+
+    th {
       background: #f1f5f9;
+      color: #334155;
+      font-size: 13px;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+
+    code {
+      background: var(--code-bg);
       border: 1px solid #e2e8f0;
       border-radius: 5px;
       padding: 1px 5px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       font-size: .92em;
     }
+
     pre {
       overflow: auto;
-      background: #111827;
+      background: var(--dark);
       color: #f9fafb;
       border-radius: 8px;
       padding: 14px;
       font-size: 14px;
+      line-height: 1.55;
+      margin: 14px 0 0;
     }
+
     pre code {
       background: transparent;
       border: 0;
       color: inherit;
       padding: 0;
     }
-    ul, ol { padding-left: 22px; }
-    li { margin: 6px 0; }
-    .callout {
-      border-left: 4px solid var(--teal);
-      background: #ecfeff;
-      padding: 14px 16px;
-      margin-top: 16px;
-      border-radius: 0 8px 8px 0;
-    }
-    .warn { border-left-color: var(--amber); background: #fffbeb; }
-    .danger { border-left-color: var(--red); background: #fef2f2; }
+
     .diagram {
       background: var(--paper);
       border: 1px solid var(--line);
       border-radius: 8px;
-      margin-top: 18px;
+      margin-top: 16px;
       padding: 12px;
       overflow: auto;
     }
-    svg text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-    footer { color: var(--muted); padding: 24px 0 40px; font-size: 14px; }
+
+    svg text {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      gap: 14px;
+      align-items: start;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+    }
+
+    .step .label {
+      color: var(--teal);
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    footer {
+      color: var(--muted);
+      padding: 26px 0 42px;
+      font-size: 14px;
+    }
+
     @media (max-width: 860px) {
-      .grid { grid-template-columns: 1fr; }
-      th, td { font-size: 13px; }
+      .grid, .grid.two { grid-template-columns: 1fr; }
+      .step { grid-template-columns: 1fr; }
       table { display: block; overflow-x: auto; }
+      th, td { font-size: 13px; }
     }
   </style>
 </head>
 <body>
   <header>
     <div class="wrap hero">
-      <div class="eyebrow">Project 1 / AI Infra Learning Path</div>
-      <h1>Multi-Agent Job Search Platform 技术复盘与下一步实现路线</h1>
+      <div class="eyebrow">Canonical Mega Guide / Project 1</div>
+      <h1>Multi-Agent Job Search Platform：从转型计划到可运行 AI Infra 项目</h1>
       <p class="lead">
-        这份文档把原始转型计划里的 Project 1 重新拉回技术视角：当前仓库已经完成了一个可运行、零成本的教学骨架；
-        但它还不是完整的 LangGraph + MCP + Langfuse + pgvector + real LLM production stack。下面会明确列出覆盖范围、缺口、成本和推荐实施顺序。
+        这是本仓库唯一推荐阅读的中文主文档。它把原来的 technical design、learning guide、usage guide、
+        architecture 说明和 Project 1 教程合并为一条线：为什么做、现在有什么、怎么运行、怎么看代码、还缺什么、下一步怎么升级。
       </p>
-      <nav aria-label="Table of contents">
-        <a href="#positioning">项目定位</a>
-        <a href="#doc-map">文档融合</a>
-        <a href="#original">原规格回放</a>
-        <a href="#coverage">覆盖矩阵</a>
-        <a href="#code-entrypoints">代码入口</a>
-        <a href="#infra-map">Infra 映射</a>
-        <a href="#cost">本地与成本</a>
-        <a href="#roadmap">实施路线</a>
-        <a href="#reading">阅读路径</a>
-      </nav>
+      <div class="meta">
+        <span class="badge done">默认零成本可运行</span>
+        <span class="badge done">15 条 eval cases</span>
+        <span class="badge done">HITL checkpoint</span>
+        <span class="badge done">Docker + Postgres/pgvector</span>
+        <span class="badge optional">真实 LLM 调用 opt-in</span>
+      </div>
     </div>
   </header>
 
+  <nav aria-label="Table of contents">
+    <div class="wrap toc">
+      <a href="#one-page">一页总览</a>
+      <a href="#why">项目定位</a>
+      <a href="#quickstart">怎么运行</a>
+      <a href="#architecture">架构</a>
+      <a href="#state">State/HITL</a>
+      <a href="#agents">Agent 职责</a>
+      <a href="#stack">技术栈映射</a>
+      <a href="#tests">测试与验证</a>
+      <a href="#reading">读代码路线</a>
+      <a href="#roadmap">升级路线</a>
+      <a href="#interview">面试叙事</a>
+    </div>
+  </nav>
+
   <main class="wrap">
-    <section id="positioning">
-      <h2>1. 当前项目定位</h2>
-      <p>
-        当前仓库最适合被理解成一个 <strong>reference implementation</strong>：它把 multi-agent 产品中最重要的边界先做清楚，
-        用标准库 Python 保证任何机器都能跑起来。它不是为了立刻追求“看起来很炫”，而是为了让你真的摸到 AI infra 的骨架：
-        state、graph、checkpoint、eval、trace、tool boundary、HITL。
-      </p>
+    <section id="one-page">
+      <h2>1. 一页总览</h2>
       <div class="grid">
         <div class="card">
-          <strong>已经适合作为简历项目的部分</strong>
-          <p>能展示 multi-agent workflow、可恢复状态机、human approval gate、offline eval、trace artifact 和 MCP-shaped boundary。</p>
+          <strong>这个项目是什么</strong>
+          <p>一个学习型 multi-agent job-search reference system。输入 JD，输出公司研究、JD 结构化、fit score、简历建议、tracker update 和 interview prep。</p>
         </div>
         <div class="card">
-          <strong>还不应夸大的部分</strong>
-          <p>还没有真实 LangGraph、真实 Claude/OpenAI API、Langfuse dashboard、pgvector、官方 MCP SDK、Docker deployment。</p>
+          <strong>它真正训练什么</strong>
+          <p>不是“写 prompt”，而是 agent productionization：typed state、graph orchestration、checkpoint、HITL、eval、trace、tool boundary、成本控制。</p>
         </div>
         <div class="card">
-          <strong>推荐目标</strong>
-          <p>把它迭代成“从零成本骨架到生产栈”的学习项目，而不是一次性堆满依赖和账号。</p>
+          <strong>当前完成度</strong>
+          <p>默认路径已经可运行；optional integrations 覆盖 LangGraph、MCP SDK、LLM providers、Langfuse exporter、Postgres/pgvector、Docker。</p>
         </div>
       </div>
       <div class="callout">
-        <strong>结论：</strong>现在实施非常值得，因为它正好能把传统 infra 经验迁移到 AI infra：你不是只写 prompt，
-        而是在设计一个可观测、可评估、可恢复、成本可控的 agent system。
+        <strong>怎么读这份文档：</strong>先跑 quickstart，再看架构图，然后按“读代码路线”打开源码。不要一开始陷进所有 optional stack；
+        这个项目的学习价值在于看清楚“可控 agent 系统”的边界如何逐步长出来。
       </div>
     </section>
 
-    <section id="doc-map">
-      <h2>2. 文档融合地图</h2>
+    <section id="why">
+      <h2>2. 项目定位：为什么它适合你的转型计划</h2>
       <p>
-        这份 HTML 是为了替代“打开好几个 Markdown 文件来回跳”的阅读体验。它没有删除原文件，而是把它们的核心内容合并成一条学习路线。
+        这个项目很适合作为“找工作 + AI Engineer 转型”的第一个 portfolio 项目，因为你就是用户，需求真实，
+        而且它自然覆盖 AI infra 面试里常问的几个主题：agent 编排、工具调用、评测、可观测性、记忆、人工审批、安全边界和部署。
       </p>
       <table>
         <thead>
-          <tr>
-            <th>原 Markdown / 文档</th>
-            <th>已融合到本 HTML 的位置</th>
-            <th>阅读目的</th>
-          </tr>
+          <tr><th>传统 Infra 经验</th><th>AI Infra 对应物</th><th>本项目落点</th></tr>
         </thead>
         <tbody>
-          <tr>
-            <td><code>README.md</code></td>
-            <td>项目定位、本地验证命令、本地与成本</td>
-            <td>先知道项目怎么跑、当前为什么零依赖、哪些能力已经可演示。</td>
-          </tr>
-          <tr>
-            <td><code>TECHNICAL_DESIGN.md</code></td>
-            <td>原规格回放、覆盖矩阵、实施路线、Infra 映射</td>
-            <td>把 production design 拆成可执行的技术栈、缺口和下一轮 milestone。</td>
-          </tr>
-          <tr>
-            <td><code>docs/LEARNING_GUIDE.md</code></td>
-            <td>代码阅读路径、HITL、eval、provider boundary、MCP stub</td>
-            <td>按传统 infra engineer 能理解的顺序学习 agent system 的核心边界。</td>
-          </tr>
-          <tr>
-            <td><code>docs/architecture_zh.html</code></td>
-            <td>覆盖矩阵、Infra 映射、路线图</td>
-            <td>保留架构说明的系统视角，但补上“还缺什么技术经验”。</td>
-          </tr>
-          <tr>
-            <td><code>docs/usage_zh.html</code></td>
-            <td>本地验证命令、本地与成本、阅读路径</td>
-            <td>把操作说明放进更大的学习上下文里，而不是只作为命令清单。</td>
-          </tr>
+          <tr><td>Service boundary</td><td>Agent node boundary</td><td>每个 agent 只读写 <code>JobSearchState</code> 的一部分。</td></tr>
+          <tr><td>Request context</td><td>Shared graph state</td><td>JD、company brief、fit analysis、resume proposal 逐步累积。</td></tr>
+          <tr><td>Retry/fallback</td><td>Tool failure + typed stop reason</td><td><code>StopReason</code> 把失败显式暴露给 graph。</td></tr>
+          <tr><td>Logs/metrics/traces</td><td>Per-agent trace + token/cost/latency</td><td>当前 JSONL trace 是 Langfuse/OpenTelemetry 的本地形态。</td></tr>
+          <tr><td>Regression tests</td><td>Offline eval suite</td><td><code>python3 -m jobagent.cli eval</code> 是 agent regression gate。</td></tr>
+          <tr><td>Stateful recovery</td><td>Checkpoint + memory</td><td>checkpoint 支持 HITL resume；Postgres/pgvector 支持长期 memory。</td></tr>
+          <tr><td>Integration gateway</td><td>MCP server/client</td><td>career-research MCP server 和外部 tracker adapter 是 tool boundary。</td></tr>
         </tbody>
       </table>
-      <div class="callout">
-        <strong>怎么读：</strong>如果只想学习项目一，就优先读这份 HTML；如果要改代码，再回到原 Markdown 和源码文件看更细的实现约束。
+      <div class="callout warning">
+        <strong>不要把它包装成 auto-apply bot。</strong>更可信的定位是：一个针对求职场景的 staged agent system，
+        用真实产品需求来练 AI infra 的工程能力。
       </div>
     </section>
 
-    <section id="original">
-      <h2>3. 原始 Project 1 规格回放</h2>
-      <p>原计划中的技术信号很明确：CLI-first，不做漂亮 UI，重点是让 hiring manager 看出你理解 agent productionization。</p>
-      <div class="diagram" role="img" aria-label="Original target stack diagram">
-        <svg width="1040" height="250" viewBox="0 0 1040 250">
-          <rect x="20" y="20" width="1000" height="210" rx="8" fill="#ffffff" stroke="#dadce0"/>
-          <text x="44" y="55" font-size="20" font-weight="700" fill="#202124">Original Project 1 Target Stack</text>
-          <g font-size="14">
-            <rect x="45" y="85" width="140" height="64" rx="8" fill="#eff6ff" stroke="#2563eb"/>
-            <text x="65" y="114" font-weight="700" fill="#1d4ed8">LangGraph</text>
-            <text x="65" y="136" fill="#374151">orchestration</text>
-            <rect x="205" y="85" width="140" height="64" rx="8" fill="#ecfeff" stroke="#0f766e"/>
-            <text x="225" y="114" font-weight="700" fill="#0f766e">Claude/OpenAI</text>
-            <text x="225" y="136" fill="#374151">LLM adapters</text>
-            <rect x="365" y="85" width="140" height="64" rx="8" fill="#fff7ed" stroke="#b45309"/>
-            <text x="385" y="114" font-weight="700" fill="#b45309">MCP</text>
-            <text x="385" y="136" fill="#374151">tools/resources</text>
-            <rect x="525" y="85" width="140" height="64" rx="8" fill="#f5f3ff" stroke="#6d28d9"/>
-            <text x="545" y="114" font-weight="700" fill="#6d28d9">Langfuse</text>
-            <text x="545" y="136" fill="#374151">traces/cost</text>
-            <rect x="685" y="85" width="140" height="64" rx="8" fill="#f0fdf4" stroke="#15803d"/>
-            <text x="705" y="114" font-weight="700" fill="#15803d">Postgres</text>
-            <text x="705" y="136" fill="#374151">pgvector memory</text>
-            <rect x="845" y="85" width="140" height="64" rx="8" fill="#fef2f2" stroke="#b42318"/>
-            <text x="865" y="114" font-weight="700" fill="#b42318">Docker</text>
-            <text x="865" y="136" fill="#374151">deploy touchpoint</text>
-          </g>
-          <text x="45" y="188" font-size="14" fill="#374151">Signal items: 15-20 eval cases, trajectory evals, HITL checkpoint, failure fallback, custom career-research MCP server, tracker integration.</text>
-        </svg>
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <th>模块</th>
-            <th>原始期待</th>
-            <th>为什么对 AI Infra 有价值</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Orchestrator</td>
-            <td>LangGraph graph, state, edges, checkpoint</td>
-            <td>把 agent 从“聊天脚本”升级成可恢复的状态机。</td>
-          </tr>
-          <tr>
-            <td>Company Research Agent</td>
-            <td>检索公司、职位、新闻和来源</td>
-            <td>练习 RAG、source grounding、fallback、工具失败处理。</td>
-          </tr>
-          <tr>
-            <td>Resume Tailoring Agent</td>
-            <td>JD-aware resume proposal + human approval</td>
-            <td>练习结构化输出和 HITL，避免自动生成不可信申请材料。</td>
-          </tr>
-          <tr>
-            <td>Application Tracker</td>
-            <td>Notion/Google Sheet via MCP</td>
-            <td>练习 agent-to-tool 边界、schema validation、idempotent writes。</td>
-          </tr>
-          <tr>
-            <td>Interview Prep Agent</td>
-            <td>根据公司和 JD 生成准备包</td>
-            <td>练习把前序 artifact 组合为下游任务输入。</td>
-          </tr>
-          <tr>
-            <td>Eval Harness</td>
-            <td>15-20 offline eval cases, pass rate, failures</td>
-            <td>这是 AI infra 项目最强的信号：你知道 agent 需要回归测试。</td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
-
-    <section id="coverage">
-      <h2>4. 当前实现覆盖矩阵</h2>
-      <p>下面是“原计划 vs 当前仓库”的诚实对照。它可以直接指导下一轮 issue 或 milestone。</p>
-      <table>
-        <thead>
-          <tr>
-            <th>原要求</th>
-            <th>当前状态</th>
-            <th>文件证据</th>
-            <th>是否足够作为经验</th>
-            <th>下一步建议</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>LangGraph orchestration</td>
-            <td><span class="pill partial">部分覆盖</span></td>
-            <td><code>jobagent/graph/engine.py</code>, <code>jobagent/graph/workflow.py</code></td>
-            <td>足够讲清 LangGraph 心智模型，不足以声称生产 LangGraph 使用经验。</td>
-            <td>新增真实 LangGraph branch：<code>StateGraph</code>, interrupt, checkpointer。</td>
-          </tr>
-          <tr>
-            <td>Typed shared state</td>
-            <td><span class="pill done">已覆盖</span></td>
-            <td><code>jobagent/models.py</code></td>
-            <td>非常适合作为系统设计讨论入口。</td>
-            <td>保留 typed artifacts；迁移 LangGraph 时不要退回 loose dict。</td>
-          </tr>
-          <tr>
-            <td>HITL approval + checkpoint</td>
-            <td><span class="pill done">已覆盖</span></td>
-            <td><code>JsonCheckpointStore</code>, CLI <code>resume</code></td>
-            <td>足够展示 pause/resume 的产品和 infra 边界。</td>
-            <td>下一步对齐 LangGraph interrupt + Postgres checkpointer。</td>
-          </tr>
-          <tr>
-            <td>Claude/OpenAI real model calls</td>
-            <td><span class="pill missing">未覆盖</span></td>
-            <td><code>jobagent/llm/provider.py</code> 只有 provider boundary</td>
-            <td>边界设计有价值，但还不是 LLM SDK 实战。</td>
-            <td>实现一个 opt-in adapter：需要 API key、token budget、成本 trace。</td>
-          </tr>
-          <tr>
-            <td>Company research retrieval</td>
-            <td><span class="pill partial">部分覆盖</span></td>
-            <td><code>jobagent/agents/company_research.py</code></td>
-            <td>能讲 node responsibility，不能讲真实 web/RAG grounding。</td>
-            <td>加入 source objects、local cache、fallback to web_search 或 fixture retrieval。</td>
-          </tr>
-          <tr>
-            <td>Memory layering</td>
-            <td><span class="pill partial">部分覆盖</span></td>
-            <td><code>jobagent/memory/story_bank.py</code></td>
-            <td>有 story bank 概念，但缺 semantic/episodic memory 分层。</td>
-            <td>加 Postgres + pgvector，本地 embeddings 可先用免费模型或 deterministic fake embeddings。</td>
-          </tr>
-          <tr>
-            <td>Langfuse observability</td>
-            <td><span class="pill partial">部分覆盖</span></td>
-            <td><code>jobagent/observability/tracer.py</code> 写 JSONL</td>
-            <td>能讲 trace schema；不能声称 Langfuse dashboard 经验。</td>
-            <td>加可选 Langfuse exporter，记录 prompt version、tokens、latency、cost。</td>
-          </tr>
-          <tr>
-            <td>MCP server</td>
-            <td><span class="pill partial">部分覆盖</span></td>
-            <td><code>mcp_server/career_research_server.py</code></td>
-            <td>MCP-shaped stub 有教学价值，但不是官方 SDK。</td>
-            <td>用 official Python/TypeScript SDK 重写，暴露 tools/resources/prompts。</td>
-          </tr>
-          <tr>
-            <td>Notion/Google Sheet tracker</td>
-            <td><span class="pill partial">部分覆盖</span></td>
-            <td><code>jobagent/storage/tracker.py</code> 写 JSONL</td>
-            <td>足够练习 idempotent write；缺真实第三方 OAuth/MCP。</td>
-            <td>先保持 JSONL，之后接一个 MCP tracker adapter。</td>
-          </tr>
-          <tr>
-            <td>Eval harness 15-20 cases</td>
-            <td><span class="pill done">已覆盖第一版</span></td>
-            <td><code>jobagent/evals/runner.py</code>, <code>samples/eval_suite.json</code></td>
-            <td>已有 15 条 sample eval，并区分 single-turn JD extraction 和 trajectory workflow。</td>
-            <td>下一步加 human labels、source grounding、LLM-as-judge rubric 和趋势 dashboard。</td>
-          </tr>
-          <tr>
-            <td>Docker/deploy touchpoint</td>
-            <td><span class="pill missing">未覆盖</span></td>
-            <td>暂无 <code>Dockerfile</code> / <code>docker-compose.yml</code></td>
-            <td>本地 demo 足够；部署经验还没体现。</td>
-            <td>先加 docker-compose: app + Postgres/pgvector + optional Langfuse。</td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
-
-    <section id="code-entrypoints">
-      <h2>5. 原技术栈的代码学习入口</h2>
-      <p>
-        现在项目不只是“文档里提到”这些技术栈，而是给每个原始 stack item 都放了一个可读、可扩展的代码入口。
-        默认路径仍然零成本；真实 API、云服务和第三方账号都通过 optional extras 打开。
-      </p>
-      <pre><code>python3 -m jobagent.cli integrations</code></pre>
-      <table>
-        <thead>
-          <tr>
-            <th>原计划技术栈</th>
-            <th>当前代码入口</th>
-            <th>你能学到什么</th>
-            <th>启用方式</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Eval harness</td>
-            <td><code>jobagent/evals/runner.py</code>, <code>samples/eval_suite.json</code></td>
-            <td>15 条 offline cases，区分 single-turn extractor eval 和完整 trajectory eval。</td>
-            <td><code>python3 -m jobagent.cli eval</code></td>
-          </tr>
-          <tr>
-            <td>RAG retrieval</td>
-            <td><code>jobagent/retrieval/local_rag.py</code></td>
-            <td>先用 deterministic chunking/ranking 学 retrieval 边界，再替换成 embeddings、pgvector 或 reranker。</td>
-            <td>默认内置，不需要 API key。</td>
-          </tr>
-          <tr>
-            <td>LangGraph</td>
-            <td><code>jobagent/graph/langgraph_reference.py</code></td>
-            <td>把当前 <code>GraphEngine</code> 迁移到 <code>StateGraph</code>、conditional edges、checkpointer 的路径。</td>
-            <td><code>python3 -m pip install -e '.[langgraph]'</code></td>
-          </tr>
-          <tr>
-            <td>Claude/OpenAI SDK</td>
-            <td><code>jobagent/llm/anthropic_provider.py</code>, <code>jobagent/llm/openai_provider.py</code></td>
-            <td>真实 model adapter 应该如何实现 <code>generate_structured</code>，并返回 token usage。</td>
-            <td><code>python3 -m pip install -e '.[llm]'</code>，再设置 API key。</td>
-          </tr>
-          <tr>
-            <td>Langfuse</td>
-            <td><code>jobagent/observability/langfuse_exporter.py</code></td>
-            <td>如何把本地 JSONL trace 转成可上传的 per-agent observability event。</td>
-            <td><code>python3 -m pip install -e '.[observability]'</code></td>
-          </tr>
-          <tr>
-            <td>Postgres + pgvector</td>
-            <td><code>jobagent/storage/postgres_memory.py</code>, <code>docker-compose.yml</code></td>
-            <td>semantic memory 和 episodic memory 的 schema 分层，以及 vector search 的位置。</td>
-            <td><code>docker compose up postgres -d</code></td>
-          </tr>
-          <tr>
-            <td>MCP consumer</td>
-            <td><code>jobagent/integrations/external_mcp_tracker.py</code></td>
-            <td>把 Application Tracker 写入建模成 MCP <code>tools/call</code>，先学 idempotency 和 schema，再接 Notion/Sheets。</td>
-            <td>默认可读；真实连接需要第三方账号和 MCP client。</td>
-          </tr>
-          <tr>
-            <td>MCP server</td>
-            <td><code>mcp_server/career_research_sdk_server.py</code></td>
-            <td>用官方 SDK 暴露 tools/resources，让 career research 能被外部 agent client 调用。</td>
-            <td><code>python3 -m pip install -e '.[mcp]'</code></td>
-          </tr>
-          <tr>
-            <td>Docker/deploy</td>
-            <td><code>Dockerfile</code>, <code>docker-compose.yml</code>, <code>deploy/langfuse/README.md</code></td>
-            <td>把 app、Postgres/pgvector、observability 的部署边界拆开，不让学习路径一开始就依赖云账号。</td>
-            <td><code>docker compose run --rm app</code></td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
-
-    <section id="infra-map">
-      <h2>6. 从传统 Infra 到 AI Infra 的迁移映射</h2>
-      <p>你的优势不是“我会写 prompt”，而是“我知道一个不稳定智能系统也需要工程边界”。这张表是面试时可以反复使用的语言。</p>
-      <table>
-        <thead>
-          <tr>
-            <th>传统 Infra 经验</th>
-            <th>AI Infra 对应物</th>
-            <th>在本项目里的落点</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Service boundary</td>
-            <td>Agent node boundary</td>
-            <td>每个 agent 只读写 <code>JobSearchState</code> 的一部分。</td>
-          </tr>
-          <tr>
-            <td>Request context</td>
-            <td>Shared graph state</td>
-            <td>JD、company brief、fit analysis、resume proposal 逐步累积。</td>
-          </tr>
-          <tr>
-            <td>Retry/fallback/circuit breaker</td>
-            <td>Tool failure handling</td>
-            <td>下一步应加入 research fallback 和 diagnostic stop。</td>
-          </tr>
-          <tr>
-            <td>Logs/traces/metrics</td>
-            <td>Per-agent traces, token/cost/latency</td>
-            <td>当前 JSONL trace 是 Langfuse/OpenTelemetry 的前置形态。</td>
-          </tr>
-          <tr>
-            <td>CI regression tests</td>
-            <td>Offline eval suite</td>
-            <td><code>python3 -m jobagent.cli eval</code> 是 agent regression gate。</td>
-          </tr>
-          <tr>
-            <td>State store</td>
-            <td>Checkpoint + memory</td>
-            <td>checkpoint 负责恢复；story bank/pgvector 负责长期偏好和经历。</td>
-          </tr>
-          <tr>
-            <td>API gateway / tool integration</td>
-            <td>MCP server/client</td>
-            <td>未来 <code>career-research</code> server 暴露公司研究工具。</td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="diagram" role="img" aria-label="Infra to AI infra mapping diagram">
-        <svg width="1040" height="260" viewBox="0 0 1040 260">
-          <rect x="20" y="20" width="460" height="205" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
-          <rect x="560" y="20" width="460" height="205" rx="8" fill="#f0fdfa" stroke="#99f6e4"/>
-          <text x="45" y="55" font-size="20" font-weight="700" fill="#334155">Traditional Infra</text>
-          <text x="585" y="55" font-size="20" font-weight="700" fill="#115e59">AI Infra</text>
-          <g font-size="14" fill="#334155">
-            <text x="60" y="92">request routing</text>
-            <text x="60" y="122">service contracts</text>
-            <text x="60" y="152">logs + metrics</text>
-            <text x="60" y="182">integration tests</text>
-            <text x="60" y="212">stateful recovery</text>
-          </g>
-          <g font-size="14" fill="#115e59">
-            <text x="600" y="92">graph orchestration</text>
-            <text x="600" y="122">agent/tool schemas</text>
-            <text x="600" y="152">traces + token cost</text>
-            <text x="600" y="182">offline evals</text>
-            <text x="600" y="212">checkpoint + memory</text>
-          </g>
-          <g stroke="#64748b" stroke-width="2" marker-end="url(#arrow)">
-            <line x1="240" y1="88" x2="590" y2="88"/>
-            <line x1="240" y1="118" x2="590" y2="118"/>
-            <line x1="240" y1="148" x2="590" y2="148"/>
-            <line x1="240" y1="178" x2="590" y2="178"/>
-            <line x1="240" y1="208" x2="590" y2="208"/>
-          </g>
-          <defs>
-            <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
-              <path d="M0,0 L0,6 L9,3 z" fill="#64748b"/>
-            </marker>
-          </defs>
-        </svg>
-      </div>
-    </section>
-
-    <section id="cost">
-      <h2>7. 本地运行可行性与成本</h2>
-      <p>按 2026-05-27 当前官方文档核对，最稳妥的策略是：先保持当前仓库完全免费可运行，再逐步引入需要账号或可能收费的组件。</p>
-      <table>
-        <thead>
-          <tr>
-            <th>能力</th>
-            <th>本地是否可免费做</th>
-            <th>什么时候会花钱</th>
-            <th>推荐选择</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>当前 demo / eval / trace</td>
-            <td><span class="pill done">免费</span></td>
-            <td>不会。当前只用 Python 标准库。</td>
-            <td>继续作为 baseline，保证任何人 clone 后能跑。</td>
-          </tr>
-          <tr>
-            <td>Postgres + pgvector</td>
-            <td><span class="pill done">本地免费</span></td>
-            <td>云数据库会收费；本地 Docker 只消耗本机资源。</td>
-            <td>第二阶段引入，先用 docker-compose。</td>
-          </tr>
-          <tr>
-            <td>Langfuse observability</td>
-            <td><span class="pill optional">可本地自托管</span></td>
-            <td>Langfuse Cloud 或企业自托管能力可能收费；自托管有运维成本。</td>
-            <td>先保留 JSONL，再加 optional Langfuse exporter。</td>
-          </tr>
-          <tr>
-            <td>OpenAI / Anthropic API</td>
-            <td><span class="pill missing">通常需要付费 API key</span></td>
-            <td>按 token 计费；agent loop 容易产生多轮成本。</td>
-            <td>做 opt-in adapter，默认不开；设置每次 run 的 token/cost budget。</td>
-          </tr>
-          <tr>
-            <td>MCP SDK</td>
-            <td><span class="pill done">SDK 本身免费</span></td>
-            <td>工具背后的第三方 API 可能收费或需要 OAuth。</td>
-            <td>先实现本地 career-research MCP server，再接外部 tracker。</td>
-          </tr>
-          <tr>
-            <td>Notion / Google Sheets</td>
-            <td><span class="pill optional">个人账号通常可试</span></td>
-            <td>高级 workspace、企业 OAuth、用量或自动化可能有限制。</td>
-            <td>先用本地 JSONL tracker，等 MCP 边界稳定后再接。</td>
-          </tr>
-          <tr>
-            <td>Fly.io / Render / Modal deploy</td>
-            <td><span class="pill optional">可能有免费层</span></td>
-            <td>需要支付方式、资源持续运行、数据库、带宽或冷启动限制。</td>
-            <td>最后做 deployment touchpoint，不要一开始就烧钱。</td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="callout warn">
-        <strong>成本纪律：</strong>真实 LLM adapter 加入前，先做 budget guard。每次 run 记录 model、input tokens、output tokens、latency、估算成本、是否命中缓存。
-        这样项目会更像 AI infra，而不是一个不可控的 agent demo。
-      </div>
-      <h3>推荐的低成本路径</h3>
-      <ol>
-        <li><strong>Phase A:</strong> 保持当前零成本 skeleton，扩 eval 到 15-20 个 cases。</li>
-        <li><strong>Phase B:</strong> 加 docker-compose 的 Postgres/pgvector 和本地 checkpoint/memory adapter。</li>
-        <li><strong>Phase C:</strong> 加一个真实 LLM provider，默认 mock，只有设置 API key 才启用。</li>
-        <li><strong>Phase D:</strong> 加 optional Langfuse exporter 或本地 self-host compose profile。</li>
-        <li><strong>Phase E:</strong> 用官方 MCP SDK 重写 <code>career-research</code> server。</li>
-        <li><strong>Phase F:</strong> 最后做 cloud deploy touchpoint 和 README architecture screenshot。</li>
-      </ol>
-    </section>
-
-    <section id="roadmap">
-      <h2>8. 下一步技术实施路线</h2>
-      <p>如果目标是“积累 agent 经验 + 面向 AI infra 转型”，我建议按下面三轮做，每轮都有可展示的产物。</p>
-      <table>
-        <thead>
-          <tr>
-            <th>Iteration</th>
-            <th>目标</th>
-            <th>具体任务</th>
-            <th>完成标准</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>1. Eval-first hardening</td>
-            <td>把当前 skeleton 变成可信 regression harness</td>
-            <td>扩充 15-20 cases；分 extractor eval、trajectory eval；记录 failure reason；加 source-grounding fixture。</td>
-            <td><code>python3 -m jobagent.cli eval</code> 输出 pass rate、case failure table、trace path。</td>
-          </tr>
-          <tr>
-            <td>2. Real infra adapters</td>
-            <td>让项目碰到真实 AI infra 组件</td>
-            <td>Postgres/pgvector memory；LangGraph branch；官方 MCP SDK server；JSONL to Langfuse exporter。</td>
-            <td>docker-compose 一键起本地依赖；mock 模式仍然可零成本运行。</td>
-          </tr>
-          <tr>
-            <td>3. Cost-aware LLM mode</td>
-            <td>引入真实模型但控制风险</td>
-            <td>OpenAI 或 Anthropic adapter；structured output schema；budget guard；prompt version tracing；small paid smoke suite。</td>
-            <td>README 能展示一次真实 run 的 tokens、cost、latency、eval result。</td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="callout">
-        <strong>简历表述建议：</strong>不要写“built a full production job search agent platform”。更强也更可信的说法是：
-        “Built a staged multi-agent job-search reference system with typed graph state, HITL checkpointing, offline evals, trace artifacts, and a migration path to LangGraph, MCP, Langfuse, and pgvector.”
-      </div>
-    </section>
-
-    <section id="reading">
-      <h2>9. 代码阅读路径</h2>
-      <p>这部分把 <code>docs/LEARNING_GUIDE.md</code> 的阅读路线融合进来。你可以按这个顺序给自己做 code walkthrough。</p>
-      <ol>
-        <li>
-          <strong>先读 state:</strong> <code>jobagent/models.py</code>。重点看 <code>JobSearchState</code>、artifact model、<code>StopReason</code>。
-        </li>
-        <li>
-          <strong>再读 graph:</strong> <code>jobagent/graph/workflow.py</code> 和 <code>jobagent/graph/engine.py</code>。重点看 node wiring、stop condition、checkpoint save。
-        </li>
-        <li>
-          <strong>逐个读 agent:</strong> <code>jobagent/agents/</code>。不要纠结 heuristic 文本处理，重点看 agent contract：输入来自 state，输出是 typed artifact。
-        </li>
-        <li>
-          <strong>跑 HITL:</strong> 先 <code>python3 -m jobagent.cli demo</code>，再 <code>python3 -m jobagent.cli resume &lt;run_id&gt; --approve</code>。
-        </li>
-        <li>
-          <strong>跑 eval:</strong> <code>python3 -m jobagent.cli eval</code>。把它当成 agent regression test，不只是 demo script。
-        </li>
-        <li>
-          <strong>看 provider boundary:</strong> <code>jobagent/llm/provider.py</code> 和 <code>jobagent/prompts/registry.py</code>。真实 LLM adapter 应该接在这里。
-        </li>
-        <li>
-          <strong>看 observability:</strong> <code>jobagent/observability/tracer.py</code>。下一步 Langfuse exporter 应该保持同样的 trace fields。
-        </li>
-        <li>
-          <strong>看 MCP stub:</strong> <code>mcp_server/career_research_server.py</code>。下一步用官方 SDK 重写时，保留 tool schema 和错误语义。
-        </li>
-        <li>
-          <strong>看 optional integrations:</strong> 运行 <code>python3 -m jobagent.cli integrations</code>，再逐个打开 LangGraph、Langfuse、pgvector、MCP、LLM provider 的代码入口。
-        </li>
-      </ol>
-      <h3>本地验证命令</h3>
+    <section id="quickstart">
+      <h2>3. 怎么运行</h2>
+      <p>默认路径不需要 API key，也不需要网络。先用下面三条命令建立信心。</p>
       <pre><code>python3 -m unittest discover -s tests
 python3 -m jobagent.cli eval
 python3 -m jobagent.cli demo --auto-approve</code></pre>
+
+      <h3>Human-in-the-loop 路径</h3>
+      <pre><code>python3 -m jobagent.cli demo
+python3 -m jobagent.cli resume &lt;run_id&gt; --approve</code></pre>
+      <p>第一条命令会停在 <code>NEED_USER_APPROVAL</code>，并写入 checkpoint。第二条命令读取 checkpoint，从 <code>tracker</code> 继续执行。</p>
+
+      <h3>Optional integrations</h3>
+      <pre><code>python3 -m jobagent.cli integrations
+python3 -m pip install -e '.[all]'</code></pre>
+
+      <h3>Docker + Postgres/pgvector</h3>
+      <pre><code>docker compose config
+docker compose build app
+docker compose run --rm app python -m jobagent.cli eval
+docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[all]' &amp;&amp; python -m unittest discover -s tests"</code></pre>
+
+      <table>
+        <thead>
+          <tr><th>运行结果</th><th>你应该看到什么</th><th>说明</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>默认单测</td><td><code>14 tests OK, skipped=4</code></td><td>4 个 optional integration 测试在无 extras 时跳过，这是预期行为。</td></tr>
+          <tr><td>全依赖单测</td><td><code>14 tests OK</code></td><td>安装 <code>.[all]</code> 且提供 Postgres 后，optional tests 全部执行。</td></tr>
+          <tr><td>Eval</td><td><code>15/15 passed</code></td><td>覆盖 10 条 trajectory eval 和 5 条 single-turn JD extraction eval。</td></tr>
+          <tr><td>Demo</td><td><code>COMPLETED</code> 或 <code>NEED_USER_APPROVAL</code></td><td>取决于是否传入 <code>--auto-approve</code>。</td></tr>
+        </tbody>
+      </table>
     </section>
 
-    <section id="references">
-      <h2>10. 官方参考链接</h2>
-      <p>这些链接会随时间变化，涉及价格和 SDK API 时请以官方页面为准。</p>
+    <section id="architecture">
+      <h2>4. 架构：不要让一个大 prompt 控制一切</h2>
+      <p>
+        这个项目的核心原则是：graph 拥有控制流，agent node 拥有局部认知，state 是唯一共享事实源。
+        这也是从 toy agent 走向 production agent 的关键分界线。
+      </p>
+      <div class="diagram" role="img" aria-label="Architecture diagram">
+        <svg width="1040" height="360" viewBox="0 0 1040 360">
+          <defs>
+            <marker id="arrow-a" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+              <path d="M0,0 L0,6 L9,3 z" fill="#2457c5"></path>
+            </marker>
+          </defs>
+          <rect x="24" y="38" width="170" height="260" rx="8" fill="#eff6ff" stroke="#2457c5"/>
+          <text x="109" y="68" text-anchor="middle" font-weight="700" fill="#1f2328">输入层</text>
+          <rect x="44" y="98" width="130" height="44" rx="7" fill="#fff" stroke="#d9dde3"/>
+          <text x="109" y="125" text-anchor="middle" fill="#1f2328">JD text</text>
+          <rect x="44" y="156" width="130" height="44" rx="7" fill="#fff" stroke="#d9dde3"/>
+          <text x="109" y="183" text-anchor="middle" fill="#1f2328">Story bank</text>
+          <rect x="44" y="214" width="130" height="44" rx="7" fill="#fff" stroke="#d9dde3"/>
+          <text x="109" y="241" text-anchor="middle" fill="#1f2328">Eval suite</text>
+
+          <line x1="194" y1="168" x2="248" y2="168" stroke="#2457c5" stroke-width="2" marker-end="url(#arrow-a)"/>
+          <rect x="248" y="38" width="214" height="260" rx="8" fill="#ecfeff" stroke="#0f766e"/>
+          <text x="355" y="68" text-anchor="middle" font-weight="700" fill="#1f2328">编排层</text>
+          <rect x="274" y="96" width="162" height="44" rx="7" fill="#fff" stroke="#d9dde3"/>
+          <text x="355" y="123" text-anchor="middle" fill="#1f2328">GraphEngine</text>
+          <rect x="274" y="154" width="162" height="44" rx="7" fill="#fff" stroke="#d9dde3"/>
+          <text x="355" y="181" text-anchor="middle" fill="#1f2328">JobSearchState</text>
+          <rect x="274" y="212" width="162" height="44" rx="7" fill="#fff" stroke="#d9dde3"/>
+          <text x="355" y="239" text-anchor="middle" fill="#1f2328">StopReason</text>
+
+          <line x1="462" y1="168" x2="516" y2="168" stroke="#2457c5" stroke-width="2" marker-end="url(#arrow-a)"/>
+          <rect x="516" y="38" width="230" height="260" rx="8" fill="#fffbeb" stroke="#b45309"/>
+          <text x="631" y="68" text-anchor="middle" font-weight="700" fill="#1f2328">Agent 层</text>
+          <rect x="544" y="90" width="174" height="32" rx="7" fill="#fff" stroke="#d9dde3"/>
+          <text x="631" y="111" text-anchor="middle" fill="#1f2328">ingest + jd_extract</text>
+          <rect x="544" y="132" width="174" height="32" rx="7" fill="#fff" stroke="#d9dde3"/>
+          <text x="631" y="153" text-anchor="middle" fill="#1f2328">company_research</text>
+          <rect x="544" y="174" width="174" height="32" rx="7" fill="#fff" stroke="#d9dde3"/>
+          <text x="631" y="195" text-anchor="middle" fill="#1f2328">fit_analysis</text>
+          <rect x="544" y="216" width="174" height="32" rx="7" fill="#fff" stroke="#d9dde3"/>
+          <text x="631" y="237" text-anchor="middle" fill="#1f2328">resume_tailor</text>
+          <rect x="544" y="258" width="174" height="32" rx="7" fill="#fff" stroke="#d9dde3"/>
+          <text x="631" y="279" text-anchor="middle" fill="#1f2328">tracker + interview</text>
+
+          <line x1="746" y1="168" x2="800" y2="168" stroke="#2457c5" stroke-width="2" marker-end="url(#arrow-a)"/>
+          <rect x="800" y="38" width="216" height="260" rx="8" fill="#f5f3ff" stroke="#6d28d9"/>
+          <text x="908" y="68" text-anchor="middle" font-weight="700" fill="#1f2328">基础设施边界</text>
+          <rect x="826" y="92" width="164" height="36" rx="7" fill="#fff" stroke="#d9dde3"/>
+          <text x="908" y="115" text-anchor="middle" fill="#1f2328">Checkpoint</text>
+          <rect x="826" y="140" width="164" height="36" rx="7" fill="#fff" stroke="#d9dde3"/>
+          <text x="908" y="163" text-anchor="middle" fill="#1f2328">JSONL / Langfuse trace</text>
+          <rect x="826" y="188" width="164" height="36" rx="7" fill="#fff" stroke="#d9dde3"/>
+          <text x="908" y="211" text-anchor="middle" fill="#1f2328">LLM Provider</text>
+          <rect x="826" y="236" width="164" height="36" rx="7" fill="#fff" stroke="#d9dde3"/>
+          <text x="908" y="259" text-anchor="middle" fill="#1f2328">MCP + Postgres</text>
+        </svg>
+      </div>
+
+      <h3>主流程</h3>
+      <pre><code>JD text
+  -&gt; ingest
+  -&gt; jd_extract
+  -&gt; company_research
+  -&gt; fit_analysis
+  -&gt; resume_tailor
+  -&gt; NEED_USER_APPROVAL
+  -&gt; tracker
+  -&gt; interview_prep
+  -&gt; COMPLETED</code></pre>
+    </section>
+
+    <section id="state">
+      <h2>5. State、StopReason 和 HITL</h2>
+      <p><code>JobSearchState</code> 是系统中枢。agent 不互相传 loose strings，而是增量写入 typed artifacts。</p>
+      <pre><code>JobSearchState
+  run_id
+  raw_job_text
+  normalized_jd
+  company_brief
+  fit_analysis
+  resume_proposal
+  tracker_update
+  interview_pack
+  stop_reason
+  pending_node</code></pre>
+      <table>
+        <thead>
+          <tr><th>StopReason</th><th>含义</th><th>为什么重要</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>COMPLETED</code></td><td>完整 workflow 已完成。</td><td>可作为 eval trajectory 的成功终点。</td></tr>
+          <tr><td><code>NEED_USER_APPROVAL</code></td><td>简历/投递相关动作等待人工审批。</td><td>防止 agent 自动生成或提交不可信申请材料。</td></tr>
+          <tr><td><code>NEED_MORE_INPUT</code></td><td>输入不足，比如 JD 太短。</td><td>把数据质量问题显式化。</td></tr>
+          <tr><td><code>TOOL_ERROR</code></td><td>节点或工具调用失败。</td><td>给重试、fallback、trace 诊断留接口。</td></tr>
+          <tr><td><code>LOW_CONFIDENCE</code></td><td>系统判断不适合继续。</td><td>体现 agent 不应该“永远输出”。</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        <strong>HITL 的关键不是问一句 yes/no。</strong>真正关键是：停在可恢复状态、写 checkpoint、保留 pending node、
+        把用户决策写回 state，然后从明确节点恢复。
+      </div>
+    </section>
+
+    <section id="agents">
+      <h2>6. Agent 节点职责</h2>
+      <table>
+        <thead>
+          <tr><th>节点</th><th>输入</th><th>输出</th><th>学习重点</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>ingest</code></td><td>raw JD text</td><td>消息记录或 <code>NEED_MORE_INPUT</code></td><td>把输入质量校验放在 graph 起点。</td></tr>
+          <tr><td><code>jd_extract</code></td><td>JD text</td><td><code>JDExtract</code></td><td>结构化输出比自然语言总结更可测。</td></tr>
+          <tr><td><code>company_research</code></td><td><code>JDExtract</code></td><td><code>CompanyBrief</code></td><td>未来接 RAG/web/source grounding 的位置。</td></tr>
+          <tr><td><code>fit_analysis</code></td><td>JD + story bank</td><td><code>FitAnalysis</code></td><td>把个人经历库和岗位要求做 evidence-based matching。</td></tr>
+          <tr><td><code>resume_tailor</code></td><td>JD + fit + stories</td><td><code>ResumeProposal</code></td><td>默认进入人工审批，不自动最终化简历。</td></tr>
+          <tr><td><code>tracker</code></td><td>approved state</td><td><code>TrackerUpdate</code></td><td>投递记录是外部副作用，需要 approval 和 idempotency。</td></tr>
+          <tr><td><code>interview_prep</code></td><td>JD + company + stories</td><td><code>InterviewPack</code></td><td>复用上游 artifact，展示 agent workflow 的组合价值。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="stack">
+      <h2>7. 原始技术栈现在落在哪里</h2>
+      <p>这个表是当前最新状态，不再是早期规划。默认路径仍然免费，但每个原计划技术点都有对应代码入口或 optional integration。</p>
+      <table>
+        <thead>
+          <tr><th>技术点</th><th>当前状态</th><th>代码入口</th><th>你能学到什么</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Typed graph orchestration</td>
+            <td><span class="badge done">已实现教学版</span></td>
+            <td><code>jobagent/graph/engine.py</code>, <code>jobagent/graph/workflow.py</code></td>
+            <td>graph runner、node wiring、stop reason、checkpoint save。</td>
+          </tr>
+          <tr>
+            <td>LangGraph</td>
+            <td><span class="badge partial">optional reference</span></td>
+            <td><code>jobagent/graph/langgraph_reference.py</code></td>
+            <td>把当前心智模型迁移到 <code>StateGraph</code> 的路径。</td>
+          </tr>
+          <tr>
+            <td>Claude/OpenAI SDK</td>
+            <td><span class="badge partial">adapter scaffold</span></td>
+            <td><code>jobagent/llm/anthropic_provider.py</code>, <code>jobagent/llm/openai_provider.py</code></td>
+            <td>provider boundary、structured output、usage accounting 的位置。真实调用需要 API key。</td>
+          </tr>
+          <tr>
+            <td>RAG retrieval</td>
+            <td><span class="badge done">本地实现</span></td>
+            <td><code>jobagent/retrieval/local_rag.py</code></td>
+            <td>先用 deterministic chunk/rank 学 retrieval contract，再替换 embeddings/reranker。</td>
+          </tr>
+          <tr>
+            <td>Postgres + pgvector</td>
+            <td><span class="badge done">已实现并测试</span></td>
+            <td><code>jobagent/storage/postgres_memory.py</code>, <code>docker-compose.yml</code></td>
+            <td>semantic memory、episodic memory、JSONB metadata、vector search。</td>
+          </tr>
+          <tr>
+            <td>Langfuse</td>
+            <td><span class="badge partial">exporter scaffold</span></td>
+            <td><code>jobagent/observability/tracer.py</code>, <code>jobagent/observability/langfuse_exporter.py</code></td>
+            <td>从本地 trace schema 迁移到 per-agent observability event。</td>
+          </tr>
+          <tr>
+            <td>MCP server</td>
+            <td><span class="badge done">SDK server exists</span></td>
+            <td><code>mcp_server/career_research_sdk_server.py</code></td>
+            <td>用 MCP 暴露 career research tools/resources。</td>
+          </tr>
+          <tr>
+            <td>MCP consumer / tracker</td>
+            <td><span class="badge partial">payload boundary</span></td>
+            <td><code>jobagent/integrations/external_mcp_tracker.py</code></td>
+            <td>先建模 <code>tools/call</code> payload，再接 Notion/Sheets 等真实 MCP client。</td>
+          </tr>
+          <tr>
+            <td>Eval harness</td>
+            <td><span class="badge done">15 cases</span></td>
+            <td><code>jobagent/evals/runner.py</code>, <code>samples/eval_suite.json</code></td>
+            <td>single-turn extraction eval + trajectory eval。</td>
+          </tr>
+          <tr>
+            <td>Docker deployment touchpoint</td>
+            <td><span class="badge done">已实现并验证</span></td>
+            <td><code>Dockerfile</code>, <code>docker-compose.yml</code>, <code>deploy/langfuse/README.md</code></td>
+            <td>app 与 Postgres/pgvector 的本地部署边界。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="tests">
+      <h2>8. 测试与验证：这个项目最应该强调的部分</h2>
+      <p>AI 项目容易变成 demo，但这个项目的差异化应该是 eval-first。你要能回答：“我怎么知道 agent 没有退化？”</p>
+      <table>
+        <thead>
+          <tr><th>验证层</th><th>命令</th><th>覆盖内容</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>默认单测</td><td><code>python3 -m unittest discover -s tests</code></td><td>workflow、eval runner、learning integrations；optional deps 不存在时 skip。</td></tr>
+          <tr><td>全依赖单测</td><td><code>JOBAGENT_DATABASE_URL=... python -m unittest discover -s tests</code></td><td>LangGraph compile、MCP SDK server、LLM provider constructors、Postgres round-trip。</td></tr>
+          <tr><td>Offline eval</td><td><code>python3 -m jobagent.cli eval</code></td><td>15 条样例，检查 company、skills、stop reason、fit score。</td></tr>
+          <tr><td>Demo smoke</td><td><code>python3 -m jobagent.cli demo --auto-approve</code></td><td>端到端 run、tracker write、interview pack、trace/checkpoint artifacts。</td></tr>
+          <tr><td>Docker smoke</td><td><code>docker compose run --rm app python -m jobagent.cli eval</code></td><td>容器构建、compose 网络、Postgres service readiness。</td></tr>
+          <tr><td>Static sanity</td><td><code>python3 -m py_compile $(find jobagent mcp_server tests -name '*.py' -print)</code></td><td>语法和 import-time 基础检查。</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        <strong>最近一次完整验证结果：</strong>默认单测 14 tests OK / 4 skipped；全依赖单测 14 tests OK；
+        eval 15/15 passed；Docker eval 15/15 passed；容器内安装 <code>.[all]</code> 后 optional tests 全通过。
+      </div>
+      <h3>接下来该补的 eval</h3>
       <ul>
-        <li><a href="https://developers.openai.com/api/docs/pricing">OpenAI API Pricing</a></li>
-        <li><a href="https://platform.claude.com/docs/en/about-claude/pricing">Anthropic Claude API Pricing</a></li>
-        <li><a href="https://docs.langchain.com/oss/python/langgraph/persistence">LangGraph Persistence / Checkpointing</a></li>
-        <li><a href="https://docs.langchain.com/oss/python/langgraph/interrupts">LangGraph Interrupts / HITL</a></li>
-        <li><a href="https://langfuse.com/pricing-self-host">Langfuse Self-hosted Pricing</a></li>
-        <li><a href="https://modelcontextprotocol.io/docs/sdk">Model Context Protocol Official SDKs</a></li>
+        <li>Source-grounding eval：公司研究必须引用真实来源或 fixture source。</li>
+        <li>Resume quality rubric：检查 bullet 是否包含 action、scope、impact、JD keyword。</li>
+        <li>Human labels：保存你对 10-20 个真实 JD 的 apply/skip 标签，用来校准 fit score。</li>
+        <li>Cost/latency regression：真实 LLM provider 开启后，记录每次 run 的 token、成本、延迟。</li>
       </ul>
+    </section>
+
+    <section id="reading">
+      <h2>9. 读代码路线</h2>
+      <div class="timeline">
+        <div class="step">
+          <div class="label">Step 1</div>
+          <div><strong><code>jobagent/models.py</code></strong><p>先理解 <code>JobSearchState</code>、typed artifact、<code>StopReason</code>。这是整个系统的语言。</p></div>
+        </div>
+        <div class="step">
+          <div class="label">Step 2</div>
+          <div><strong><code>jobagent/graph/workflow.py</code></strong><p>看节点怎么连接。重点是 graph 拥有控制流，而不是某个 agent 自己决定全局流程。</p></div>
+        </div>
+        <div class="step">
+          <div class="label">Step 3</div>
+          <div><strong><code>jobagent/graph/engine.py</code></strong><p>看 tiny graph runner 如何执行 node、记录 trace、处理 stop reason、保存 checkpoint。</p></div>
+        </div>
+        <div class="step">
+          <div class="label">Step 4</div>
+          <div><strong><code>jobagent/agents/</code></strong><p>逐个 agent 读。不要太纠结 heuristic 文本处理，重点看每个 node 的输入输出 contract。</p></div>
+        </div>
+        <div class="step">
+          <div class="label">Step 5</div>
+          <div><strong><code>jobagent/evals/runner.py</code></strong><p>理解如何把 agent 行为变成 regression suite。这里是 portfolio 最强信号之一。</p></div>
+        </div>
+        <div class="step">
+          <div class="label">Step 6</div>
+          <div><strong>Optional stack</strong><p>再读 LangGraph reference、LLM providers、Langfuse exporter、Postgres memory、MCP SDK server。</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="roadmap">
+      <h2>10. 下一步升级路线</h2>
+      <p>现在项目已经不只是文档规划，而是有可运行 skeleton 和 optional stack。下一步应该从“更像 production AI infra”推进。</p>
+      <table>
+        <thead>
+          <tr><th>Iteration</th><th>目标</th><th>具体任务</th><th>完成标准</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1. Eval depth</td>
+            <td>让质量证明更强</td>
+            <td>加入 source-grounding fixture、resume rubric、failure table、human labels。</td>
+            <td>README/HTML 能展示 baseline pass rate 和一次改进后的 pass rate。</td>
+          </tr>
+          <tr>
+            <td>2. Real LangGraph path</td>
+            <td>把教学 GraphEngine 映射到真实生态</td>
+            <td>实现一个真实 <code>StateGraph</code> runner，支持 interrupt/checkpoint，对照现有 runner。</td>
+            <td>同一 eval suite 可以跑教学版和 LangGraph 版。</td>
+          </tr>
+          <tr>
+            <td>3. Cost-aware LLM mode</td>
+            <td>接入真实模型但保持成本纪律</td>
+            <td>实现 Anthropic 或 OpenAI structured output；加 token budget、prompt version trace、mock fallback。</td>
+            <td>一次真实 run 能显示 model、tokens、latency、estimated cost。</td>
+          </tr>
+          <tr>
+            <td>4. Research grounding</td>
+            <td>把 company research 从本地文本升级为可溯源</td>
+            <td>加入 source fetch/cache、official careers page fixture、citation fields、grounding eval。</td>
+            <td>CompanyBrief 的 claims 能追到 sources。</td>
+          </tr>
+          <tr>
+            <td>5. Portfolio packaging</td>
+            <td>让项目能服务面试</td>
+            <td>录 3 分钟 demo；写 15 分钟 deep dive；加 architecture tradeoff note。</td>
+            <td>你能用代码、trace、eval、失败处理回答“为什么这样设计”。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="cost">
+      <h2>11. 成本与安全边界</h2>
+      <table>
+        <thead>
+          <tr><th>能力</th><th>本地是否可免费做</th><th>什么时候会花钱</th><th>推荐策略</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>默认 demo/eval/trace</td><td><span class="badge done">免费</span></td><td>不会，标准库路径不需要 API。</td><td>永远保留为 baseline。</td></tr>
+          <tr><td>Docker Postgres/pgvector</td><td><span class="badge done">本地免费</span></td><td>云数据库或托管服务会收费。</td><td>本地 compose 先跑通。</td></tr>
+          <tr><td>OpenAI/Anthropic</td><td><span class="badge optional">需要 key</span></td><td>按 token 计费，多 agent 容易放大成本。</td><td>默认 mock；真实 provider 必须 opt-in 并记录 budget。</td></tr>
+          <tr><td>Langfuse</td><td><span class="badge optional">可自托管</span></td><td>Hosted plan 或自托管运维会有成本。</td><td>先 JSONL，再 exporter，再 dashboard。</td></tr>
+          <tr><td>Notion/Sheets MCP</td><td><span class="badge optional">可能免费试用</span></td><td>workspace 权限、OAuth、API quota 可能受限。</td><td>先本地 JSONL tracker，再接外部 MCP。</td></tr>
+        </tbody>
+      </table>
+      <div class="callout danger">
+        <strong>安全边界：</strong>不要自动申请职位，不要自动发邮件，不要登录 credentialed job site 做 scraping。
+        Resume proposal、tracker write、任何外部副作用都应该先经过 human approval。
+      </div>
+    </section>
+
+    <section id="interview">
+      <h2>12. 面试叙事</h2>
+      <p>这个项目最强的讲法不是“我做了一个帮我找工作的 agent”，而是：</p>
+      <div class="callout">
+        <strong>推荐表述：</strong>
+        I built a staged multi-agent job-search reference system with typed graph state, HITL checkpointing,
+        offline evals, trace artifacts, optional Postgres/pgvector memory, MCP tool boundaries, and a migration path to LangGraph,
+        Langfuse, and real LLM providers.
+      </div>
+      <h3>你应该准备展示的 5 个点</h3>
+      <ol>
+        <li>一次 end-to-end run：JD 输入到 tracker + interview prep。</li>
+        <li>一次 HITL pause/resume：为什么 <code>NEED_USER_APPROVAL</code> 是产品安全边界。</li>
+        <li>一次 eval report：15/15 passed 只是起点，说明下一步如何做 grounding/rubric/human labels。</li>
+        <li>一次 trace：每个 node 的执行顺序、耗时、stop reason、artifact。</li>
+        <li>一次 tradeoff discussion：为什么 graph-first，为什么 CLI-first，为什么 MCP 放在 integration boundary，为什么 vector memory 不能替代 relational filters。</li>
+      </ol>
+    </section>
+
+    <section id="source-map">
+      <h2>13. 这份 mega guide 融合了哪些原文档</h2>
+      <p>旧文档的核心内容已经合并到本文中。以后你主要读这一个 HTML 即可。</p>
+      <table>
+        <thead>
+          <tr><th>原文档</th><th>合并到这里的内容</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>TECHNICAL_DESIGN.md</code></td><td>目标、scope、agent inventory、state model、eval plan、observability、安全边界、四周路线和 interview narrative。</td></tr>
+          <tr><td><code>docs/LEARNING_GUIDE.md</code></td><td>读代码顺序、HITL、eval、provider boundary、migration map。</td></tr>
+          <tr><td><code>docs/architecture_zh.html</code></td><td>架构图、目录职责、state flow、agent 节点职责、trace/eval/provider/MCP 说明。</td></tr>
+          <tr><td><code>docs/usage_zh.html</code></td><td>安装、常用命令、完整使用流程、运行产物、通过标准。</td></tr>
+          <tr><td><code>README.md</code></td><td>quickstart、architecture、optional stack、runtime artifacts 和 project framing。</td></tr>
+        </tbody>
+      </table>
     </section>
   </main>
 
   <footer class="wrap">
-    Built as a learning companion for the multi-agent job-search reference implementation.
+    Canonical learning guide for the Multi-Agent Job Search Platform. Keep this file as the single reading surface; keep code and tests as the source of truth.
   </footer>
 </body>
 </html>
