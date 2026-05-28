@@ -1,1 +1,1 @@
-"""Minimal production-demo web surface for JobAgent."""
+"""Production web surface for JobAgent."""

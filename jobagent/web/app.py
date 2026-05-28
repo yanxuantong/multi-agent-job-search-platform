@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import os
+import re
+import time
+from collections import defaultdict, deque
 from contextlib import asynccontextmanager
 from pathlib import Path
 from urllib.parse import parse_qs
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -21,10 +24,22 @@ TEMPLATE_DIR = PACKAGE_DIR / "templates"
 STATIC_DIR = PACKAGE_DIR / "static"
 DEFAULT_JOB_FILE = Path("samples/job_description.txt")
 DEFAULT_STORY_BANK = Path("samples/story_bank.json")
+MAX_REQUEST_BODY_BYTES = int(os.environ.get("JOBAGENT_MAX_REQUEST_BODY_BYTES", "200000"))
+MIN_JOB_TEXT_CHARS = 20
+MAX_JOB_TEXT_CHARS = int(os.environ.get("JOBAGENT_MAX_JOB_TEXT_CHARS", "12000"))
+MAX_JOB_URL_CHARS = int(os.environ.get("JOBAGENT_MAX_JOB_URL_CHARS", "2048"))
+MAX_FORM_FIELDS = 8
+RUN_ID_PATTERN = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+    re.IGNORECASE,
+)
+RATE_LIMIT_WINDOW_SECONDS = int(os.environ.get("JOBAGENT_RATE_LIMIT_WINDOW_SECONDS", "60"))
+RATE_LIMIT_POST_RUNS = int(os.environ.get("JOBAGENT_RATE_LIMIT_POST_RUNS", "12"))
 
 
 def create_app(store: RunStore | None = None) -> FastAPI:
     run_store = store or build_run_store()
+    post_run_hits: defaultdict[str, deque[float]] = defaultdict(deque)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -35,6 +50,41 @@ def create_app(store: RunStore | None = None) -> FastAPI:
     app.state.run_store = run_store
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
     templates = Jinja2Templates(directory=TEMPLATE_DIR)
+
+    @app.middleware("http")
+    async def production_safety_headers(request: Request, call_next):
+        if request.method in {"POST", "PUT", "PATCH"}:
+            content_length = request.headers.get("content-length")
+            if content_length:
+                try:
+                    body_size = int(content_length)
+                except ValueError:
+                    return PlainTextResponse("Invalid Content-Length", status_code=400)
+                if body_size > MAX_REQUEST_BODY_BYTES:
+                    return PlainTextResponse("Request body too large", status_code=413)
+
+        if request.method == "POST" and request.url.path == "/runs":
+            retry_after = _rate_limit_retry_after(request, post_run_hits)
+            if retry_after is not None:
+                return PlainTextResponse(
+                    "Too many workflow runs. Please wait before starting another run.",
+                    status_code=429,
+                    headers={"Retry-After": str(retry_after)},
+                )
+
+        response = await call_next(request)
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "no-referrer")
+        response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+        response.headers.setdefault(
+            "Content-Security-Policy",
+            "default-src 'self'; img-src 'self' data:; object-src 'none'; "
+            "frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+        )
+        if request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https":
+            response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+        return response
 
     @app.get("/healthz")
     def healthz() -> dict[str, str]:
@@ -60,8 +110,11 @@ def create_app(store: RunStore | None = None) -> FastAPI:
         job_text = form.get("job_text", "").strip()
         job_url = form.get("job_url", "").strip() or None
         approved = form.get("auto_approve") == "on"
-        if len(job_text) < 20:
+        validation_error = _validate_job_submission(job_text, job_url)
+        if validation_error == "short_job_text":
             return RedirectResponse("/?error=short_job_text", status_code=303)
+        if validation_error:
+            raise HTTPException(status_code=400, detail=validation_error)
 
         stories = load_story_bank(DEFAULT_STORY_BANK)
         state = run_job_workflow(job_text, stories, job_url=job_url, approved=approved)
@@ -70,6 +123,7 @@ def create_app(store: RunStore | None = None) -> FastAPI:
 
     @app.get("/runs/{run_id}", response_class=HTMLResponse)
     def show_run(request: Request, run_id: str) -> HTMLResponse:
+        _validate_run_id_or_404(run_id)
         state = _load_or_404(app.state.run_store, run_id)
         return templates.TemplateResponse(
             request,
@@ -85,6 +139,7 @@ def create_app(store: RunStore | None = None) -> FastAPI:
 
     @app.post("/runs/{run_id}/approve")
     def approve_run(run_id: str) -> RedirectResponse:
+        _validate_run_id_or_404(run_id)
         state = _load_or_404(app.state.run_store, run_id)
         state = resume_job_state(state, approved=True)
         app.state.run_store.save(state)
@@ -101,9 +156,57 @@ def _load_or_404(store: RunStore, run_id: str) -> JobSearchState:
 
 
 async def _read_urlencoded_form(request: Request) -> dict[str, str]:
-    body = (await request.body()).decode("utf-8")
-    parsed = parse_qs(body, keep_blank_values=True)
+    content_type = request.headers.get("content-type", "").lower()
+    if not content_type.startswith("application/x-www-form-urlencoded"):
+        raise HTTPException(status_code=415, detail="Only application/x-www-form-urlencoded submissions are accepted")
+
+    body_bytes = await request.body()
+    if len(body_bytes) > MAX_REQUEST_BODY_BYTES:
+        raise HTTPException(status_code=413, detail="Request body too large")
+
+    try:
+        body = body_bytes.decode("utf-8")
+        parsed = parse_qs(body, keep_blank_values=True, max_num_fields=MAX_FORM_FIELDS)
+    except (UnicodeDecodeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail="Invalid form body") from exc
     return {key: values[-1] if values else "" for key, values in parsed.items()}
+
+
+def _validate_job_submission(job_text: str, job_url: str | None) -> str | None:
+    if len(job_text) < MIN_JOB_TEXT_CHARS:
+        return "short_job_text"
+    if len(job_text) > MAX_JOB_TEXT_CHARS:
+        return f"job_text must be at most {MAX_JOB_TEXT_CHARS} characters"
+    if job_url:
+        if len(job_url) > MAX_JOB_URL_CHARS:
+            return f"job_url must be at most {MAX_JOB_URL_CHARS} characters"
+        if not job_url.lower().startswith(("https://", "http://")):
+            return "job_url must start with http:// or https://"
+    return None
+
+
+def _validate_run_id_or_404(run_id: str) -> None:
+    if not RUN_ID_PATTERN.fullmatch(run_id):
+        raise HTTPException(status_code=404, detail="Run not found")
+
+
+def _rate_limit_retry_after(request: Request, hits_by_client: defaultdict[str, deque[float]]) -> int | None:
+    now = time.monotonic()
+    key = _client_key(request)
+    hits = hits_by_client[key]
+    while hits and now - hits[0] > RATE_LIMIT_WINDOW_SECONDS:
+        hits.popleft()
+    if len(hits) >= RATE_LIMIT_POST_RUNS:
+        return max(1, int(RATE_LIMIT_WINDOW_SECONDS - (now - hits[0])))
+    hits.append(now)
+    return None
+
+
+def _client_key(request: Request) -> str:
+    forwarded_for = request.headers.get("x-forwarded-for", "").split(",", 1)[0].strip()
+    if forwarded_for:
+        return forwarded_for
+    return request.client.host if request.client else "unknown"
 
 
 def _run_summary(state: JobSearchState) -> dict[str, object]:

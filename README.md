@@ -1,19 +1,20 @@
 # Multi-Agent Job Search Platform
 
-An agentic job-search demo you can actually click.
+An agentic job-search product you can actually use.
 
 This project is a learning-first reference implementation for a multi-agent job-search platform. It turns a job description into structured role signals, company research, fit analysis, resume-positioning suggestions, a human approval checkpoint, a tracker update, and interview prep.
 
 The default path is intentionally deterministic and low-cost: no API keys, no hosted vector database, no fragile external calls. The point is to make the core production pattern visible before swapping in LangGraph, LLM providers, MCP tools, Langfuse, Postgres, or pgvector.
 
-**Live demo:** [https://jobagent-demo.onrender.com](https://jobagent-demo.onrender.com)  
+**Live product:** [https://jobagent-demo.onrender.com](https://jobagent-demo.onrender.com)
+
 **Canonical learning guide:** [docs/project1_ai_infra_tutorial_zh.html](docs/project1_ai_infra_tutorial_zh.html)
 
 ## Product Snapshot
 
 ![Start a live job-agent run](docs/assets/readme/demo-home.png)
 
-The web demo is deliberately small, but it shows the end-to-end operating loop:
+The hosted product is intentionally focused, and it shows the end-to-end operating loop:
 
 1. Paste a job description.
 2. Let bounded agent nodes analyze the role.
@@ -33,7 +34,7 @@ The web demo is deliberately small, but it shows the end-to-end operating loop:
 - **Checkpoint and resume:** paused runs can continue after approval.
 - **Offline evaluation:** deterministic eval cases protect the workflow from drift.
 - **Traceability:** every run can write local JSONL traces.
-- **Production shell:** FastAPI/Jinja UI, Dockerfile, Render deployment, and optional Postgres store.
+- **Production surface:** FastAPI/Jinja UI, Dockerfile, Render deployment, safety limits, and optional Postgres store.
 - **Learning bridge:** local teaching code maps cleanly to LangGraph, MCP, Langfuse, pgvector, and hosted LLM providers.
 
 ## Quickstart
@@ -68,7 +69,7 @@ Run tests:
 python3 -m unittest discover -s tests
 ```
 
-Run the web demo locally:
+Run the web product locally:
 
 ```bash
 uvicorn jobagent.web.app:app --reload
@@ -78,15 +79,28 @@ Then open <http://localhost:8000>.
 
 ## Render Deployment
 
-This repo includes a Render Blueprint at [render.yaml](render.yaml). The default hosted demo deploys one Docker web service on Render's free web plan:
+This repo includes a Render Blueprint at [render.yaml](render.yaml). The hosted product deploys one Docker web service on Render's free web plan:
 
 - `jobagent-demo`: runs `uvicorn jobagent.web.app:app`
 - health check: `/healthz`
-- public demo flag: `JOBAGENT_PUBLIC_DEMO_MODE=true`
+- public hosted mode flag: `JOBAGENT_PUBLIC_DEMO_MODE=true`
 
 [Deploy to Render](https://render.com/deploy?repo=https://github.com/yanxuantong/multi-agent-job-search-platform)
 
-The default hosted demo avoids managed Postgres so it can launch before adding billing details. In this mode, run state uses the local checkpoint store inside the web instance and should be treated as ephemeral. For a more production-like deployment, add a Render Postgres database and set `JOBAGENT_DATABASE_URL` to its private connection string; the app will automatically switch to the Postgres run store.
+The hosted product currently avoids managed Postgres so it can launch before adding billing details. In this mode, run state uses the local checkpoint store inside the web instance and should be treated as ephemeral. For a more production-like deployment, add a Render Postgres database and set `JOBAGENT_DATABASE_URL` to its private connection string; the app will automatically switch to the Postgres run store.
+
+## Production Safety
+
+The public service is intentionally constrained:
+
+- request bodies and job descriptions have explicit size limits
+- `/runs` has a lightweight per-client rate limit
+- run ids are validated before touching the checkpoint store
+- form submissions must use `application/x-www-form-urlencoded`
+- responses include baseline browser security headers: CSP, frame protection, no-sniff, referrer policy, and permissions policy
+- the default workflow does not call external LLM APIs, execute user-provided code, or fetch arbitrary job URLs
+
+These controls do not make the free hosted instance a high-availability SaaS. They are meant to keep the public product safe enough for portfolio traffic while preserving a clean upgrade path to auth, durable Postgres state, queue-backed workers, and stronger edge rate limiting.
 
 ## Architecture
 
@@ -114,7 +128,7 @@ Start with the core workflow:
 - [jobagent/graph/workflow.py](jobagent/graph/workflow.py): node wiring and resume behavior.
 - [jobagent/agents/](jobagent/agents): bounded agent responsibilities.
 - [jobagent/storage/checkpoint.py](jobagent/storage/checkpoint.py): local checkpoint/resume store.
-- [jobagent/web/app.py](jobagent/web/app.py): FastAPI production demo shell.
+- [jobagent/web/app.py](jobagent/web/app.py): FastAPI production web surface and safety controls.
 - [jobagent/web/store.py](jobagent/web/store.py): local or Postgres-backed web run store.
 - [jobagent/evals/runner.py](jobagent/evals/runner.py): offline eval harness.
 - [mcp_server/career_research_server.py](mcp_server/career_research_server.py): dependency-free MCP-shaped teaching stub.
@@ -144,9 +158,10 @@ The deeper explanation lives in the mega guide: [docs/project1_ai_infra_tutorial
 
 # 中文版本
 
-这是一个面向学习和作品集展示的 multi-agent job search platform。它不是只停留在 architecture diagram 上，而是已经部署成一个可以打开、可以提交 JD、可以看到 agent workflow 结果的 live demo。
+这是一个面向学习和作品集展示的 multi-agent job search product。它不是只停留在 architecture diagram 上，而是已经部署成一个可以打开、可以提交 JD、可以看到 agent workflow 结果的线上产品。
 
-**线上 demo:** [https://jobagent-demo.onrender.com](https://jobagent-demo.onrender.com)  
+**线上产品:** [https://jobagent-demo.onrender.com](https://jobagent-demo.onrender.com)
+
 **完整中文 mega guide:** [docs/project1_ai_infra_tutorial_zh.html](docs/project1_ai_infra_tutorial_zh.html)
 
 ## 这个项目在展示什么
@@ -156,7 +171,7 @@ The deeper explanation lives in the mega guide: [docs/project1_ai_infra_tutorial
 - 在 resume/application 输出前停下来，要求人工确认。
 - 确认后继续执行 tracker 和 interview prep。
 - 用本地 eval、trace、checkpoint 把 agent 系统变得可测试、可解释、可恢复。
-- 用 FastAPI + Docker + Render 包一层可以公开访问的 production-style demo。
+- 用 FastAPI + Docker + Render 包一层可以公开访问的 production-style product surface。
 
 ## 为什么它适合作为学习项目
 
@@ -186,7 +201,9 @@ uvicorn jobagent.web.app:app --reload
 
 ## 部署说明
 
-当前 Render demo 使用 free web plan，不默认创建 managed Postgres。这样可以先上线展示，不被 billing/payment info 卡住。缺点是 web instance 内的 run state 是 ephemeral，重启或重新部署后可能丢失。
+当前 Render product 使用 free web plan，不默认创建 managed Postgres。这样可以先上线展示，不被 billing/payment info 卡住。缺点是 web instance 内的 run state 是 ephemeral，重启或重新部署后可能丢失。
+
+公开服务已经加了几层基础安全限制：请求体和 JD 长度上限、`/runs` 简单限流、run id 格式校验、表单 content-type 限制、CSP/frame/no-sniff/referrer/permissions 等浏览器安全头。默认 workflow 不会执行用户代码，也不会拿用户输入去请求任意外部 URL。
 
 如果之后要更像 production，可以加 Render Postgres，然后设置：
 

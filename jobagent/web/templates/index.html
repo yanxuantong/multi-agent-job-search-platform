@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>JobAgent Demo</title>
+  <title>JobAgent Product</title>
   <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
   <header>
     <div class="wrap">
-      <div class="eyebrow">Production demo</div>
+      <div class="eyebrow">Production product</div>
       <h1>Multi-Agent Job Search Platform</h1>
       <p class="lead">Paste a job description, run the agent workflow, review the resume proposal, and approve the tracker/interview-prep continuation.</p>
     </div>
@@ -20,7 +20,7 @@
       <section class="panel">
         <div class="section-head">
           <h2>Start a run</h2>
-          {% if public_demo_mode %}<span class="pill info">public demo mode</span>{% endif %}
+          {% if public_demo_mode %}<span class="pill info">public hosted mode</span>{% endif %}
         </div>
         <form method="post" action="/runs">
           <label for="job_url">Job URL</label>
@@ -32,7 +32,7 @@
           <div class="row">
             <label class="row small" for="auto_approve">
               <input id="auto_approve" name="auto_approve" type="checkbox">
-              Auto-approve this demo run
+              Auto-approve this run
             </label>
             <button type="submit">Run workflow</button>
           </div>
@@ -41,7 +41,7 @@
 
       <aside class="stack">
         <section class="card">
-          <h2>What this demo shows</h2>
+          <h2>What this product shows</h2>
           <ul class="small">
             <li>Typed shared state across bounded agent nodes.</li>
             <li>Human approval before tracker side effects.</li>
