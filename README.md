@@ -1,22 +1,40 @@
 # Multi-Agent Job Search Platform
 
-Reference implementation for a multi-agent job-search platform.
+An agentic job-search demo you can actually click.
 
-This repo is intentionally a learning codebase first. It demonstrates the operating pattern behind a production agent system without requiring API keys or network access for the default mock workflow:
+This project is a learning-first reference implementation for a multi-agent job-search platform. It turns a job description into structured role signals, company research, fit analysis, resume-positioning suggestions, a human approval checkpoint, a tracker update, and interview prep.
 
-- supervisor-style graph orchestration
-- typed shared state
-- bounded agent nodes
-- human-in-the-loop stop reasons
-- local JSONL tracing
-- offline evals
-- application tracker write after approval
-- an MCP-shaped tool boundary
-- a minimal FastAPI web demo for production-style deployment
+The default path is intentionally deterministic and low-cost: no API keys, no hosted vector database, no fragile external calls. The point is to make the core production pattern visible before swapping in LangGraph, LLM providers, MCP tools, Langfuse, Postgres, or pgvector.
 
-The canonical learning guide lives in [docs/project1_ai_infra_tutorial_zh.html](docs/project1_ai_infra_tutorial_zh.html).
+**Live demo:** [https://jobagent-demo.onrender.com](https://jobagent-demo.onrender.com)  
+**Canonical learning guide:** [docs/project1_ai_infra_tutorial_zh.html](docs/project1_ai_infra_tutorial_zh.html)
 
-That single HTML guide consolidates the previous technical design, usage guide, learning guide, architecture notes, and Project 1 AI infra tutorial. It explains how this zero-cost reference implementation maps to the original LangGraph, MCP, Langfuse, pgvector, eval, and deployment plan, including what is implemented now, what remains missing, and which next steps may require paid APIs or hosted accounts.
+## Product Snapshot
+
+![Start a live job-agent run](docs/assets/readme/demo-home.png)
+
+The web demo is deliberately small, but it shows the end-to-end operating loop:
+
+1. Paste a job description.
+2. Let bounded agent nodes analyze the role.
+3. Pause before application-facing output becomes final.
+4. Approve the resume proposal.
+5. Continue into tracker and interview-prep outputs.
+
+![Human approval gate](docs/assets/readme/demo-review.png)
+
+![Completed run after approval](docs/assets/readme/demo-complete.png)
+
+## What It Demonstrates
+
+- **Supervisor-style orchestration:** a small graph engine coordinates bounded agent nodes.
+- **Typed shared state:** all agents read/write a single `JobSearchState` model.
+- **Human-in-the-loop control:** resume/application outputs stop at `NEED_USER_APPROVAL`.
+- **Checkpoint and resume:** paused runs can continue after approval.
+- **Offline evaluation:** deterministic eval cases protect the workflow from drift.
+- **Traceability:** every run can write local JSONL traces.
+- **Production shell:** FastAPI/Jinja UI, Dockerfile, Render deployment, and optional Postgres store.
+- **Learning bridge:** local teaching code maps cleanly to LangGraph, MCP, Langfuse, pgvector, and hosted LLM providers.
 
 ## Quickstart
 
@@ -44,64 +62,31 @@ Run offline evals:
 python3 -m jobagent.cli eval
 ```
 
-The sample suite contains 15 cases and reports both single-turn extraction evals and full trajectory evals.
-
 Run tests:
 
 ```bash
 python3 -m unittest discover -s tests
 ```
 
-Inspect the optional production-stack learning paths:
-
-```bash
-python3 -m jobagent.cli integrations
-```
-
-Run the minimal web demo locally:
+Run the web demo locally:
 
 ```bash
 uvicorn jobagent.web.app:app --reload
 ```
 
-Open <http://localhost:8000>, paste a job description, and approve the paused run from the result page.
-
-Local runtime artifacts are written under `.jobagent/` and ignored by git:
-
-- `.jobagent/checkpoints/<run_id>.json`
-- `.jobagent/runs/<run_id>/trace.jsonl`
-- `.jobagent/applications.jsonl`
-
-When `JOBAGENT_DATABASE_URL` or `DATABASE_URL` is set, the web demo stores run state in Postgres instead of relying only on local checkpoint files.
+Then open <http://localhost:8000>.
 
 ## Render Deployment
 
-This repo includes a Render Blueprint at [render.yaml](render.yaml). The Blueprint provisions:
+This repo includes a Render Blueprint at [render.yaml](render.yaml). The default hosted demo deploys one Docker web service on Render's free web plan:
 
-- `jobagent-demo`: Docker web service running `uvicorn jobagent.web.app:app` on Render's free web plan
-
-Deploy from Render by creating a new Blueprint from this GitHub repository. Render reads `render.yaml`, builds the Docker image, and checks `/healthz`.
+- `jobagent-demo`: runs `uvicorn jobagent.web.app:app`
+- health check: `/healthz`
+- public demo flag: `JOBAGENT_PUBLIC_DEMO_MODE=true`
 
 [Deploy to Render](https://render.com/deploy?repo=https://github.com/yanxuantong/multi-agent-job-search-platform)
 
-Live demo: [https://jobagent-demo.onrender.com](https://jobagent-demo.onrender.com)
-
-The default hosted demo intentionally avoids managed Postgres so it can be launched before adding Render billing details. In that mode, run state uses the local checkpoint store inside the web instance and should be treated as ephemeral. For a more production-like deployment, add a Render Postgres database and set `JOBAGENT_DATABASE_URL` to its private connection string; the app will automatically switch to the Postgres run store.
-
-## How To Read The Code
-
-Start here:
-
-- [jobagent/models.py](jobagent/models.py): shared state, artifacts, and `StopReason`.
-- [jobagent/graph/engine.py](jobagent/graph/engine.py): small graph runner that mirrors the LangGraph mental model.
-- [jobagent/graph/workflow.py](jobagent/graph/workflow.py): node wiring.
-- [jobagent/agents/](jobagent/agents): bounded agent responsibilities.
-- [jobagent/storage/checkpoint.py](jobagent/storage/checkpoint.py): local checkpoint/resume store for HITL.
-- [jobagent/llm/provider.py](jobagent/llm/provider.py): provider interface for future Anthropic/OpenAI adapters.
-- [jobagent/prompts/registry.py](jobagent/prompts/registry.py): prompt version registry.
-- [jobagent/evals/runner.py](jobagent/evals/runner.py): offline eval harness.
-- [jobagent/observability/tracer.py](jobagent/observability/tracer.py): local JSONL trace sink.
-- [mcp_server/career_research_server.py](mcp_server/career_research_server.py): dependency-free MCP-shaped teaching stub.
+The default hosted demo avoids managed Postgres so it can launch before adding billing details. In this mode, run state uses the local checkpoint store inside the web instance and should be treated as ephemeral. For a more production-like deployment, add a Render Postgres database and set `JOBAGENT_DATABASE_URL` to its private connection string; the app will automatically switch to the Postgres run store.
 
 ## Architecture
 
@@ -114,35 +99,33 @@ flowchart TD
   E --> F["resume_tailor"]
   F -->|not approved| G["NEED_USER_APPROVAL"]
   G --> K["checkpoint"]
-  K -->|resume approve| H
-  F -->|approved| H["tracker"]
+  K -->|resume approve| H["tracker"]
+  F -->|approved| H
   H --> I["interview_prep"]
   I --> J["COMPLETED"]
 ```
 
-## Why The Code Uses No External Dependencies Yet
+## How To Read The Code
 
-The first teaching milestone should always run. This version uses standard-library Python to make the core agent architecture visible:
+Start with the core workflow:
 
-- graph state instead of hidden framework state
-- clear node boundaries
-- explicit stop reasons
-- checkpoint/resume before and after human approval
-- provider and prompt boundaries
-- testable deterministic behavior
-- trace files you can inspect directly
+- [jobagent/models.py](jobagent/models.py): shared state, artifacts, and `StopReason`.
+- [jobagent/graph/engine.py](jobagent/graph/engine.py): small graph runner that mirrors the LangGraph mental model.
+- [jobagent/graph/workflow.py](jobagent/graph/workflow.py): node wiring and resume behavior.
+- [jobagent/agents/](jobagent/agents): bounded agent responsibilities.
+- [jobagent/storage/checkpoint.py](jobagent/storage/checkpoint.py): local checkpoint/resume store.
+- [jobagent/web/app.py](jobagent/web/app.py): FastAPI production demo shell.
+- [jobagent/web/store.py](jobagent/web/store.py): local or Postgres-backed web run store.
+- [jobagent/evals/runner.py](jobagent/evals/runner.py): offline eval harness.
+- [mcp_server/career_research_server.py](mcp_server/career_research_server.py): dependency-free MCP-shaped teaching stub.
 
-The intended production migration is:
+Local runtime artifacts are written under `.jobagent/` and ignored by git:
 
-- replace `GraphEngine` with LangGraph `StateGraph`
-- replace local JSONL tracing with Langfuse/OpenTelemetry callbacks
-- replace heuristic nodes with Anthropic/OpenAI structured-output calls
-- replace JSONL tracker with Postgres plus optional Notion/Google Sheets MCP
-- replace the teaching MCP stub with the official MCP Python SDK
+- `.jobagent/checkpoints/<run_id>.json`
+- `.jobagent/runs/<run_id>/trace.jsonl`
+- `.jobagent/applications.jsonl`
 
 ## Optional Production-Stack Learning Paths
-
-The default path stays zero-cost and dependency-free. The original Project 1 stack is represented through optional extras and code entrypoints:
 
 | Stack item | Code entrypoint | Install hint | Cost note |
 | --- | --- | --- | --- |
@@ -151,20 +134,64 @@ The default path stays zero-cost and dependency-free. The original Project 1 sta
 | Claude/OpenAI SDKs | `jobagent/llm/anthropic_provider.py`, `jobagent/llm/openai_provider.py` | `python3 -m pip install -e '.[llm]'` | API usage is usually billed per token. |
 | Langfuse | `jobagent/observability/langfuse_exporter.py` | `python3 -m pip install -e '.[observability]'` | Self-host can be free; hosted tiers may be paid. |
 | Postgres/pgvector | `jobagent/storage/postgres_memory.py`, `docker-compose.yml` | `docker compose up postgres -d` | Local Docker is free; managed databases are paid. |
-| External MCP consumer | `jobagent/integrations/external_mcp_tracker.py` | Connect after choosing Notion or Sheets MCP credentials | Local payload construction is free; workspace features may cost money. |
+| External MCP consumer | `jobagent/integrations/external_mcp_tracker.py` | Connect after choosing Notion or Sheets MCP credentials | Workspace features may cost money. |
 | MCP SDK server | `mcp_server/career_research_sdk_server.py` | `python3 -m pip install -e '.[mcp]'` | SDK is free; connected tools may have API costs. |
 | Docker | `Dockerfile`, `docker-compose.yml` | `docker compose run --rm app` | Local Docker is free; cloud deploy may require billing. |
 
-## Example Output Shape
+The deeper explanation lives in the mega guide: [docs/project1_ai_infra_tutorial_zh.html](docs/project1_ai_infra_tutorial_zh.html).
 
-The demo prints:
+---
 
-- run id
-- stop reason
-- company and role
-- fit score
-- resume proposal
-- optional tracker update and interview pack
-- trace path
+# 中文版本
 
-When `--auto-approve` is omitted, the workflow stops at `NEED_USER_APPROVAL`. That is deliberate: resume/application material should not become final without human review.
+这是一个面向学习和作品集展示的 multi-agent job search platform。它不是只停留在 architecture diagram 上，而是已经部署成一个可以打开、可以提交 JD、可以看到 agent workflow 结果的 live demo。
+
+**线上 demo:** [https://jobagent-demo.onrender.com](https://jobagent-demo.onrender.com)  
+**完整中文 mega guide:** [docs/project1_ai_infra_tutorial_zh.html](docs/project1_ai_infra_tutorial_zh.html)
+
+## 这个项目在展示什么
+
+- 把 JD 文本变成结构化职位信息。
+- 用多个 bounded agents 做 company research、fit analysis、resume tailoring、tracker update、interview prep。
+- 在 resume/application 输出前停下来，要求人工确认。
+- 确认后继续执行 tracker 和 interview prep。
+- 用本地 eval、trace、checkpoint 把 agent 系统变得可测试、可解释、可恢复。
+- 用 FastAPI + Docker + Render 包一层可以公开访问的 production-style demo。
+
+## 为什么它适合作为学习项目
+
+默认实现不依赖 OpenAI/Anthropic key，也不需要先买数据库。你可以先看清楚 agent system 的骨架：
+
+- graph orchestration
+- typed shared state
+- HITL approval gate
+- checkpoint/resume
+- eval harness
+- JSONL tracing
+- MCP-shaped tool boundary
+
+等这些理解清楚之后，再逐步替换成更接近真实生产的组件：LangGraph、LLM providers、Langfuse、Postgres/pgvector、Notion/Sheets MCP。
+
+## 本地运行
+
+```bash
+python3 -m jobagent.cli demo
+python3 -m jobagent.cli resume <run_id> --approve
+python3 -m jobagent.cli eval
+python3 -m unittest discover -s tests
+uvicorn jobagent.web.app:app --reload
+```
+
+然后打开 <http://localhost:8000>。
+
+## 部署说明
+
+当前 Render demo 使用 free web plan，不默认创建 managed Postgres。这样可以先上线展示，不被 billing/payment info 卡住。缺点是 web instance 内的 run state 是 ephemeral，重启或重新部署后可能丢失。
+
+如果之后要更像 production，可以加 Render Postgres，然后设置：
+
+```bash
+JOBAGENT_DATABASE_URL=<render-private-postgres-url>
+```
+
+应用会自动从本地 checkpoint store 切换到 Postgres run store。
