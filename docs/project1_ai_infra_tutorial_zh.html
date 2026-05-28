@@ -389,7 +389,7 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
       <pre><code>uvicorn jobagent.web.app:app --reload</code></pre>
       <p>
         打开 <code>http://localhost:8000</code> 后，你会看到一个很轻的操作界面：粘贴 JD、启动 run、查看 fit/resume proposal、
-        点击 approve 继续 tracker 和 interview prep。它不是完整 SaaS UI，而是一个可以部署到 production 平台的 portfolio demo。
+        点击 approve 继续 tracker 和 interview prep。它不是完整 SaaS UI，而是一个可以部署到 production 平台的 portfolio product surface。
       </p>
 
       <h3>Render Blueprint deploy</h3>
@@ -400,24 +400,31 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
 </code></pre>
       <p>
         默认 <code>render.yaml</code> 不创建 managed Postgres，因为当前 workspace 在 paid web/database plan 上需要先补 payment info。
-        这版先部署一个可公开访问、可操作的 free demo；run state 使用实例内的本地 checkpoint store，应该视为 ephemeral。
+        这版先部署一个可公开访问、可操作的 free product surface；run state 使用实例内的本地 checkpoint store，应该视为 ephemeral。
         如果之后要更接近 production，再添加 Render Postgres，并把 private connection string 设置为 <code>JOBAGENT_DATABASE_URL</code>；
-        Web demo 检测到这个环境变量后会自动切到 Postgres run store。
+        Web product 检测到这个环境变量后会自动切到 Postgres run store。
         也可以从 README 里的 <code>Deploy to Render</code> 链接进入 Render Blueprint 创建流程。
-        当前 live demo 已发布在 <a href="https://jobagent-demo.onrender.com">https://jobagent-demo.onrender.com</a>。
+        当前 live product 已发布在 <a href="https://jobagent-demo.onrender.com">https://jobagent-demo.onrender.com</a>。
       </p>
+
+      <div class="callout">
+        <strong>Production safety baseline：</strong>公网服务已经限制 request body 和 JD 长度，对 <code>POST /runs</code> 做轻量 per-client rate limit，
+        在读取 checkpoint 前校验 run id 格式，只接受 <code>application/x-www-form-urlencoded</code> 表单，并返回 CSP、HSTS、frame protection、
+        no-sniff、referrer policy、permissions policy 等浏览器安全头。默认 workflow 不调用外部 LLM API、不执行用户代码，也不会用用户输入去 fetch 任意外部 URL。
+        这让它适合 portfolio/public traffic；如果要升级成真实 SaaS，还应该加 auth、edge rate limiting、queue worker、durable Postgres 和更完整的 abuse monitoring。
+      </div>
 
       <table>
         <thead>
           <tr><th>运行结果</th><th>你应该看到什么</th><th>说明</th></tr>
         </thead>
         <tbody>
-          <tr><td>默认单测</td><td><code>14 tests OK, skipped=4</code></td><td>4 个 optional integration 测试在无 extras 时跳过，这是预期行为。</td></tr>
-          <tr><td>全依赖单测</td><td><code>14 tests OK</code></td><td>安装 <code>.[all]</code> 且提供 Postgres 后，optional tests 全部执行。</td></tr>
+          <tr><td>默认单测</td><td><code>部分 optional tests skipped</code></td><td>没有安装 web/LLM/Postgres extras 时，相关测试会跳过，这是预期行为。</td></tr>
+          <tr><td>全依赖单测</td><td><code>21 tests OK, skipped=1</code></td><td>安装 <code>.[all]</code> 后，web security、workflow、eval 和 optional integration 覆盖会执行；Postgres 仍可按环境跳过。</td></tr>
           <tr><td>Eval</td><td><code>15/15 passed</code></td><td>覆盖 10 条 trajectory eval 和 5 条 single-turn JD extraction eval。</td></tr>
           <tr><td>Demo</td><td><code>COMPLETED</code> 或 <code>NEED_USER_APPROVAL</code></td><td>取决于是否传入 <code>--auto-approve</code>。</td></tr>
           <tr><td>Web health</td><td><code>GET /healthz -&gt; {"status":"ok"}</code></td><td>Render 用它判断服务是否启动成功。</td></tr>
-          <tr><td>Render live smoke</td><td><code>POST /runs -&gt; 303 /runs/&lt;id&gt;</code></td><td>公网 demo 已验证首页、health check、run 创建和 detail page。</td></tr>
+          <tr><td>Render live smoke</td><td><code>GET /</code>, <code>POST /runs</code>, security headers</td><td>公网 product 已验证首页、health check、run 创建、detail page 和安全响应头。</td></tr>
         </tbody>
       </table>
     </section>
@@ -494,7 +501,7 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
   -&gt; interview_prep
   -&gt; COMPLETED</code></pre>
 
-      <h3>Production demo 外壳</h3>
+      <h3>Production product 外壳</h3>
       <pre><code>Browser
   -&gt; FastAPI / Jinja minimal UI
   -&gt; existing jobagent graph workflow
@@ -591,7 +598,7 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
             <td>semantic memory、episodic memory、JSONB metadata、vector search。</td>
           </tr>
           <tr>
-            <td>FastAPI production demo</td>
+            <td>FastAPI production product surface</td>
             <td><span class="badge done">已实现</span></td>
             <td><code>jobagent/web/app.py</code>, <code>jobagent/web/templates/</code>, <code>jobagent/web/store.py</code></td>
             <td>把 CLI/agent workflow 包成可公开访问的极简 UI，同时保留 HITL approve/resume。</td>
@@ -705,7 +712,7 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
         </thead>
         <tbody>
           <tr>
-            <td>0. Production demo shell</td>
+            <td>0. Production product shell</td>
             <td>先有一个能公开打开的最小 UI</td>
             <td>FastAPI/Jinja form、run detail page、approve button、Render Blueprint、Postgres run store。</td>
             <td>Render 上可访问首页和 <code>/healthz</code>，本地 Web smoke 通过。</td>
