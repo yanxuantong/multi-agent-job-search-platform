@@ -1,108 +1,108 @@
 # Multi-Agent Job Search Platform
 
-An agentic job-search product you can actually use.
+[English version](README.en.md)
 
-This project is a learning-first reference implementation for a multi-agent job-search platform. It turns a job description into structured role signals, company research, fit analysis, resume-positioning suggestions, a human approval checkpoint, a tracker update, and interview prep.
+这是一个可以直接使用的 agentic job-search product。它面向学习和作品集展示，但不是只停留在 architecture diagram 上，而是已经部署成一个可以打开、可以提交 JD、可以看到 agent workflow 结果的线上产品。
 
-The default path is intentionally deterministic and low-cost: no API keys, no hosted vector database, no fragile external calls. The point is to make the core production pattern visible before swapping in LangGraph, LLM providers, MCP tools, Langfuse, Postgres, or pgvector.
+默认路径刻意保持 deterministic 和 low-cost：不需要 API key，不需要托管向量数据库，也不依赖脆弱的外部调用。先把 multi-agent production pattern 看清楚，再逐步替换成 LangGraph、LLM providers、MCP tools、Langfuse、Postgres 或 pgvector。
 
-**Live product:** [https://jobagent-demo.onrender.com](https://jobagent-demo.onrender.com)
+**线上产品:** [https://jobagent-demo.onrender.com](https://jobagent-demo.onrender.com)
 
-**Canonical learning guide:** [docs/project1_ai_infra_tutorial_zh.html](docs/project1_ai_infra_tutorial_zh.html)
+**完整中文 mega guide:** [docs/project1_ai_infra_tutorial_zh.html](docs/project1_ai_infra_tutorial_zh.html)
 
-## Product Snapshot
+## 产品截图
 
 ![Start a live job-agent run](docs/assets/readme/demo-home.png)
 
-The hosted product is intentionally focused, and it shows the end-to-end operating loop:
+这个 hosted product 有意保持聚焦，但覆盖了完整的操作闭环：
 
-1. Paste a job description.
-2. Let bounded agent nodes analyze the role.
-3. Pause before application-facing output becomes final.
-4. Approve the resume proposal.
-5. Continue into tracker and interview-prep outputs.
+1. 粘贴职位描述。
+2. 让 bounded agent nodes 分析职位。
+3. 在 application-facing 输出最终生效前暂停。
+4. 人工确认 resume proposal。
+5. 继续生成 tracker 和 interview-prep 输出。
 
 ![Human approval gate](docs/assets/readme/demo-review.png)
 
 ![Completed run after approval](docs/assets/readme/demo-complete.png)
 
-## What It Demonstrates
+## 这个项目在展示什么
 
-- **Supervisor-style orchestration:** a small graph engine coordinates bounded agent nodes.
-- **Typed shared state:** all agents read/write a single `JobSearchState` model.
-- **Human-in-the-loop control:** resume/application outputs stop at `NEED_USER_APPROVAL`.
-- **Checkpoint and resume:** paused runs can continue after approval.
-- **Offline evaluation:** deterministic eval cases protect the workflow from drift.
-- **Traceability:** every run can write local JSONL traces.
-- **Production surface:** FastAPI/Jinja UI, Dockerfile, Render deployment, safety limits, and optional Postgres store.
-- **Learning bridge:** local teaching code maps cleanly to LangGraph, MCP, Langfuse, pgvector, and hosted LLM providers.
+- **Supervisor-style orchestration:** 一个小型 graph engine 协调多个 bounded agent nodes。
+- **Typed shared state:** 所有 agents 读写同一个 `JobSearchState` model。
+- **Human-in-the-loop control:** resume/application 输出会停在 `NEED_USER_APPROVAL`。
+- **Checkpoint and resume:** 暂停后的 run 可以在人工确认后继续。
+- **Offline evaluation:** deterministic eval cases 用来保护 workflow，避免 agent 行为漂移。
+- **Traceability:** 每次 run 都可以写出本地 JSONL traces。
+- **Production surface:** FastAPI/Jinja UI、Dockerfile、Render deployment、安全限制，以及 optional Postgres store。
+- **Learning bridge:** 本地教学代码可以映射到 LangGraph、MCP、Langfuse、pgvector 和 hosted LLM providers。
 
-## Quickstart
+## 本地运行
 
-Run the workflow until the resume proposal approval gate:
+运行 workflow，并停在 resume proposal 的人工确认点：
 
 ```bash
 python3 -m jobagent.cli demo
 ```
 
-Resume a paused run after reviewing the generated proposal:
+确认 proposal 后继续一个 paused run：
 
 ```bash
 python3 -m jobagent.cli resume <run_id> --approve
 ```
 
-Run the full workflow and write a local tracker event:
+运行完整 workflow，并写入本地 tracker event：
 
 ```bash
 python3 -m jobagent.cli demo --auto-approve
 ```
 
-Run offline evals:
+运行 offline evals：
 
 ```bash
 python3 -m jobagent.cli eval
 ```
 
-Run tests:
+运行测试：
 
 ```bash
 python3 -m unittest discover -s tests
 ```
 
-Run the web product locally:
+本地启动 web product：
 
 ```bash
 uvicorn jobagent.web.app:app --reload
 ```
 
-Then open <http://localhost:8000>.
+然后打开 <http://localhost:8000>。
 
-## Render Deployment
+## Render 部署
 
-This repo includes a Render Blueprint at [render.yaml](render.yaml). The hosted product deploys one Docker web service on Render's free web plan:
+这个 repo 包含 Render Blueprint：[render.yaml](render.yaml)。当前 hosted product 在 Render free web plan 上部署一个 Docker web service：
 
-- `jobagent-demo`: runs `uvicorn jobagent.web.app:app`
+- `jobagent-demo`: 运行 `uvicorn jobagent.web.app:app`
 - health check: `/healthz`
 - public hosted mode flag: `JOBAGENT_PUBLIC_DEMO_MODE=true`
 
 [Deploy to Render](https://render.com/deploy?repo=https://github.com/yanxuantong/multi-agent-job-search-platform)
 
-The hosted product currently avoids managed Postgres so it can launch before adding billing details. In this mode, run state uses the local checkpoint store inside the web instance and should be treated as ephemeral. For a more production-like deployment, add a Render Postgres database and set `JOBAGENT_DATABASE_URL` to its private connection string; the app will automatically switch to the Postgres run store.
+当前 Render product 不默认创建 managed Postgres，这样可以先上线展示，不被 billing/payment info 卡住。在这个模式下，run state 使用 web instance 内的 local checkpoint store，应该视为 ephemeral。之后如果要更接近 production，可以添加 Render Postgres，并把 `JOBAGENT_DATABASE_URL` 设置成 private connection string；app 会自动切换到 Postgres run store。
 
 ## Production Safety
 
-The public service is intentionally constrained:
+公开服务已经做了基础限制：
 
-- request bodies and job descriptions have explicit size limits
-- `/runs` has a lightweight per-client rate limit
-- run ids are validated before touching the checkpoint store
-- form submissions must use `application/x-www-form-urlencoded`
-- responses include baseline browser security headers: CSP, frame protection, no-sniff, referrer policy, and permissions policy
-- the default workflow does not call external LLM APIs, execute user-provided code, or fetch arbitrary job URLs
+- request body 和 job description 有明确大小上限
+- `/runs` 有轻量 per-client rate limit
+- run id 在读取 checkpoint store 前会先做格式校验
+- form submission 只接受 `application/x-www-form-urlencoded`
+- response 包含基础浏览器安全头：CSP、frame protection、no-sniff、referrer policy、permissions policy
+- 默认 workflow 不调用外部 LLM API，不执行用户代码，也不会 fetch 任意 job URL
 
-These controls do not make the free hosted instance a high-availability SaaS. They are meant to keep the public product safe enough for portfolio traffic while preserving a clean upgrade path to auth, durable Postgres state, queue-backed workers, and stronger edge rate limiting.
+这些控制并不意味着 free hosted instance 已经是 high-availability SaaS。它现在适合 portfolio/public traffic，同时保留清晰升级路径：auth、durable Postgres state、queue-backed workers、edge rate limiting 和 abuse monitoring。
 
-## Architecture
+## 架构
 
 ```mermaid
 flowchart TD
@@ -119,21 +119,21 @@ flowchart TD
   I --> J["COMPLETED"]
 ```
 
-## How To Read The Code
+## 怎么读代码
 
-Start with the core workflow:
+建议从 core workflow 开始：
 
-- [jobagent/models.py](jobagent/models.py): shared state, artifacts, and `StopReason`.
-- [jobagent/graph/engine.py](jobagent/graph/engine.py): small graph runner that mirrors the LangGraph mental model.
-- [jobagent/graph/workflow.py](jobagent/graph/workflow.py): node wiring and resume behavior.
-- [jobagent/agents/](jobagent/agents): bounded agent responsibilities.
-- [jobagent/storage/checkpoint.py](jobagent/storage/checkpoint.py): local checkpoint/resume store.
-- [jobagent/web/app.py](jobagent/web/app.py): FastAPI production web surface and safety controls.
-- [jobagent/web/store.py](jobagent/web/store.py): local or Postgres-backed web run store.
-- [jobagent/evals/runner.py](jobagent/evals/runner.py): offline eval harness.
-- [mcp_server/career_research_server.py](mcp_server/career_research_server.py): dependency-free MCP-shaped teaching stub.
+- [jobagent/models.py](jobagent/models.py): shared state、artifacts 和 `StopReason`。
+- [jobagent/graph/engine.py](jobagent/graph/engine.py): 小型 graph runner，对应 LangGraph 的 mental model。
+- [jobagent/graph/workflow.py](jobagent/graph/workflow.py): node wiring 和 resume behavior。
+- [jobagent/agents/](jobagent/agents): bounded agent responsibilities。
+- [jobagent/storage/checkpoint.py](jobagent/storage/checkpoint.py): local checkpoint/resume store。
+- [jobagent/web/app.py](jobagent/web/app.py): FastAPI production web surface 和安全控制。
+- [jobagent/web/store.py](jobagent/web/store.py): local 或 Postgres-backed web run store。
+- [jobagent/evals/runner.py](jobagent/evals/runner.py): offline eval harness。
+- [mcp_server/career_research_server.py](mcp_server/career_research_server.py): dependency-free MCP-shaped teaching stub。
 
-Local runtime artifacts are written under `.jobagent/` and ignored by git:
+本地 runtime artifacts 会写到 `.jobagent/`，并被 git ignore：
 
 - `.jobagent/checkpoints/<run_id>.json`
 - `.jobagent/runs/<run_id>/trace.jsonl`
@@ -143,72 +143,13 @@ Local runtime artifacts are written under `.jobagent/` and ignored by git:
 
 | Stack item | Code entrypoint | Install hint | Cost note |
 | --- | --- | --- | --- |
-| Local RAG | `jobagent/retrieval/local_rag.py` | Built in | Local keyword retrieval is free; hosted embeddings/rerankers may cost money. |
-| LangGraph | `jobagent/graph/langgraph_reference.py` | `python3 -m pip install -e '.[langgraph]'` | Local library is free; production checkpointers may need Postgres. |
-| Claude/OpenAI SDKs | `jobagent/llm/anthropic_provider.py`, `jobagent/llm/openai_provider.py` | `python3 -m pip install -e '.[llm]'` | API usage is usually billed per token. |
-| Langfuse | `jobagent/observability/langfuse_exporter.py` | `python3 -m pip install -e '.[observability]'` | Self-host can be free; hosted tiers may be paid. |
-| Postgres/pgvector | `jobagent/storage/postgres_memory.py`, `docker-compose.yml` | `docker compose up postgres -d` | Local Docker is free; managed databases are paid. |
-| External MCP consumer | `jobagent/integrations/external_mcp_tracker.py` | Connect after choosing Notion or Sheets MCP credentials | Workspace features may cost money. |
-| MCP SDK server | `mcp_server/career_research_sdk_server.py` | `python3 -m pip install -e '.[mcp]'` | SDK is free; connected tools may have API costs. |
-| Docker | `Dockerfile`, `docker-compose.yml` | `docker compose run --rm app` | Local Docker is free; cloud deploy may require billing. |
+| Local RAG | `jobagent/retrieval/local_rag.py` | Built in | Local keyword retrieval 免费；hosted embeddings/rerankers 可能收费。 |
+| LangGraph | `jobagent/graph/langgraph_reference.py` | `python3 -m pip install -e '.[langgraph]'` | Local library 免费；production checkpointers 可能需要 Postgres。 |
+| Claude/OpenAI SDKs | `jobagent/llm/anthropic_provider.py`, `jobagent/llm/openai_provider.py` | `python3 -m pip install -e '.[llm]'` | API usage 通常按 token 计费。 |
+| Langfuse | `jobagent/observability/langfuse_exporter.py` | `python3 -m pip install -e '.[observability]'` | Self-host 可以免费；hosted tiers 可能收费。 |
+| Postgres/pgvector | `jobagent/storage/postgres_memory.py`, `docker-compose.yml` | `docker compose up postgres -d` | Local Docker 免费；managed databases 收费。 |
+| External MCP consumer | `jobagent/integrations/external_mcp_tracker.py` | 选择 Notion 或 Sheets MCP credentials 后连接 | Workspace features 可能收费。 |
+| MCP SDK server | `mcp_server/career_research_sdk_server.py` | `python3 -m pip install -e '.[mcp]'` | SDK 免费；connected tools 可能有 API costs。 |
+| Docker | `Dockerfile`, `docker-compose.yml` | `docker compose run --rm app` | Local Docker 免费；cloud deploy 可能需要 billing。 |
 
-The deeper explanation lives in the mega guide: [docs/project1_ai_infra_tutorial_zh.html](docs/project1_ai_infra_tutorial_zh.html).
-
----
-
-# 中文版本
-
-这是一个面向学习和作品集展示的 multi-agent job search product。它不是只停留在 architecture diagram 上，而是已经部署成一个可以打开、可以提交 JD、可以看到 agent workflow 结果的线上产品。
-
-**线上产品:** [https://jobagent-demo.onrender.com](https://jobagent-demo.onrender.com)
-
-**完整中文 mega guide:** [docs/project1_ai_infra_tutorial_zh.html](docs/project1_ai_infra_tutorial_zh.html)
-
-## 这个项目在展示什么
-
-- 把 JD 文本变成结构化职位信息。
-- 用多个 bounded agents 做 company research、fit analysis、resume tailoring、tracker update、interview prep。
-- 在 resume/application 输出前停下来，要求人工确认。
-- 确认后继续执行 tracker 和 interview prep。
-- 用本地 eval、trace、checkpoint 把 agent 系统变得可测试、可解释、可恢复。
-- 用 FastAPI + Docker + Render 包一层可以公开访问的 production-style product surface。
-
-## 为什么它适合作为学习项目
-
-默认实现不依赖 OpenAI/Anthropic key，也不需要先买数据库。你可以先看清楚 agent system 的骨架：
-
-- graph orchestration
-- typed shared state
-- HITL approval gate
-- checkpoint/resume
-- eval harness
-- JSONL tracing
-- MCP-shaped tool boundary
-
-等这些理解清楚之后，再逐步替换成更接近真实生产的组件：LangGraph、LLM providers、Langfuse、Postgres/pgvector、Notion/Sheets MCP。
-
-## 本地运行
-
-```bash
-python3 -m jobagent.cli demo
-python3 -m jobagent.cli resume <run_id> --approve
-python3 -m jobagent.cli eval
-python3 -m unittest discover -s tests
-uvicorn jobagent.web.app:app --reload
-```
-
-然后打开 <http://localhost:8000>。
-
-## 部署说明
-
-当前 Render product 使用 free web plan，不默认创建 managed Postgres。这样可以先上线展示，不被 billing/payment info 卡住。缺点是 web instance 内的 run state 是 ephemeral，重启或重新部署后可能丢失。
-
-公开服务已经加了几层基础安全限制：请求体和 JD 长度上限、`/runs` 简单限流、run id 格式校验、表单 content-type 限制、CSP/frame/no-sniff/referrer/permissions 等浏览器安全头。默认 workflow 不会执行用户代码，也不会拿用户输入去请求任意外部 URL。
-
-如果之后要更像 production，可以加 Render Postgres，然后设置：
-
-```bash
-JOBAGENT_DATABASE_URL=<render-private-postgres-url>
-```
-
-应用会自动从本地 checkpoint store 切换到 Postgres run store。
+更完整的技术解释在中文 mega guide：[docs/project1_ai_infra_tutorial_zh.html](docs/project1_ai_infra_tutorial_zh.html)。
