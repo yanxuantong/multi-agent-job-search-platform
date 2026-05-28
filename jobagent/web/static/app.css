@@ -39,7 +39,7 @@ a { color: var(--blue); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
 .wrap {
-  width: min(1180px, calc(100vw - 32px));
+  width: min(1440px, calc(100vw - 32px));
   max-width: calc(100vw - 32px);
   margin: 0 auto;
 }
@@ -99,7 +99,6 @@ a:hover { text-decoration: underline; }
   grid-template-columns: minmax(0, 1.1fr) minmax(340px, .9fr);
   gap: 28px;
   align-items: stretch;
-  width: 100%;
   min-width: 0;
   padding: 34px 0 36px;
 }
