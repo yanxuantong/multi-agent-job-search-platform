@@ -94,12 +94,16 @@ def create_app(store: RunStore | None = None) -> FastAPI:
     def index(request: Request) -> HTMLResponse:
         sample_text = DEFAULT_JOB_FILE.read_text(encoding="utf-8") if DEFAULT_JOB_FILE.exists() else ""
         runs = app.state.run_store.list_recent()
+        run_summaries = [_run_summary(run) for run in runs]
         return templates.TemplateResponse(
             request,
             "index.html",
             {
                 "sample_text": sample_text,
-                "runs": [_run_summary(run) for run in runs],
+                "runs": run_summaries,
+                "stats": _run_stats(run_summaries),
+                "workflow_steps": _workflow_steps(),
+                "agent_cards": _agent_cards(),
                 "public_demo_mode": _public_demo_mode(),
             },
         )
@@ -132,6 +136,7 @@ def create_app(store: RunStore | None = None) -> FastAPI:
                 "state": state,
                 "summary": _run_summary(state),
                 "scores": _score_rows(state),
+                "run_steps": _run_steps(state),
                 "can_approve": state.stop_reason == StopReason.NEED_USER_APPROVAL and bool(state.pending_node),
                 "public_demo_mode": _public_demo_mode(),
             },
@@ -231,6 +236,65 @@ def _score_rows(state: JobSearchState) -> list[tuple[str, int]]:
         ("Logistics match", state.fit_analysis.logistics_match),
         ("Narrative strength", state.fit_analysis.narrative_strength),
         ("Expected ROI", state.fit_analysis.expected_roi),
+    ]
+
+
+def _run_stats(runs: list[dict[str, object]]) -> dict[str, int]:
+    completed = sum(1 for run in runs if run["stop_reason"] == StopReason.COMPLETED.value)
+    awaiting = sum(1 for run in runs if run["stop_reason"] == StopReason.NEED_USER_APPROVAL.value)
+    return {
+        "total": len(runs),
+        "completed": completed,
+        "awaiting": awaiting,
+        "agents": len(_agent_cards()),
+    }
+
+
+def _workflow_steps() -> list[dict[str, str]]:
+    return [
+        {"name": "Ingest", "label": "JD intake"},
+        {"name": "Extract", "label": "role signals"},
+        {"name": "Research", "label": "company brief"},
+        {"name": "Score", "label": "fit analysis"},
+        {"name": "Tailor", "label": "resume proposal"},
+        {"name": "Approve", "label": "human gate"},
+        {"name": "Prep", "label": "tracker + interview"},
+    ]
+
+
+def _agent_cards() -> list[dict[str, str]]:
+    return [
+        {"name": "JD Extractor", "detail": "normalizes role, company, and skill signals"},
+        {"name": "Researcher", "detail": "builds a company-facing context brief"},
+        {"name": "Fit Analyst", "detail": "scores technical, domain, logistics, and ROI"},
+        {"name": "Resume Tailor", "detail": "drafts human-reviewable positioning"},
+    ]
+
+
+def _run_steps(state: JobSearchState) -> list[dict[str, str]]:
+    status_by_node = {
+        "ingest": "done" if any("ingested" in message.lower() for message in state.messages) else "idle",
+        "jd_extract": "done" if state.role_title else "idle",
+        "company_research": "done" if state.company_brief else "idle",
+        "fit_analysis": "done" if state.fit_analysis else "idle",
+        "resume_tailor": "done" if state.resume_proposal else "idle",
+        "approval": "active" if state.stop_reason == StopReason.NEED_USER_APPROVAL else "done",
+        "tracker": "done" if state.tracker_update else "idle",
+        "interview_prep": "done" if state.interview_pack else "idle",
+    }
+    if state.pending_node:
+        status_by_node[state.pending_node] = "active"
+    if state.stop_reason == StopReason.COMPLETED:
+        status_by_node["approval"] = "done"
+    return [
+        {"name": "Ingest", "key": "ingest", "status": status_by_node["ingest"]},
+        {"name": "Extract", "key": "jd_extract", "status": status_by_node["jd_extract"]},
+        {"name": "Research", "key": "company_research", "status": status_by_node["company_research"]},
+        {"name": "Score", "key": "fit_analysis", "status": status_by_node["fit_analysis"]},
+        {"name": "Tailor", "key": "resume_tailor", "status": status_by_node["resume_tailor"]},
+        {"name": "Approve", "key": "approval", "status": status_by_node["approval"]},
+        {"name": "Tracker", "key": "tracker", "status": status_by_node["tracker"]},
+        {"name": "Prep", "key": "interview_prep", "status": status_by_node["interview_prep"]},
     ]
 
 

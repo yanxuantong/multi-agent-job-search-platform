@@ -16,7 +16,7 @@ The default path is intentionally deterministic and low-cost: no API keys, no ho
 
 ![Start a live job-agent run](docs/assets/readme/demo-home.png)
 
-The hosted product is intentionally focused, and it shows the end-to-end operating loop:
+The hosted product now opens as a modern job-search cockpit: status cards, an agent workflow strip, bounded specialist roster, recent activity, and the command form live on one focused operating surface. The core loop is still intentionally simple:
 
 1. Paste a job description.
 2. Let bounded agent nodes analyze the role.

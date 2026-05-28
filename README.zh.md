@@ -14,7 +14,7 @@
 
 ![Start a live job-agent run](docs/assets/readme/demo-home.png)
 
-这个 hosted product 有意保持聚焦，但覆盖了完整的操作闭环：
+这个 hosted product 现在更像一个现代 job-search cockpit：状态卡、agent workflow strip、bounded specialist roster、recent activity 和 command form 都放在一个聚焦的操作面里。核心闭环仍然保持简单：
 
 1. 粘贴职位描述。
 2. 让 bounded agent nodes 分析职位。
