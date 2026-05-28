@@ -411,6 +411,14 @@ button:hover, .button:hover {
   gap: 10px;
 }
 
+.guardrail-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.guardrail-note { margin-top: 12px; }
+
 .agent-card, .run-item {
   border: 1px solid var(--line);
   border-radius: 8px;

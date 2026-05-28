@@ -95,12 +95,23 @@ uvicorn jobagent.web.app:app --reload
 
 - request body 和 job description 有明确大小上限
 - `/runs` 有轻量 per-client rate limit
+- public submission 在执行 workflow 前会先经过 secret 和 prompt-injection guardrails
 - run id 在读取 checkpoint store 前会先做格式校验
 - form submission 只接受 `application/x-www-form-urlencoded`
 - response 包含基础浏览器安全头：CSP、frame protection、no-sniff、referrer policy、permissions policy
+- 每个 response 都带 `X-Request-ID`，并提供 `/readyz` 和 `/ops/status` 做 production smoke check
 - 默认 workflow 不调用外部 LLM API，不执行用户代码，也不会 fetch 任意 job URL
 
 这些控制并不意味着 free hosted instance 已经是 high-availability SaaS。它现在适合 portfolio/public traffic，同时保留清晰升级路径：auth、durable Postgres state、queue-backed workers、edge rate limiting 和 abuse monitoring。
+
+## Production Hardening Notes
+
+这一轮打磨刻意吸收了主流 agent/workflow 系统里的几个模式：
+
+- **Durable execution mindset:** 每次 run 都 checkpoint；人工审批后从 pending node resume，而不是重放整个 workflow。
+- **Guardrails before agency:** 明显 secrets、credential-shaped payloads、instruction-override prompt 会在任何 agent node 执行前被拒绝。
+- **Operational visibility:** 暴露 `/healthz`、`/readyz`、`/ops/status`、request ids 和轻量 in-memory counters，方便 smoke test 和 incident triage。
+- **Bounded public surface:** 默认 workflow 保持 deterministic、同步、零 token 成本；等 auth、queue、durable Postgres、budget tracking 到位后再接真实 LLM。
 
 ## 架构
 

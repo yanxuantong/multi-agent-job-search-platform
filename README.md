@@ -97,12 +97,23 @@ The public service is intentionally constrained:
 
 - request bodies and job descriptions have explicit size limits
 - `/runs` has a lightweight per-client rate limit
+- public submissions pass secret and prompt-injection guardrails before workflow execution
 - run ids are validated before touching the checkpoint store
 - form submissions must use `application/x-www-form-urlencoded`
 - responses include baseline browser security headers: CSP, frame protection, no-sniff, referrer policy, and permissions policy
+- every response gets an `X-Request-ID`, with `/readyz` and `/ops/status` for production smoke checks
 - the default workflow does not call external LLM APIs, execute user-provided code, or fetch arbitrary job URLs
 
 These controls do not make the free hosted instance a high-availability SaaS. They are meant to keep the public product safe enough for portfolio traffic while preserving a clean upgrade path to auth, durable Postgres state, queue-backed workers, and stronger edge rate limiting.
+
+## Production Hardening Notes
+
+This pass intentionally mirrors patterns from mainstream agent and workflow systems:
+
+- **Durable execution mindset:** checkpoint every run before human approval, then resume from the pending node rather than replaying the whole workflow.
+- **Guardrails before agency:** reject obvious secrets, credential-shaped payloads, and instruction-override prompts before any agent node runs.
+- **Operational visibility:** expose `/healthz`, `/readyz`, `/ops/status`, request ids, and lightweight in-memory counters for smoke tests and incident triage.
+- **Bounded public surface:** keep the default workflow deterministic, synchronous, and cost-free until auth, queues, durable Postgres, and budget tracking are added.
 
 ## Architecture
 

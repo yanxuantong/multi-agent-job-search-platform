@@ -20,6 +20,9 @@ class RunStore:
     def list_recent(self, limit: int = 8) -> list[JobSearchState]:
         raise NotImplementedError
 
+    def health(self) -> dict[str, str]:
+        raise NotImplementedError
+
 
 @dataclass
 class LocalRunStore(RunStore):
@@ -40,6 +43,10 @@ class LocalRunStore(RunStore):
         for path in paths[:limit]:
             states.append(self.checkpoint_store.load(path.stem))
         return states
+
+    def health(self) -> dict[str, str]:
+        self.checkpoint_store.root.mkdir(parents=True, exist_ok=True)
+        return {"kind": "local_checkpoint", "status": "ok"}
 
 
 class PostgresRunStore(RunStore):
@@ -103,6 +110,11 @@ class PostgresRunStore(RunStore):
                 (limit,),
             ).fetchall()
         return [JobSearchState.from_dict(row[0]) for row in rows]
+
+    def health(self) -> dict[str, str]:
+        with self._psycopg.connect(self.dsn) as conn:
+            conn.execute("SELECT 1")
+        return {"kind": "postgres", "status": "ok"}
 
 
 def build_run_store() -> RunStore:

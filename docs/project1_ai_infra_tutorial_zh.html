@@ -414,17 +414,25 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
         这让它适合 portfolio/public traffic；如果要升级成真实 SaaS，还应该加 auth、edge rate limiting、queue worker、durable Postgres 和更完整的 abuse monitoring。
       </div>
 
+      <div class="callout">
+        <strong>最新 hardening pass：</strong>参考 LangGraph/Temporal 的 durable execution 心智、OpenAI Agents SDK 的 tracing/guardrails 分层、
+        OWASP LLM Top 10 的 prompt injection 与 sensitive information 风险后，当前 public surface 又补了几件准 production 能力：
+        <code>X-Request-ID</code>、<code>/readyz</code>、<code>/ops/status</code>、轻量 request/run/rejection counters、
+        secret-shaped input detection、prompt-injection payload screening，以及 UI 上的 Production controls/Guardrails 区块。
+      </div>
+
       <table>
         <thead>
           <tr><th>运行结果</th><th>你应该看到什么</th><th>说明</th></tr>
         </thead>
         <tbody>
           <tr><td>默认单测</td><td><code>部分 optional tests skipped</code></td><td>没有安装 web/LLM/Postgres extras 时，相关测试会跳过，这是预期行为。</td></tr>
-          <tr><td>全依赖单测</td><td><code>21 tests OK, skipped=1</code></td><td>安装 <code>.[all]</code> 后，web security、workflow、eval 和 optional integration 覆盖会执行；Postgres 仍可按环境跳过。</td></tr>
+          <tr><td>全依赖单测</td><td><code>28 tests OK, skipped=1</code></td><td>安装 <code>.[all]</code> 后，web security、input guardrails、workflow、eval 和 optional integration 覆盖会执行；Postgres 仍可按环境跳过。</td></tr>
           <tr><td>Eval</td><td><code>15/15 passed</code></td><td>覆盖 10 条 trajectory eval 和 5 条 single-turn JD extraction eval。</td></tr>
           <tr><td>Demo</td><td><code>COMPLETED</code> 或 <code>NEED_USER_APPROVAL</code></td><td>取决于是否传入 <code>--auto-approve</code>。</td></tr>
           <tr><td>Web health</td><td><code>GET /healthz -&gt; {"status":"ok"}</code></td><td>Render 用它判断服务是否启动成功。</td></tr>
-          <tr><td>Render live smoke</td><td><code>GET /</code>, <code>POST /runs</code>, security headers</td><td>公网 product 已验证首页、health check、run 创建、detail page 和安全响应头。</td></tr>
+          <tr><td>Readiness/Ops</td><td><code>GET /readyz</code>, <code>GET /ops/status</code></td><td>验证 storage health、safety settings、request counters 和 guardrail 状态。</td></tr>
+          <tr><td>Render live smoke</td><td><code>GET /</code>, <code>POST /runs</code>, security headers</td><td>公网 product 已验证首页、health/readiness、run 创建、detail page、安全响应头和 request id。</td></tr>
         </tbody>
       </table>
     </section>

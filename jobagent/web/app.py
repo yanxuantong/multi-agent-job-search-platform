@@ -7,6 +7,7 @@ from collections import defaultdict, deque
 from contextlib import asynccontextmanager
 from pathlib import Path
 from urllib.parse import parse_qs
+from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
@@ -16,6 +17,7 @@ from fastapi.templating import Jinja2Templates
 from jobagent.graph.workflow import resume_job_state, run_job_workflow
 from jobagent.memory import load_story_bank
 from jobagent.models import JobSearchState, StopReason
+from jobagent.security import inspect_public_submission
 from jobagent.web.store import RunStore, build_run_store
 
 
@@ -40,6 +42,7 @@ RATE_LIMIT_POST_RUNS = int(os.environ.get("JOBAGENT_RATE_LIMIT_POST_RUNS", "12")
 def create_app(store: RunStore | None = None) -> FastAPI:
     run_store = store or build_run_store()
     post_run_hits: defaultdict[str, deque[float]] = defaultdict(deque)
+    metrics: defaultdict[str, int] = defaultdict(int)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -48,31 +51,39 @@ def create_app(store: RunStore | None = None) -> FastAPI:
 
     app = FastAPI(title="Multi-Agent Job Search Platform", version="0.1.0", lifespan=lifespan)
     app.state.run_store = run_store
+    app.state.metrics = metrics
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
     templates = Jinja2Templates(directory=TEMPLATE_DIR)
 
     @app.middleware("http")
     async def production_safety_headers(request: Request, call_next):
+        request_id = request.headers.get("x-request-id") or str(uuid4())
+        metrics["requests_total"] += 1
         if request.method in {"POST", "PUT", "PATCH"}:
             content_length = request.headers.get("content-length")
             if content_length:
                 try:
                     body_size = int(content_length)
                 except ValueError:
-                    return PlainTextResponse("Invalid Content-Length", status_code=400)
+                    metrics["rejected_total"] += 1
+                    return _with_request_id(PlainTextResponse("Invalid Content-Length", status_code=400), request_id)
                 if body_size > MAX_REQUEST_BODY_BYTES:
-                    return PlainTextResponse("Request body too large", status_code=413)
+                    metrics["rejected_total"] += 1
+                    return _with_request_id(PlainTextResponse("Request body too large", status_code=413), request_id)
 
         if request.method == "POST" and request.url.path == "/runs":
             retry_after = _rate_limit_retry_after(request, post_run_hits)
             if retry_after is not None:
-                return PlainTextResponse(
+                metrics["rate_limited_total"] += 1
+                metrics["rejected_total"] += 1
+                return _with_request_id(PlainTextResponse(
                     "Too many workflow runs. Please wait before starting another run.",
                     status_code=429,
                     headers={"Retry-After": str(retry_after)},
-                )
+                ), request_id)
 
         response = await call_next(request)
+        response.headers.setdefault("X-Request-ID", request_id)
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("X-Frame-Options", "DENY")
         response.headers.setdefault("Referrer-Policy", "no-referrer")
@@ -89,6 +100,28 @@ def create_app(store: RunStore | None = None) -> FastAPI:
     @app.get("/healthz")
     def healthz() -> dict[str, str]:
         return {"status": "ok"}
+
+    @app.get("/readyz")
+    def readyz() -> dict[str, object]:
+        storage = app.state.run_store.health()
+        return {"status": "ok", "storage": storage}
+
+    @app.get("/ops/status")
+    def ops_status() -> dict[str, object]:
+        storage = app.state.run_store.health()
+        return {
+            "status": "ok",
+            "storage": storage,
+            "safety": {
+                "max_request_body_bytes": MAX_REQUEST_BODY_BYTES,
+                "max_job_text_chars": MAX_JOB_TEXT_CHARS,
+                "max_job_url_chars": MAX_JOB_URL_CHARS,
+                "rate_limit_window_seconds": RATE_LIMIT_WINDOW_SECONDS,
+                "rate_limit_post_runs": RATE_LIMIT_POST_RUNS,
+                "input_guardrails": ["secret_detection", "prompt_injection_detection"],
+            },
+            "metrics": dict(app.state.metrics),
+        }
 
     @app.get("/", response_class=HTMLResponse)
     def index(request: Request) -> HTMLResponse:
@@ -116,13 +149,21 @@ def create_app(store: RunStore | None = None) -> FastAPI:
         approved = form.get("auto_approve") == "on"
         validation_error = _validate_job_submission(job_text, job_url)
         if validation_error == "short_job_text":
+            app.state.metrics["rejected_total"] += 1
             return RedirectResponse("/?error=short_job_text", status_code=303)
         if validation_error:
+            app.state.metrics["rejected_total"] += 1
             raise HTTPException(status_code=400, detail=validation_error)
+        findings = inspect_public_submission(job_text, job_url)
+        if findings:
+            app.state.metrics["guardrail_rejected_total"] += 1
+            app.state.metrics["rejected_total"] += 1
+            raise HTTPException(status_code=400, detail=findings[0].message)
 
         stories = load_story_bank(DEFAULT_STORY_BANK)
         state = run_job_workflow(job_text, stories, job_url=job_url, approved=approved)
         app.state.run_store.save(state)
+        app.state.metrics["runs_started_total"] += 1
         return RedirectResponse(f"/runs/{state.run_id}", status_code=303)
 
     @app.get("/runs/{run_id}", response_class=HTMLResponse)
@@ -151,6 +192,12 @@ def create_app(store: RunStore | None = None) -> FastAPI:
         return RedirectResponse(f"/runs/{state.run_id}", status_code=303)
 
     return app
+
+
+def _with_request_id(response: PlainTextResponse, request_id: str) -> PlainTextResponse:
+    response.headers.setdefault("X-Request-ID", request_id)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    return response
 
 
 def _load_or_404(store: RunStore, run_id: str) -> JobSearchState:
