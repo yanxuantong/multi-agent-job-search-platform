@@ -152,6 +152,34 @@
             </div>
           </section>
         {% endif %}
+
+        {% if state.eval_summary %}
+          <section class="panel">
+            <div class="section-head">
+              <div>
+                <span class="kicker">Quality gate</span>
+                <h2>Run evaluation</h2>
+              </div>
+              <span class="pill {% if state.eval_summary.passed %}complete{% else %}paused{% endif %}">
+                score {{ state.eval_summary.score }}
+              </span>
+            </div>
+            <div class="proposal">
+              <div>
+                <h3>Checks</h3>
+                <ul>{% for item in state.eval_summary.checks %}<li>{{ item }}</li>{% endfor %}</ul>
+              </div>
+              <div>
+                <h3>Failure categories</h3>
+                {% if state.eval_summary.failure_categories %}
+                  <ul>{% for item in state.eval_summary.failure_categories %}<li>{{ item }}</li>{% endfor %}</ul>
+                {% else %}
+                  <p class="small muted">No failed quality categories for this run.</p>
+                {% endif %}
+              </div>
+            </div>
+          </section>
+        {% endif %}
       </div>
 
       <aside class="panel run-log">
@@ -168,6 +196,35 @@
         </ol>
       </aside>
     </div>
+
+    {% if trace_rows %}
+      <section class="panel trace-panel">
+        <div class="section-head">
+          <div>
+            <span class="kicker">Control plane</span>
+            <h2>Orchestrator and tool audit</h2>
+          </div>
+        </div>
+        <div class="trace-table" role="table" aria-label="Orchestrator and tool audit">
+          <div class="trace-row trace-head" role="row">
+            <span>Node</span>
+            <span>Tool</span>
+            <span>Decision</span>
+            <span>Result</span>
+            <span>Latency</span>
+          </div>
+          {% for row in trace_rows %}
+            <div class="trace-row" role="row">
+              <span><strong>{{ row.node }}</strong><small>{{ row.input }}</small></span>
+              <span>{{ row.tool }}</span>
+              <span><strong>{{ row.action }}</strong><small>{{ row.rationale }}</small></span>
+              <span><strong>{{ row.status }}</strong><small>{{ row.output }}</small></span>
+              <span>{{ row.elapsed_ms }} ms</span>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
   </main>
 </body>
 </html>

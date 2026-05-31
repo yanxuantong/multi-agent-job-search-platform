@@ -12,6 +12,12 @@ The default path is intentionally deterministic and low-cost: no API keys, no ho
 
 **Canonical learning guide:** [docs/project1_ai_infra_tutorial_zh.html](docs/project1_ai_infra_tutorial_zh.html)
 
+**Multi-agent engineering course:** [docs/agentic_course/index.html](docs/agentic_course/index.html)<br>
+Chinese chapter-by-chapter HTML course plus a [mega edition](docs/agentic_course/mega_agentic_course_zh.html), grounded in this codebase, debugging exercises, and 2026 AI infra industry references.
+
+**Reading-experience prototype:** [docs/agentic_course_prototype/index.html](docs/agentic_course_prototype/index.html)<br>
+All 21 chapters rewritten as article-style lessons with highlighted code lines, project file links, diagrams, lab checklists, and extended reading.
+
 ## Product Snapshot
 
 ![Start a live job-agent run](docs/assets/readme/demo-home.png)
@@ -30,12 +36,12 @@ The hosted product now opens as a modern job-search cockpit: status cards, an ag
 
 ## What It Demonstrates
 
-- **Supervisor-style orchestration:** a small graph engine coordinates bounded agent nodes.
+- **Production-style orchestration:** a control-plane orchestrator records every routing decision before bounded agent nodes run.
 - **Typed shared state:** all agents read/write a single `JobSearchState` model.
 - **Human-in-the-loop control:** resume/application outputs stop at `NEED_USER_APPROVAL`.
 - **Checkpoint and resume:** paused runs can continue after approval.
-- **Offline evaluation:** deterministic eval cases protect the workflow from drift.
-- **Traceability:** every run can write local JSONL traces.
+- **Offline and per-run evaluation:** deterministic eval cases protect the workflow from drift, while each run gets a quality summary.
+- **Traceability:** every run writes JSONL traces plus UI-visible orchestrator decisions and tool audit events.
 - **Production surface:** FastAPI/Jinja UI, Dockerfile, Render deployment, safety limits, and optional Postgres store.
 - **Learning bridge:** local teaching code maps cleanly to LangGraph, MCP, Langfuse, pgvector, and hosted LLM providers.
 
@@ -102,6 +108,7 @@ The public service is intentionally constrained:
 - form submissions must use `application/x-www-form-urlencoded`
 - responses include baseline browser security headers: CSP, frame protection, no-sniff, referrer policy, and permissions policy
 - every response gets an `X-Request-ID`, with `/readyz` and `/ops/status` for production smoke checks
+- `/ops/evals` runs the bundled regression suite and reports pass rate plus failure categories
 - the default workflow does not call external LLM APIs, execute user-provided code, or fetch arbitrary job URLs
 
 These controls do not make the free hosted instance a high-availability SaaS. They are meant to keep the public product safe enough for portfolio traffic while preserving a clean upgrade path to auth, durable Postgres state, queue-backed workers, and stronger edge rate limiting.
@@ -111,8 +118,10 @@ These controls do not make the free hosted instance a high-availability SaaS. Th
 This pass intentionally mirrors patterns from mainstream agent and workflow systems:
 
 - **Durable execution mindset:** checkpoint every run before human approval, then resume from the pending node rather than replaying the whole workflow.
+- **Control plane before agency:** `JobSearchOrchestrator` decides whether to run, stop, or ask for human approval before each node.
+- **Tool boundary audit:** each node maps to a registered tool capability and records input summary, output summary, status, latency, and cost estimate.
 - **Guardrails before agency:** reject obvious secrets, credential-shaped payloads, and instruction-override prompts before any agent node runs.
-- **Operational visibility:** expose `/healthz`, `/readyz`, `/ops/status`, request ids, and lightweight in-memory counters for smoke tests and incident triage.
+- **Operational visibility:** expose `/healthz`, `/readyz`, `/ops/status`, `/ops/evals`, request ids, lightweight counters, and run-detail trace tables for smoke tests and incident triage.
 - **Bounded public surface:** keep the default workflow deterministic, synchronous, and cost-free until auth, queues, durable Postgres, and budget tracking are added.
 
 ## Architecture
@@ -120,15 +129,22 @@ This pass intentionally mirrors patterns from mainstream agent and workflow syst
 ```mermaid
 flowchart TD
   A["JD text"] --> B["ingest"]
-  B --> C["jd_extract"]
-  C --> D["company_research"]
-  D --> E["fit_analysis"]
-  E --> F["resume_tailor"]
+  O["JobSearchOrchestrator"] --> B
+  O --> C["jd_extract"]
+  O --> D["company_research"]
+  O --> E["fit_analysis"]
+  O --> F["resume_tailor"]
+  B --> C
+  C --> D
+  D --> E
+  E --> F
   F -->|not approved| G["NEED_USER_APPROVAL"]
   G --> K["checkpoint"]
-  K -->|resume approve| H["tracker"]
+  K -->|resume approve| O
   F -->|approved| H
+  O --> H["tracker"]
   H --> I["interview_prep"]
+  O --> I
   I --> J["COMPLETED"]
 ```
 
@@ -139,11 +155,14 @@ Start with the core workflow:
 - [jobagent/models.py](jobagent/models.py): shared state, artifacts, and `StopReason`.
 - [jobagent/graph/engine.py](jobagent/graph/engine.py): small graph runner that mirrors the LangGraph mental model.
 - [jobagent/graph/workflow.py](jobagent/graph/workflow.py): node wiring and resume behavior.
+- [jobagent/orchestration/controller.py](jobagent/orchestration/controller.py): control-plane routing, budget checks, and HITL decisions.
+- [jobagent/tools/registry.py](jobagent/tools/registry.py): registered tool boundaries and audit event creation.
 - [jobagent/agents/](jobagent/agents): bounded agent responsibilities.
 - [jobagent/storage/checkpoint.py](jobagent/storage/checkpoint.py): local checkpoint/resume store.
 - [jobagent/web/app.py](jobagent/web/app.py): FastAPI production web surface and safety controls.
 - [jobagent/web/store.py](jobagent/web/store.py): local or Postgres-backed web run store.
 - [jobagent/evals/runner.py](jobagent/evals/runner.py): offline eval harness.
+- [jobagent/evals/run_quality.py](jobagent/evals/run_quality.py): per-run quality gate used by the product UI.
 - [mcp_server/career_research_server.py](mcp_server/career_research_server.py): dependency-free MCP-shaped teaching stub.
 
 Local runtime artifacts are written under `.jobagent/` and ignored by git:

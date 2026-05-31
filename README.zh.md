@@ -10,6 +10,12 @@
 
 **完整中文 mega guide:** [docs/project1_ai_infra_tutorial_zh.html](docs/project1_ai_infra_tutorial_zh.html)
 
+**Multi-Agent 工程系列教程:** [docs/agentic_course/index.html](docs/agentic_course/index.html)<br>
+单章 HTML + [mega 合集](docs/agentic_course/mega_agentic_course_zh.html)，围绕本项目代码、调试练习和 2026 AI infra 行业动态展开。
+
+**新版阅读体验 prototype:** [docs/agentic_course_prototype/index.html](docs/agentic_course_prototype/index.html)<br>
+21 章文章式教程，包含重点代码行高亮、项目文件链接、图解、lab checklist 和扩展阅读。
+
 ## 产品截图
 
 ![Start a live job-agent run](docs/assets/readme/demo-home.png)
@@ -28,12 +34,12 @@
 
 ## 这个项目在展示什么
 
-- **Supervisor-style orchestration:** 一个小型 graph engine 协调多个 bounded agent nodes。
+- **Production-style orchestration:** control-plane orchestrator 会在每个 bounded agent node 执行前记录路由决策。
 - **Typed shared state:** 所有 agents 读写同一个 `JobSearchState` model。
 - **Human-in-the-loop control:** resume/application 输出会停在 `NEED_USER_APPROVAL`。
 - **Checkpoint and resume:** 暂停后的 run 可以在人工确认后继续。
-- **Offline evaluation:** deterministic eval cases 用来保护 workflow，避免 agent 行为漂移。
-- **Traceability:** 每次 run 都可以写出本地 JSONL traces。
+- **Offline and per-run evaluation:** deterministic eval cases 保护 workflow，每次 run 也会生成 quality summary。
+- **Traceability:** 每次 run 都写出 JSONL traces，并在 UI 里展示 orchestrator decisions 和 tool audit events。
 - **Production surface:** FastAPI/Jinja UI、Dockerfile、Render deployment、安全限制，以及 optional Postgres store。
 - **Learning bridge:** 本地教学代码可以映射到 LangGraph、MCP、Langfuse、pgvector 和 hosted LLM providers。
 
@@ -100,6 +106,7 @@ uvicorn jobagent.web.app:app --reload
 - form submission 只接受 `application/x-www-form-urlencoded`
 - response 包含基础浏览器安全头：CSP、frame protection、no-sniff、referrer policy、permissions policy
 - 每个 response 都带 `X-Request-ID`，并提供 `/readyz` 和 `/ops/status` 做 production smoke check
+- `/ops/evals` 会运行内置 regression suite，并返回 pass rate 和 failure categories
 - 默认 workflow 不调用外部 LLM API，不执行用户代码，也不会 fetch 任意 job URL
 
 这些控制并不意味着 free hosted instance 已经是 high-availability SaaS。它现在适合 portfolio/public traffic，同时保留清晰升级路径：auth、durable Postgres state、queue-backed workers、edge rate limiting 和 abuse monitoring。
@@ -109,8 +116,10 @@ uvicorn jobagent.web.app:app --reload
 这一轮打磨刻意吸收了主流 agent/workflow 系统里的几个模式：
 
 - **Durable execution mindset:** 每次 run 都 checkpoint；人工审批后从 pending node resume，而不是重放整个 workflow。
+- **Control plane before agency:** `JobSearchOrchestrator` 会在每个 node 前决定 run、stop 或 ask human。
+- **Tool boundary audit:** 每个 node 都映射到一个注册过的 tool capability，并记录 input summary、output summary、status、latency 和 cost estimate。
 - **Guardrails before agency:** 明显 secrets、credential-shaped payloads、instruction-override prompt 会在任何 agent node 执行前被拒绝。
-- **Operational visibility:** 暴露 `/healthz`、`/readyz`、`/ops/status`、request ids 和轻量 in-memory counters，方便 smoke test 和 incident triage。
+- **Operational visibility:** 暴露 `/healthz`、`/readyz`、`/ops/status`、`/ops/evals`、request ids、轻量 counters，以及 run detail trace table，方便 smoke test 和 incident triage。
 - **Bounded public surface:** 默认 workflow 保持 deterministic、同步、零 token 成本；等 auth、queue、durable Postgres、budget tracking 到位后再接真实 LLM。
 
 ## 架构
@@ -118,15 +127,22 @@ uvicorn jobagent.web.app:app --reload
 ```mermaid
 flowchart TD
   A["JD text"] --> B["ingest"]
-  B --> C["jd_extract"]
-  C --> D["company_research"]
-  D --> E["fit_analysis"]
-  E --> F["resume_tailor"]
+  O["JobSearchOrchestrator"] --> B
+  O --> C["jd_extract"]
+  O --> D["company_research"]
+  O --> E["fit_analysis"]
+  O --> F["resume_tailor"]
+  B --> C
+  C --> D
+  D --> E
+  E --> F
   F -->|not approved| G["NEED_USER_APPROVAL"]
   G --> K["checkpoint"]
-  K -->|resume approve| H["tracker"]
+  K -->|resume approve| O
   F -->|approved| H
+  O --> H["tracker"]
   H --> I["interview_prep"]
+  O --> I
   I --> J["COMPLETED"]
 ```
 
@@ -137,11 +153,14 @@ flowchart TD
 - [jobagent/models.py](jobagent/models.py): shared state、artifacts 和 `StopReason`。
 - [jobagent/graph/engine.py](jobagent/graph/engine.py): 小型 graph runner，对应 LangGraph 的 mental model。
 - [jobagent/graph/workflow.py](jobagent/graph/workflow.py): node wiring 和 resume behavior。
+- [jobagent/orchestration/controller.py](jobagent/orchestration/controller.py): control-plane routing、budget checks 和 HITL decisions。
+- [jobagent/tools/registry.py](jobagent/tools/registry.py): registered tool boundaries 和 audit event creation。
 - [jobagent/agents/](jobagent/agents): bounded agent responsibilities。
 - [jobagent/storage/checkpoint.py](jobagent/storage/checkpoint.py): local checkpoint/resume store。
 - [jobagent/web/app.py](jobagent/web/app.py): FastAPI production web surface 和安全控制。
 - [jobagent/web/store.py](jobagent/web/store.py): local 或 Postgres-backed web run store。
 - [jobagent/evals/runner.py](jobagent/evals/runner.py): offline eval harness。
+- [jobagent/evals/run_quality.py](jobagent/evals/run_quality.py): product UI 使用的 per-run quality gate。
 - [mcp_server/career_research_server.py](mcp_server/career_research_server.py): dependency-free MCP-shaped teaching stub。
 
 本地 runtime artifacts 会写到 `.jobagent/`，并被 git ignore：

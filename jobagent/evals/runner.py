@@ -33,12 +33,21 @@ def run_eval_suite(path: str | Path, story_bank: list[dict]) -> dict:
             )
             checks = _check_trajectory_case(case, state)
         ok = all(check["passed"] for check in checks)
+        failure_categories = _failure_categories(checks)
         passed += int(ok)
         type_counts = by_type.setdefault(eval_type, {"total": 0, "passed": 0, "failed": 0})
         type_counts["total"] += 1
         type_counts["passed"] += int(ok)
         type_counts["failed"] += int(not ok)
-        results.append({"id": case["id"], "eval_type": eval_type, "passed": ok, "checks": checks})
+        results.append(
+            {
+                "id": case["id"],
+                "eval_type": eval_type,
+                "passed": ok,
+                "checks": checks,
+                "failure_categories": failure_categories,
+            }
+        )
     return {
         "total": len(cases),
         "passed": passed,
@@ -51,6 +60,7 @@ def run_eval_suite(path: str | Path, story_bank: list[dict]) -> dict:
             }
             for eval_type, counts in by_type.items()
         },
+        "failure_categories": _suite_failure_categories(results),
         "results": results,
     }
 
@@ -77,6 +87,29 @@ def _check_extraction_case(case: dict, state) -> list[dict]:
             }
         )
     return checks
+
+
+def _failure_categories(checks: list[dict]) -> list[str]:
+    categories = []
+    for check in checks:
+        if check["passed"]:
+            continue
+        name = check["name"]
+        if name.startswith("required_skill"):
+            categories.append("skill_extraction")
+        elif name in {"company", "stop_reason", "min_fit_score"}:
+            categories.append(name)
+        else:
+            categories.append("unknown")
+    return sorted(set(categories))
+
+
+def _suite_failure_categories(results: list[dict]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for result in results:
+        for category in result.get("failure_categories", []):
+            counts[category] = counts.get(category, 0) + 1
+    return counts
 
 
 def _check_trajectory_case(case: dict, state) -> list[dict]:

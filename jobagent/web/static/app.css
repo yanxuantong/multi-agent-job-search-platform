@@ -531,6 +531,44 @@ li { margin: 6px 0; }
 
 .run-log li:last-child { border-bottom: 0; }
 
+.trace-panel { margin-top: 18px; }
+
+.trace-table {
+  display: grid;
+  gap: 8px;
+}
+
+.trace-row {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr 1.35fr 1.35fr 96px;
+  gap: 10px;
+  align-items: start;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  background: var(--paper-soft);
+}
+
+.trace-row span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.trace-row small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.trace-head {
+  color: var(--muted);
+  background: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
 @media (max-width: 960px) {
   .hero,
   .dashboard-grid,
@@ -541,7 +579,8 @@ li { margin: 6px 0; }
 
   .workflow-strip,
   .run-progress,
-  .metric-grid {
+  .metric-grid,
+  .trace-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -565,7 +604,8 @@ li { margin: 6px 0; }
   .workflow-strip,
   .run-progress,
   .metric-grid,
-  .proposal {
+  .proposal,
+  .trace-row {
     grid-template-columns: 1fr;
   }
   .form-footer { align-items: stretch; flex-direction: column; }

@@ -38,6 +38,8 @@ class EvalRunnerTest(unittest.TestCase):
         self.assertEqual(result["failed"], 0)
         self.assertEqual(result["pass_rate"], 1.0)
         self.assertEqual(result["by_type"]["trajectory"]["passed"], 1)
+        self.assertEqual(result["failure_categories"], {})
+        self.assertEqual(result["results"][0]["failure_categories"], [])
 
     def test_eval_runner_distinguishes_single_turn_extraction(self) -> None:
         suite = [
@@ -57,6 +59,24 @@ class EvalRunnerTest(unittest.TestCase):
         self.assertEqual(result["failed"], 0)
         self.assertEqual(result["by_type"]["single_turn_jd_extract"]["total"], 1)
         self.assertEqual(result["results"][0]["eval_type"], "single_turn_jd_extract")
+
+    def test_eval_runner_reports_failure_categories(self) -> None:
+        suite = [
+            {
+                "id": "bad-company",
+                "eval_type": "single_turn_jd_extract",
+                "job_text": "Company: ToolBridge AI\nRole: Integrations Engineer\nPython MCP agents observability",
+                "expected_company": "Wrong Company",
+            }
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "suite.json"
+            path.write_text(json.dumps(suite), encoding="utf-8")
+            result = run_eval_suite(path, [])
+
+        self.assertEqual(result["failed"], 1)
+        self.assertEqual(result["failure_categories"], {"company": 1})
+        self.assertEqual(result["results"][0]["failure_categories"], ["company"])
 
 
 if __name__ == "__main__":

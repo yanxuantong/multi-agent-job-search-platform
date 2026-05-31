@@ -14,6 +14,7 @@ from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from jobagent.evals.runner import run_eval_suite
 from jobagent.graph.workflow import resume_job_state, run_job_workflow
 from jobagent.memory import load_story_bank
 from jobagent.models import JobSearchState, StopReason
@@ -26,6 +27,7 @@ TEMPLATE_DIR = PACKAGE_DIR / "templates"
 STATIC_DIR = PACKAGE_DIR / "static"
 DEFAULT_JOB_FILE = Path("samples/job_description.txt")
 DEFAULT_STORY_BANK = Path("samples/story_bank.json")
+DEFAULT_EVAL_SUITE = Path("samples/eval_suite.json")
 MAX_REQUEST_BODY_BYTES = int(os.environ.get("JOBAGENT_MAX_REQUEST_BODY_BYTES", "200000"))
 MIN_JOB_TEXT_CHARS = 20
 MAX_JOB_TEXT_CHARS = int(os.environ.get("JOBAGENT_MAX_JOB_TEXT_CHARS", "12000"))
@@ -123,6 +125,16 @@ def create_app(store: RunStore | None = None) -> FastAPI:
             "metrics": dict(app.state.metrics),
         }
 
+    @app.get("/ops/evals")
+    def ops_evals() -> dict[str, object]:
+        stories = load_story_bank(DEFAULT_STORY_BANK)
+        result = run_eval_suite(DEFAULT_EVAL_SUITE, stories)
+        return {
+            "status": "ok" if result["failed"] == 0 else "degraded",
+            "suite": str(DEFAULT_EVAL_SUITE),
+            "result": result,
+        }
+
     @app.get("/", response_class=HTMLResponse)
     def index(request: Request) -> HTMLResponse:
         sample_text = DEFAULT_JOB_FILE.read_text(encoding="utf-8") if DEFAULT_JOB_FILE.exists() else ""
@@ -178,6 +190,7 @@ def create_app(store: RunStore | None = None) -> FastAPI:
                 "summary": _run_summary(state),
                 "scores": _score_rows(state),
                 "run_steps": _run_steps(state),
+                "trace_rows": _trace_rows(state),
                 "can_approve": state.stop_reason == StopReason.NEED_USER_APPROVAL and bool(state.pending_node),
                 "public_demo_mode": _public_demo_mode(),
             },
@@ -343,6 +356,27 @@ def _run_steps(state: JobSearchState) -> list[dict[str, str]]:
         {"name": "Tracker", "key": "tracker", "status": status_by_node["tracker"]},
         {"name": "Prep", "key": "interview_prep", "status": status_by_node["interview_prep"]},
     ]
+
+
+def _trace_rows(state: JobSearchState) -> list[dict[str, object]]:
+    decision_by_node = {decision.node: decision for decision in state.orchestrator_decisions if decision.node}
+    rows = []
+    for event in state.tool_audit:
+        decision = decision_by_node.get(event.node)
+        rows.append(
+            {
+                "node": event.node,
+                "tool": event.tool_name,
+                "status": event.status,
+                "elapsed_ms": event.elapsed_ms,
+                "input": event.input_summary,
+                "output": event.output_summary,
+                "action": decision.action if decision else "RUN_AGENT",
+                "rationale": decision.rationale if decision else "",
+                "confidence": decision.confidence if decision else None,
+            }
+        )
+    return rows
 
 
 def _public_demo_mode() -> bool:

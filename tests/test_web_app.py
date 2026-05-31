@@ -49,6 +49,9 @@ class WebAppTest(unittest.TestCase):
                 completed = client.get(run_url)
                 self.assertEqual(completed.status_code, 200)
                 self.assertIn("COMPLETED", completed.text)
+                self.assertIn("Orchestrator and tool audit", completed.text)
+                self.assertIn("application_tracker_writer", completed.text)
+                self.assertIn("Run evaluation", completed.text)
 
     def test_web_responses_include_security_headers(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -83,6 +86,17 @@ class WebAppTest(unittest.TestCase):
         self.assertEqual(payload["status"], "ok")
         self.assertIn("secret_detection", payload["safety"]["input_guardrails"])
         self.assertGreaterEqual(payload["metrics"]["requests_total"], 2)
+
+    def test_web_ops_evals_reports_regression_suite(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            with self._client(tmp) as client:
+                response = client.get("/ops/evals")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["status"], "ok")
+        self.assertIn("pass_rate", payload["result"])
+        self.assertIn("failure_categories", payload["result"])
 
     def test_web_rejects_oversized_job_text(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -104,6 +104,37 @@ class RunBudget:
 
 
 @dataclass
+class OrchestratorDecision:
+    step: int
+    action: str
+    node: str | None
+    rationale: str
+    confidence: float
+    budget_remaining_steps: int
+    budget_remaining_tool_calls: int
+
+
+@dataclass
+class ToolAuditEvent:
+    tool_name: str
+    node: str
+    status: str
+    input_summary: str
+    output_summary: str
+    elapsed_ms: float
+    cost_estimate: float = 0.0
+    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+
+@dataclass
+class EvalSummary:
+    score: float
+    passed: bool
+    checks: list[str]
+    failure_categories: list[str] = field(default_factory=list)
+
+
+@dataclass
 class AgentError:
     node: str
     message: str
@@ -128,6 +159,9 @@ class JobSearchState:
     story_bank: list[dict[str, Any]] = field(default_factory=list)
     messages: list[str] = field(default_factory=list)
     budget: RunBudget = field(default_factory=RunBudget)
+    orchestrator_decisions: list[OrchestratorDecision] = field(default_factory=list)
+    tool_audit: list[ToolAuditEvent] = field(default_factory=list)
+    eval_summary: EvalSummary | None = None
     errors: list[AgentError] = field(default_factory=list)
     approved: bool = False
     stop_reason: StopReason | None = None
@@ -151,6 +185,7 @@ class JobSearchState:
             ("tracker_update", TrackerUpdate),
             ("interview_pack", InterviewPack),
             ("budget", RunBudget),
+            ("eval_summary", EvalSummary),
         ):
             if nested.get(key) is not None:
                 if key == "company_brief":
@@ -161,6 +196,10 @@ class JobSearchState:
                     nested[key] = factory(**nested[key])
         nested["sources"] = [Source(**source) for source in nested.get("sources", [])]
         nested["errors"] = [AgentError(**error) for error in nested.get("errors", [])]
+        nested["orchestrator_decisions"] = [
+            OrchestratorDecision(**decision) for decision in nested.get("orchestrator_decisions", [])
+        ]
+        nested["tool_audit"] = [ToolAuditEvent(**event) for event in nested.get("tool_audit", [])]
         if nested.get("stop_reason"):
             nested["stop_reason"] = StopReason(nested["stop_reason"])
         return cls(**nested)

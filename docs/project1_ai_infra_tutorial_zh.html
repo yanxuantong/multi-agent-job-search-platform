@@ -421,17 +421,26 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
         secret-shaped input detection、prompt-injection payload screening，以及 UI 上的 Production controls/Guardrails 区块。
       </div>
 
+      <div class="callout">
+        <strong>Orchestrator/productization pass：</strong>为了更贴近 AI Engineer / Forward Deployed Engineer 的岗位要求，
+        项目现在把 <code>JobSearchOrchestrator</code> 做成一等控制平面：每个 node 执行前都会记录 run/stop/ask-human 决策、理由、
+        confidence 和剩余预算。每个 node 也映射到 <code>ToolRegistry</code> 中的注册 capability，并写出 tool audit event
+        （input summary、output summary、status、latency、cost estimate）。Run detail page 现在不仅显示结果，还显示 orchestrator
+        decision、tool audit、per-run quality gate；<code>/ops/evals</code> 可以跑内置 regression suite，返回 pass rate 和 failure categories。
+      </div>
+
       <table>
         <thead>
           <tr><th>运行结果</th><th>你应该看到什么</th><th>说明</th></tr>
         </thead>
         <tbody>
           <tr><td>默认单测</td><td><code>部分 optional tests skipped</code></td><td>没有安装 web/LLM/Postgres extras 时，相关测试会跳过，这是预期行为。</td></tr>
-          <tr><td>全依赖单测</td><td><code>28 tests OK, skipped=1</code></td><td>安装 <code>.[all]</code> 后，web security、input guardrails、workflow、eval 和 optional integration 覆盖会执行；Postgres 仍可按环境跳过。</td></tr>
-          <tr><td>Eval</td><td><code>15/15 passed</code></td><td>覆盖 10 条 trajectory eval 和 5 条 single-turn JD extraction eval。</td></tr>
+          <tr><td>全依赖单测</td><td><code>tests OK</code></td><td>安装 <code>.[all]</code> 后，web security、input guardrails、workflow、orchestrator/tool audit、eval 和 optional integration 覆盖会执行；Postgres 仍可按环境跳过。</td></tr>
+          <tr><td>Eval</td><td><code>15/15 passed</code></td><td>覆盖 trajectory eval、single-turn JD extraction eval，并输出 failure categories。</td></tr>
           <tr><td>Demo</td><td><code>COMPLETED</code> 或 <code>NEED_USER_APPROVAL</code></td><td>取决于是否传入 <code>--auto-approve</code>。</td></tr>
           <tr><td>Web health</td><td><code>GET /healthz -&gt; {"status":"ok"}</code></td><td>Render 用它判断服务是否启动成功。</td></tr>
           <tr><td>Readiness/Ops</td><td><code>GET /readyz</code>, <code>GET /ops/status</code></td><td>验证 storage health、safety settings、request counters 和 guardrail 状态。</td></tr>
+          <tr><td>Ops evals</td><td><code>GET /ops/evals</code></td><td>验证 bundled regression suite、pass rate、failure categories，适合 production smoke 和发布前检查。</td></tr>
           <tr><td>Render live smoke</td><td><code>GET /</code>, <code>POST /runs</code>, security headers</td><td>公网 product 已验证首页、health/readiness、run 创建、detail page、安全响应头和 request id。</td></tr>
         </tbody>
       </table>
@@ -440,7 +449,7 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
     <section id="architecture">
       <h2>4. 架构：不要让一个大 prompt 控制一切</h2>
       <p>
-        这个项目的核心原则是：graph 拥有控制流，agent node 拥有局部认知，state 是唯一共享事实源。
+        这个项目的核心原则是：orchestrator 拥有控制平面，graph engine 执行 node loop，agent node 拥有局部认知，state 是唯一共享事实源。
         这也是从 toy agent 走向 production agent 的关键分界线。
       </p>
       <div class="diagram" role="img" aria-label="Architecture diagram">
@@ -463,11 +472,11 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
           <rect x="248" y="38" width="214" height="260" rx="8" fill="#ecfeff" stroke="#0f766e"/>
           <text x="355" y="68" text-anchor="middle" font-weight="700" fill="#1f2328">编排层</text>
           <rect x="274" y="96" width="162" height="44" rx="7" fill="#fff" stroke="#d9dde3"/>
-          <text x="355" y="123" text-anchor="middle" fill="#1f2328">GraphEngine</text>
+          <text x="355" y="123" text-anchor="middle" fill="#1f2328">Orchestrator</text>
           <rect x="274" y="154" width="162" height="44" rx="7" fill="#fff" stroke="#d9dde3"/>
-          <text x="355" y="181" text-anchor="middle" fill="#1f2328">JobSearchState</text>
+          <text x="355" y="181" text-anchor="middle" fill="#1f2328">GraphEngine</text>
           <rect x="274" y="212" width="162" height="44" rx="7" fill="#fff" stroke="#d9dde3"/>
-          <text x="355" y="239" text-anchor="middle" fill="#1f2328">StopReason</text>
+          <text x="355" y="239" text-anchor="middle" fill="#1f2328">JobSearchState</text>
 
           <line x1="462" y1="168" x2="516" y2="168" stroke="#2457c5" stroke-width="2" marker-end="url(#arrow-a)"/>
           <rect x="516" y="38" width="230" height="260" rx="8" fill="#fffbeb" stroke="#b45309"/>
@@ -489,9 +498,9 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
           <rect x="826" y="92" width="164" height="36" rx="7" fill="#fff" stroke="#d9dde3"/>
           <text x="908" y="115" text-anchor="middle" fill="#1f2328">Checkpoint</text>
           <rect x="826" y="140" width="164" height="36" rx="7" fill="#fff" stroke="#d9dde3"/>
-          <text x="908" y="163" text-anchor="middle" fill="#1f2328">JSONL / Langfuse trace</text>
+          <text x="908" y="163" text-anchor="middle" fill="#1f2328">Trace + tool audit</text>
           <rect x="826" y="188" width="164" height="36" rx="7" fill="#fff" stroke="#d9dde3"/>
-          <text x="908" y="211" text-anchor="middle" fill="#1f2328">LLM Provider</text>
+          <text x="908" y="211" text-anchor="middle" fill="#1f2328">Eval gate</text>
           <rect x="826" y="236" width="164" height="36" rx="7" fill="#fff" stroke="#d9dde3"/>
           <text x="908" y="259" text-anchor="middle" fill="#1f2328">FastAPI + Postgres</text>
         </svg>
@@ -499,20 +508,20 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
 
       <h3>主流程</h3>
       <pre><code>JD text
-  -&gt; ingest
-  -&gt; jd_extract
-  -&gt; company_research
-  -&gt; fit_analysis
-  -&gt; resume_tailor
-  -&gt; NEED_USER_APPROVAL
-  -&gt; tracker
-  -&gt; interview_prep
-  -&gt; COMPLETED</code></pre>
+  -&gt; JobSearchOrchestrator.plan(next_node)
+  -&gt; ToolRegistry policy/audit boundary
+  -&gt; bounded agent node
+  -&gt; JsonlTracer span
+  -&gt; JobSearchState update
+  -&gt; checkpoint / HITL / next node
+  -&gt; per-run quality summary</code></pre>
 
       <h3>Production product 外壳</h3>
       <pre><code>Browser
   -&gt; FastAPI / Jinja minimal UI
-  -&gt; existing jobagent graph workflow
+  -&gt; orchestrated jobagent graph workflow
+  -&gt; run detail trace table
+  -&gt; /ops/evals regression smoke
   -&gt; Postgres web_runs table when JOBAGENT_DATABASE_URL exists
   -&gt; local checkpoint fallback when running without DB</code></pre>
     </section>
@@ -529,6 +538,9 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
   resume_proposal
   tracker_update
   interview_pack
+  orchestrator_decisions
+  tool_audit
+  eval_summary
   stop_reason
   pending_node</code></pre>
       <table>

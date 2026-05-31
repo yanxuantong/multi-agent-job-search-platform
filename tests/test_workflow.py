@@ -31,6 +31,11 @@ class WorkflowTest(unittest.TestCase):
         self.assertEqual(state.company_name, "Anthropic")
         self.assertIsNotNone(state.resume_proposal)
         self.assertIsNone(state.tracker_update)
+        self.assertGreaterEqual(len(state.orchestrator_decisions), 5)
+        self.assertGreaterEqual(len(state.tool_audit), 5)
+        self.assertEqual(state.tool_audit[0].tool_name, "jd_intake_validator")
+        self.assertIsNotNone(state.eval_summary)
+        self.assertTrue(state.eval_summary.passed)
 
     def test_workflow_completes_when_approved(self) -> None:
         state = run_job_workflow(JOB_TEXT, STORY_BANK, approved=True, run_id="test-approved")
@@ -39,6 +44,8 @@ class WorkflowTest(unittest.TestCase):
         self.assertIsNotNone(state.tracker_update)
         self.assertIsNotNone(state.interview_pack)
         self.assertGreaterEqual(state.fit_analysis.total, 15)
+        self.assertTrue(any(event.tool_name == "application_tracker_writer" for event in state.tool_audit))
+        self.assertTrue(state.eval_summary.passed)
 
     def test_workflow_can_resume_from_human_approval_checkpoint(self) -> None:
         paused = run_job_workflow(JOB_TEXT, STORY_BANK, run_id="test-resume")
@@ -51,6 +58,16 @@ class WorkflowTest(unittest.TestCase):
         self.assertEqual(resumed.stop_reason, StopReason.COMPLETED)
         self.assertIsNotNone(resumed.tracker_update)
         self.assertIsNotNone(resumed.interview_pack)
+
+    def test_rejected_resume_keeps_workflow_paused_before_side_effects(self) -> None:
+        paused = run_job_workflow(JOB_TEXT, STORY_BANK, run_id="test-reject")
+
+        rejected = resume_job_workflow("test-reject", approved=False)
+
+        self.assertEqual(rejected.stop_reason, StopReason.NEED_USER_APPROVAL)
+        self.assertEqual(rejected.pending_node, "tracker")
+        self.assertIsNone(rejected.tracker_update)
+        self.assertIn("rejected", rejected.messages[-1])
 
 
 if __name__ == "__main__":

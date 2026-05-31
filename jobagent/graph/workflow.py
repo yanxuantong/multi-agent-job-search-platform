@@ -11,8 +11,9 @@ from jobagent.agents import (
     research_company,
     tailor_resume,
 )
+from jobagent.evals.run_quality import summarize_run_quality
 from jobagent.graph import GraphEngine
-from jobagent.models import JobSearchState
+from jobagent.models import JobSearchState, StopReason
 from jobagent.observability import JsonlTracer
 from jobagent.storage import JsonCheckpointStore
 
@@ -49,6 +50,7 @@ def run_job_workflow(
     )
     graph = build_graph(JsonlTracer(state.run_id))
     state = graph.run(state, "ingest")
+    state.eval_summary = summarize_run_quality(state)
     JsonCheckpointStore().save(state)
     return state
 
@@ -65,7 +67,12 @@ def resume_job_state(state: JobSearchState, *, approved: bool) -> JobSearchState
     if not state.pending_node:
         return state
     state.approved = approved
+    if not approved:
+        state.stop_reason = state.stop_reason or StopReason.NEED_USER_APPROVAL
+        state.messages.append("Resume proposal was rejected; workflow remains paused before side effects.")
+        return state
     state.stop_reason = None
     graph = build_graph(JsonlTracer(state.run_id))
     state = graph.run(state, state.pending_node)
+    state.eval_summary = summarize_run_quality(state)
     return state
