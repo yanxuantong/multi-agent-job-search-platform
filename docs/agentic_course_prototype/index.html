@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JobAgent Multi-Agent 工程教程 Prototype</title>
+  <link rel="stylesheet" href="assets/course.css">
+</head>
+<body>
+  <div class="shell">
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark">00</div>
+    <h1>这不是聊天机器人，这是一个可运行的 Agentic Product</h1>
+    <p>先把 JobAgent 当成一个可以运行、暂停、恢复、验证、部署的产品，而不是一个 prompt demo。</p>
+  </div>
+  <nav class="nav-block" aria-label="Course">
+    <a class="active" href="index.html">Prototype 首页</a><a href="00_overview.html">00 这不是聊天机器人，这是一个可运行的 Agentic Product</a><a class="" href="01_graph_engine.html">01 从 Pipeline 到 Graph：为什么 agent 工程首先是调度问题</a><a class="" href="02_shared_state.html">02 Shared State：Multi-Agent 系统里的唯一事实表</a><a class="" href="03_bounded_agents.html">03 Bounded Agent：为什么每个 agent 都应该小而窄</a><a class="" href="04_stop_reason.html">04 StopReason：Agentic 系统不是一直跑到死</a><a class="" href="05_hitl.html">05 Human-in-the-loop：人工审批不是 UI 功能，是系统边界</a><a class="" href="06_checkpoint_resume.html">06 Checkpoint 与 Resume：Agentic Workflow 的耐久执行</a><a class="" href="07_tool_use.html">07 Tool Use：Agent 什么时候应该调用工具</a><a class="" href="08_memory_story_bank.html">08 Memory 与 Story Bank：不是所有上下文都该塞进 Prompt</a><a class="" href="09_local_rag.html">09 Local RAG：先理解检索，再上向量数据库</a><a class="" href="10_mcp.html">10 MCP：把工具世界标准化</a><a class="" href="11_llm_provider.html">11 LLM Provider：把模型调用隔离成可替换接口</a><a class="" href="12_langgraph.html">12 LangGraph：从教学 GraphEngine 迁移到工业框架</a><a class="" href="13_observability.html">13 Observability：Trace 是 Agent 系统的黑匣子</a><a class="" href="14_offline_eval.html">14 Offline Eval：别靠感觉判断 Agent 有没有变好</a><a class="" href="15_guardrails.html">15 Guardrails：在 Agency 之前先做安全边界</a><a class="" href="16_web_product.html">16 Web Product Surface：把 Workflow 变成可以用的产品</a><a class="" href="17_deployment.html">17 Deployment：从本地 demo 到公开 portfolio</a><a class="" href="18_debugging.html">18 调试一本 Agent 系统：从现象回到 state、trace、node</a><a class="" href="19_upgrade_choices.html">19 工程选择题：什么时候该升级技术栈</a><a class="" href="20_capstone.html">20 最终项目任务：把 JobAgent 改成你的 AI Infra Portfolio</a><a href="../agentic_course/index.html">返回旧版目录</a>
+  </nav>
+</aside>
+
+    <main class="reading">
+      <section class="hero">
+        <div class="kicker">Reading Experience Prototype / Updated 2026-05-30</div>
+        <h1>把教程从“信息卡片”改成“工程现场”</h1>
+        <p class="subtitle">这一版把 21 章都改成文章式教程：左侧课程地图，中间连续讲解，右侧 lab 和行业脉搏。正文里保留图解、代码高亮、项目文件链接和扩展阅读。</p>
+        <div class="hero-actions">
+          <a class="button primary" href="00_overview.html">开始第 0 章</a>
+          <a class="button" href="../agentic_course/index.html">返回旧版目录</a>
+        </div>
+      </section>
+      <article class="lesson">
+        <section class="lesson-section">
+          <h2>阅读方式</h2>
+          <div class="article-prose">
+            <p>如果上一版像课程大纲，这一版更像工程实验手册。每章先给你一个问题，再把问题放回 JobAgent 的真实文件、真实命令和真实调试路径里。</p>
+            <p>配图只承担教学任务：定位系统位置、解释状态变化、展示调试路径。代码块里的重点行会高亮，右侧注释告诉你为什么要看这一行。</p>
+          </div>
+          <img class="concept-img" src="assets/reading-experience-concept.png" alt="JobAgent course reading experience concept">
+        </section>
+        <section class="lesson-section">
+          <h2>全部章节</h2>
+          <div class="source-links"><a class="source-link" href="00_overview.html"><strong>第 0 章：这不是聊天机器人，这是一个可运行的 Agentic Product</strong><span>先把 JobAgent 当成一个可以运行、暂停、恢复、验证、部署的产品，而不是一个 prompt demo。</span></a><a class="source-link" href="01_graph_engine.html"><strong>第 1 章：从 Pipeline 到 Graph：为什么 agent 工程首先是调度问题</strong><span>Agentic workflow 的第一层不是魔法，而是 node、edge、state、stop condition。</span></a><a class="source-link" href="02_shared_state.html"><strong>第 2 章：Shared State：Multi-Agent 系统里的唯一事实表</strong><span>如果没有 typed shared state，multi-agent 很快会退化成互相转述的聊天记录。</span></a><a class="source-link" href="03_bounded_agents.html"><strong>第 3 章：Bounded Agent：为什么每个 agent 都应该小而窄</strong><span>一个万能 agent 看起来省事，长期会变成不可测、不可恢复、不可解释的 prompt monster。</span></a><a class="source-link" href="04_stop_reason.html"><strong>第 4 章：StopReason：Agentic 系统不是一直跑到死</strong><span>StopReason 是 agent workflow 的刹车系统，也是调试与产品体验的共同语言。</span></a><a class="source-link" href="05_hitl.html"><strong>第 5 章：Human-in-the-loop：人工审批不是 UI 功能，是系统边界</strong><span>HITL 的本质是权限边界：哪些动作可以建议，哪些动作必须由人放行。</span></a><a class="source-link" href="06_checkpoint_resume.html"><strong>第 6 章：Checkpoint 与 Resume：Agentic Workflow 的耐久执行</strong><span>能暂停不算难；能在正确位置恢复，而且不重复副作用，才是工程能力。</span></a><a class="source-link" href="07_tool_use.html"><strong>第 7 章：Tool Use：Agent 什么时候应该调用工具</strong><span>工具是 agent 的手，但每只手都要有权限、预算、审计和失败语义。</span></a><a class="source-link" href="08_memory_story_bank.html"><strong>第 8 章：Memory 与 Story Bank：不是所有上下文都该塞进 Prompt</strong><span>Memory 的第一原则：该结构化的结构化，该检索的检索，该短期的不要伪装长期。</span></a><a class="source-link" href="09_local_rag.html"><strong>第 9 章：Local RAG：先理解检索，再上向量数据库</strong><span>RAG 不是接一个 vector DB，而是选择什么进入上下文的工程。</span></a><a class="source-link" href="10_mcp.html"><strong>第 10 章：MCP：把工具世界标准化</strong><span>MCP 可以理解为 agent 的工具协议层，但协议标准化不等于安全自动解决。</span></a><a class="source-link" href="11_llm_provider.html"><strong>第 11 章：LLM Provider：把模型调用隔离成可替换接口</strong><span>不要让业务节点直接散落 OpenAI、Anthropic 或其他 SDK 调用。</span></a><a class="source-link" href="12_langgraph.html"><strong>第 12 章：LangGraph：从教学 GraphEngine 迁移到工业框架</strong><span>先理解本地 graph，再判断是否需要 LangGraph 的生产能力。</span></a><a class="source-link" href="13_observability.html"><strong>第 13 章：Observability：Trace 是 Agent 系统的黑匣子</strong><span>Agent debug 的第一原则：不要只看最终回答，要看轨迹。</span></a><a class="source-link" href="14_offline_eval.html"><strong>第 14 章：Offline Eval：别靠感觉判断 Agent 有没有变好</strong><span>Agent 质量不能只靠肉眼体验，必须有回归样例和可重复评估。</span></a><a class="source-link" href="15_guardrails.html"><strong>第 15 章：Guardrails：在 Agency 之前先做安全边界</strong><span>Guardrails 不是让模型更听话，而是让系统先拒绝不该处理的输入和动作。</span></a><a class="source-link" href="16_web_product.html"><strong>第 16 章：Web Product Surface：把 Workflow 变成可以用的产品</strong><span>Agent product 的 UI 不是装饰，它负责让用户看见状态、风险和下一步。</span></a><a class="source-link" href="17_deployment.html"><strong>第 17 章：Deployment：从本地 demo 到公开 portfolio</strong><span>部署 agent product，不只是把 API 跑起来，还要说明状态、成本和安全边界。</span></a><a class="source-link" href="18_debugging.html"><strong>第 18 章：调试一本 Agent 系统：从现象回到 state、trace、node</strong><span>Agent debug 不应该从改 prompt 开始，而应该从证据链开始。</span></a><a class="source-link" href="19_upgrade_choices.html"><strong>第 19 章：工程选择题：什么时候该升级技术栈</strong><span>成熟的 AI infra 判断力，不是知道所有工具，而是知道什么时候不用它们。</span></a><a class="source-link" href="20_capstone.html"><strong>第 20 章：最终项目任务：把 JobAgent 改成你的 AI Infra Portfolio</strong><span>最后一章不是阅读，而是让读者完整交付一个新的 bounded agent。</span></a></div>
+        </section>
+      </article>
+    </main>
+    <aside class="inspector">
+      <div class="inspector-card"><h3>Prototype 状态</h3><p>21 章已生成。下一步可以迁移到 MkDocs Material 或继续增强静态 HTML。</p></div>
+      <div class="inspector-card"><h3>阅读进度</h3><div class="progress"><span data-progress></span></div></div>
+    </aside>
+  </div>
+  <script src="assets/course.js"></script>
+</body>
+</html>

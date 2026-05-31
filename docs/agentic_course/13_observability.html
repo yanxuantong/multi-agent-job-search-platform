@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第 13 章：Observability：Trace 是 Agent 系统的黑匣子</title>
+  <style>
+:root {
+  --bg: #f6f7f8;
+  --paper: #ffffff;
+  --ink: #1f2328;
+  --muted: #5f6b76;
+  --line: #d8dee4;
+  --blue: #2457c5;
+  --teal: #0f766e;
+  --green: #15803d;
+  --amber: #b45309;
+  --code: #f1f5f9;
+  --dark: #111827;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 16px;
+  line-height: 1.72;
+}
+a { color: var(--blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.wrap { width: min(1160px, calc(100% - 32px)); margin: 0 auto; }
+header { background: var(--paper); border-bottom: 1px solid var(--line); }
+.hero { padding: 38px 0 28px; display: grid; gap: 14px; }
+.eyebrow { color: var(--teal); font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+h1, h2, h3 { margin: 0; line-height: 1.18; letter-spacing: 0; }
+h1 { max-width: 960px; font-size: clamp(32px, 5vw, 54px); }
+h2 { margin-top: 34px; font-size: 26px; }
+h3 { margin-top: 22px; font-size: 19px; }
+p { margin: 10px 0 0; }
+ul, ol { margin: 10px 0 0; padding-left: 22px; }
+li { margin: 6px 0; }
+code {
+  background: var(--code);
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  padding: 1px 5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .92em;
+}
+.lead { max-width: 920px; color: var(--muted); font-size: 18px; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.badge.green { color: var(--green); }
+.badge.blue { color: var(--blue); }
+.badge.amber { color: var(--amber); }
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(255,255,255,.94);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.toc { display: flex; gap: 8px; overflow-x: auto; padding: 12px 0; }
+.toc a {
+  flex: 0 0 auto;
+  color: var(--ink);
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 11px;
+  font-size: 14px;
+}
+main { padding: 18px 0 56px; }
+section { border-bottom: 1px solid var(--line); padding: 0 0 32px; }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 16px; }
+.grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+}
+.card strong { display: block; margin-bottom: 5px; color: #111827; }
+.callout {
+  margin-top: 16px;
+  border-left: 4px solid var(--teal);
+  border-radius: 0 8px 8px 0;
+  background: #ecfeff;
+  padding: 14px 16px;
+}
+.callout.warning { border-left-color: var(--amber); background: #fffbeb; }
+.chapter-nav { display: flex; justify-content: space-between; gap: 12px; margin: 24px 0 0; }
+.chapter-nav a {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  max-width: 48%;
+}
+.source-list li { margin-bottom: 8px; }
+.visual {
+  background: #f8fafc;
+  border: 1px dashed #b8c2cc;
+  border-radius: 8px;
+  padding: 14px 16px;
+  color: #334155;
+}
+.chapter-list { columns: 2; column-gap: 28px; }
+.chapter-list li { break-inside: avoid; }
+footer { color: var(--muted); padding: 28px 0 42px; font-size: 14px; }
+@media (max-width: 860px) {
+  .grid, .grid.two { grid-template-columns: 1fr; }
+  .chapter-list { columns: 1; }
+  .chapter-nav { display: block; }
+  .chapter-nav a { display: block; max-width: none; margin-top: 10px; }
+}
+</style>
+</head>
+<body>
+  <header>
+    <div class="wrap hero">
+      <div class="eyebrow">JobAgent Multi-Agent Course / Updated 2026-05-30</div>
+      <h1>第 13 章：Observability：Trace 是 Agent 系统的黑匣子</h1>
+      <p class="lead">Agent debug 的第一原则：不要只看最终回答，要看轨迹。</p>
+      <div class="meta">
+        <span class="badge green">项目驱动</span>
+        <span class="badge blue">每章单页</span>
+        <span class="badge amber">含 2026 行业扩展</span>
+      </div>
+    </div>
+  </header>
+  <nav aria-label="Chapter navigation"><div class="wrap toc"><a href="index.html">目录</a><a href="mega_agentic_course_zh.html">Mega 合集</a><a href="#13_observability">本章</a></div></nav>
+  <main class="wrap">
+
+<section id="13_observability">
+  <div class="eyebrow">Part 4 / 真实生产栈</div>
+  <h2>第 13 章：Observability：Trace 是 Agent 系统的黑匣子</h2>
+  <p class="lead">Agent debug 的第一原则：不要只看最终回答，要看轨迹。</p>
+
+  <div class="grid">
+    <div class="card">
+      <strong>概念解释</strong>
+      <ul><li>本项目的 `JsonlTracer` 为每个 node 记录 span，包含 step、next_node、stop_reason 等 metadata。</li><li>真实 agent observability 还会记录 model generation、tool call、retrieval、guardrail、handoff、latency、token、cost、prompt version、eval score。</li><li>Trace 让你回答三个问题：系统看到了什么、做了什么、为什么停在这里。</li></ul>
+    </div>
+    <div class="card">
+      <strong>寓言 / 类比</strong>
+      <p>飞机失事调查不能只看乘客最后一句话，要看黑匣子。Agent 系统也一样，最终输出只是结果，trace 才是过程证据。</p>
+    </div>
+    <div class="card">
+      <strong>建议配图</strong>
+      <p class="visual">Trace 树图：run trace -&gt; node span -&gt; tool/retrieval/generation observations。</p>
+    </div>
+  </div>
+
+  <div class="grid two">
+    <div class="card">
+      <strong>项目代码落点</strong>
+      <ul><li><a href="../../jobagent/observability/tracer.py">jobagent/observability/tracer.py</a></li><li><a href="../../jobagent/observability/langfuse_exporter.py">jobagent/observability/langfuse_exporter.py</a></li><li><code>.jobagent/runs/&lt;run_id&gt;/trace.jsonl</code></li></ul>
+    </div>
+    <div class="card">
+      <strong>运行 / 调试练习</strong>
+      <ul><li>跑一次 workflow，打开 trace JSONL，标出每个 span 的 node 与 next_node。</li><li>给 tracer 设计 cost/token 字段，即使当前 deterministic 路径没有 token 成本。</li><li>思考如何把本地 trace 映射到 Langfuse observation types。</li></ul>
+    </div>
+  </div>
+
+  <div class="grid two">
+    <div class="card">
+      <strong>工程选择题</strong>
+      <ul><li>日志、metric、trace 谁最重要？agent debugging 首先需要 trace，因为它保留因果路径。</li><li>是否记录完整 prompt/output？开发阶段有用，生产环境要考虑 PII、secret、redaction。</li><li>Trace 是否要接 OpenTelemetry？如果已有 infra observability 栈，应该考虑统一 schema。</li></ul>
+    </div>
+    <div class="card">
+      <strong>Industry Pulse / 行业脉搏</strong>
+      <ul><li>2026 年 agent observability 已经成为独立工程领域。OpenTelemetry 有 GenAI semantic conventions；Langfuse 支持 traces、sessions、observations、eval scores；OpenAI Agents SDK 默认 tracing。</li><li>这说明 agent trace 正在从 nice-to-have 变成 production requirement。</li></ul>
+      <h3>扩展阅读</h3>
+      <ul class="source-list"><li><a href="https://opentelemetry.io/docs/specs/semconv/gen-ai/">OpenTelemetry GenAI semantic conventions</a><br><span>GenAI spans、events、metrics 的语义规范。</span></li><li><a href="https://langfuse.com/docs/observability/overview/">Langfuse observability overview</a><br><span>LLM application tracing、token/cost/latency、tool/retrieval steps。</span></li><li><a href="https://openai.github.io/openai-agents-python/tracing/">OpenAI Agents SDK tracing</a><br><span>SDK 默认记录 agent、generation、tool、guardrail、handoff spans。</span></li></ul>
+    </div>
+  </div>
+</section>
+<div class="chapter-nav"><a href="12_langgraph.html">上一章：第 12 章：LangGraph：从教学 GraphEngine 迁移到工业框架</a><a href="14_offline_eval.html">下一章：第 14 章：Offline Eval：别靠感觉判断 Agent 有没有变好</a></div>
+  </main>
+  <footer class="wrap">
+    Generated from <code>docs/agentic_course/build_agentic_course.py</code>. Industry links were refreshed on 2026-05-30; fast-moving AI infra references should be reviewed periodically.
+  </footer>
+</body>
+</html>

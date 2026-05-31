@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第 20 章：最终项目任务：把 JobAgent 改成你的 AI Infra Portfolio</title>
+  <style>
+:root {
+  --bg: #f6f7f8;
+  --paper: #ffffff;
+  --ink: #1f2328;
+  --muted: #5f6b76;
+  --line: #d8dee4;
+  --blue: #2457c5;
+  --teal: #0f766e;
+  --green: #15803d;
+  --amber: #b45309;
+  --code: #f1f5f9;
+  --dark: #111827;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 16px;
+  line-height: 1.72;
+}
+a { color: var(--blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.wrap { width: min(1160px, calc(100% - 32px)); margin: 0 auto; }
+header { background: var(--paper); border-bottom: 1px solid var(--line); }
+.hero { padding: 38px 0 28px; display: grid; gap: 14px; }
+.eyebrow { color: var(--teal); font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+h1, h2, h3 { margin: 0; line-height: 1.18; letter-spacing: 0; }
+h1 { max-width: 960px; font-size: clamp(32px, 5vw, 54px); }
+h2 { margin-top: 34px; font-size: 26px; }
+h3 { margin-top: 22px; font-size: 19px; }
+p { margin: 10px 0 0; }
+ul, ol { margin: 10px 0 0; padding-left: 22px; }
+li { margin: 6px 0; }
+code {
+  background: var(--code);
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  padding: 1px 5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .92em;
+}
+.lead { max-width: 920px; color: var(--muted); font-size: 18px; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.badge.green { color: var(--green); }
+.badge.blue { color: var(--blue); }
+.badge.amber { color: var(--amber); }
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(255,255,255,.94);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.toc { display: flex; gap: 8px; overflow-x: auto; padding: 12px 0; }
+.toc a {
+  flex: 0 0 auto;
+  color: var(--ink);
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 11px;
+  font-size: 14px;
+}
+main { padding: 18px 0 56px; }
+section { border-bottom: 1px solid var(--line); padding: 0 0 32px; }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 16px; }
+.grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+}
+.card strong { display: block; margin-bottom: 5px; color: #111827; }
+.callout {
+  margin-top: 16px;
+  border-left: 4px solid var(--teal);
+  border-radius: 0 8px 8px 0;
+  background: #ecfeff;
+  padding: 14px 16px;
+}
+.callout.warning { border-left-color: var(--amber); background: #fffbeb; }
+.chapter-nav { display: flex; justify-content: space-between; gap: 12px; margin: 24px 0 0; }
+.chapter-nav a {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  max-width: 48%;
+}
+.source-list li { margin-bottom: 8px; }
+.visual {
+  background: #f8fafc;
+  border: 1px dashed #b8c2cc;
+  border-radius: 8px;
+  padding: 14px 16px;
+  color: #334155;
+}
+.chapter-list { columns: 2; column-gap: 28px; }
+.chapter-list li { break-inside: avoid; }
+footer { color: var(--muted); padding: 28px 0 42px; font-size: 14px; }
+@media (max-width: 860px) {
+  .grid, .grid.two { grid-template-columns: 1fr; }
+  .chapter-list { columns: 1; }
+  .chapter-nav { display: block; }
+  .chapter-nav a { display: block; max-width: none; margin-top: 10px; }
+}
+</style>
+</head>
+<body>
+  <header>
+    <div class="wrap hero">
+      <div class="eyebrow">JobAgent Multi-Agent Course / Updated 2026-05-30</div>
+      <h1>第 20 章：最终项目任务：把 JobAgent 改成你的 AI Infra Portfolio</h1>
+      <p class="lead">最后一章不是阅读，而是让读者完整交付一个新的 bounded agent。</p>
+      <div class="meta">
+        <span class="badge green">项目驱动</span>
+        <span class="badge blue">每章单页</span>
+        <span class="badge amber">含 2026 行业扩展</span>
+      </div>
+    </div>
+  </header>
+  <nav aria-label="Chapter navigation"><div class="wrap toc"><a href="index.html">目录</a><a href="mega_agentic_course_zh.html">Mega 合集</a><a href="#20_capstone">本章</a></div></nav>
+  <main class="wrap">
+
+<section id="20_capstone">
+  <div class="eyebrow">Part 6 / Capstone</div>
+  <h2>第 20 章：最终项目任务：把 JobAgent 改成你的 AI Infra Portfolio</h2>
+  <p class="lead">最后一章不是阅读，而是让读者完整交付一个新的 bounded agent。</p>
+
+  <div class="grid">
+    <div class="card">
+      <strong>概念解释</strong>
+      <ul><li>Capstone 任务：新增一个 agent，例如 `salary_analysis`、`networking_strategy` 或 `company_risk_analysis`。</li><li>要求完整接入 state、workflow、checkpoint/resume、eval、trace、web UI，并写出 portfolio narrative。</li><li>目标是证明读者掌握 agentic infra 的完整闭环，而不是只会加一个函数。</li></ul>
+    </div>
+    <div class="card">
+      <strong>寓言 / 类比</strong>
+      <p>毕业设计不是背诵机场规则，而是让你真正新增一个服务窗口：写清职责、接入调度、留下记录、接受检查、让乘客看得懂。</p>
+    </div>
+    <div class="card">
+      <strong>建议配图</strong>
+      <p class="visual">Capstone 交付图：new artifact -&gt; node -&gt; graph -&gt; eval -&gt; trace -&gt; UI -&gt; portfolio story。</p>
+    </div>
+  </div>
+
+  <div class="grid two">
+    <div class="card">
+      <strong>项目代码落点</strong>
+      <ul><li><a href="../../jobagent/models.py">jobagent/models.py</a></li><li><a href="../../jobagent/agents/">jobagent/agents/</a></li><li><a href="../../jobagent/graph/workflow.py">jobagent/graph/workflow.py</a></li><li><a href="../../jobagent/evals/runner.py">jobagent/evals/runner.py</a></li><li><a href="../../samples/eval_suite.json">samples/eval_suite.json</a></li><li><a href="../../jobagent/web/templates/run.html">jobagent/web/templates/run.html</a></li><li><a href="../../tests/">tests/</a></li></ul>
+    </div>
+    <div class="card">
+      <strong>运行 / 调试练习</strong>
+      <ul><li>新增 typed artifact，例如 `SalaryAnalysis`。</li><li>新增 agent node，并接入 graph。</li><li>新增 eval case，覆盖 trajectory 与关键输出。</li><li>更新 web UI，让用户能看到新 agent 结果。</li><li>写一段 README/portfolio 叙事：你如何设计 bounded multi-agent workflow。</li></ul>
+    </div>
+  </div>
+
+  <div class="grid two">
+    <div class="card">
+      <strong>工程选择题</strong>
+      <ul><li>新 agent 放在哪个位置？取决于它依赖 JD、company brief、fit score 还是 resume proposal。</li><li>是否需要 HITL？如果输出会影响真实申请或外部写入，需要。</li><li>是否需要真实 LLM？先 deterministic baseline，再用 provider adapter 替换。</li></ul>
+    </div>
+    <div class="card">
+      <strong>Industry Pulse / 行业脉搏</strong>
+      <ul><li>Langfuse 在 2026 年公开了 evaluate AI agent skills 的实践：把 prompts 做成 dataset，运行 agent，trace 行为，再迭代 skill。</li><li>这给 Capstone 一个更高阶方向：不仅评估业务输出，也评估 agent 是否遵守工程 playbook。</li></ul>
+      <h3>扩展阅读</h3>
+      <ul class="source-list"><li><a href="https://langfuse.com/blog/2026-02-26-evaluate-ai-agent-skills">Langfuse evaluating AI agent skills</a><br><span>展示如何用 dataset、trace、experiment 评估 agent skill。</span></li><li><a href="https://aws.amazon.com/about-aws/whats-new/2026/03/agentcore-evaluations-generally-available/">AWS AgentCore Evaluations GA</a><br><span>生产 agent eval 的托管平台参照。</span></li></ul>
+    </div>
+  </div>
+</section>
+<div class="chapter-nav"><a href="19_upgrade_choices.html">上一章：第 19 章：工程选择题：什么时候该升级技术栈</a><a href="mega_agentic_course_zh.html">打开 Mega 合集</a></div>
+  </main>
+  <footer class="wrap">
+    Generated from <code>docs/agentic_course/build_agentic_course.py</code>. Industry links were refreshed on 2026-05-30; fast-moving AI infra references should be reviewed periodically.
+  </footer>
+</body>
+</html>

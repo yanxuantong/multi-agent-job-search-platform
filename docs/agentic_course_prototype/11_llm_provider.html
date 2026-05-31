@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第 11 章：LLM Provider：把模型调用隔离成可替换接口 / JobAgent Course Prototype</title>
+  <link rel="stylesheet" href="assets/course.css">
+</head>
+<body>
+  <div class="shell">
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark">11</div>
+    <h1>LLM Provider：把模型调用隔离成可替换接口</h1>
+    <p>不要让业务节点直接散落 OpenAI、Anthropic 或其他 SDK 调用。</p>
+  </div>
+  <nav class="nav-block" aria-label="Course">
+    <a href="index.html">Prototype 首页</a><a class="" href="00_overview.html">00 这不是聊天机器人，这是一个可运行的 Agentic Product</a><a class="" href="01_graph_engine.html">01 从 Pipeline 到 Graph：为什么 agent 工程首先是调度问题</a><a class="" href="02_shared_state.html">02 Shared State：Multi-Agent 系统里的唯一事实表</a><a class="" href="03_bounded_agents.html">03 Bounded Agent：为什么每个 agent 都应该小而窄</a><a class="" href="04_stop_reason.html">04 StopReason：Agentic 系统不是一直跑到死</a><a class="" href="05_hitl.html">05 Human-in-the-loop：人工审批不是 UI 功能，是系统边界</a><a class="" href="06_checkpoint_resume.html">06 Checkpoint 与 Resume：Agentic Workflow 的耐久执行</a><a class="" href="07_tool_use.html">07 Tool Use：Agent 什么时候应该调用工具</a><a class="" href="08_memory_story_bank.html">08 Memory 与 Story Bank：不是所有上下文都该塞进 Prompt</a><a class="" href="09_local_rag.html">09 Local RAG：先理解检索，再上向量数据库</a><a class="" href="10_mcp.html">10 MCP：把工具世界标准化</a><a class="active" href="11_llm_provider.html">11 LLM Provider：把模型调用隔离成可替换接口</a><a class="" href="12_langgraph.html">12 LangGraph：从教学 GraphEngine 迁移到工业框架</a><a class="" href="13_observability.html">13 Observability：Trace 是 Agent 系统的黑匣子</a><a class="" href="14_offline_eval.html">14 Offline Eval：别靠感觉判断 Agent 有没有变好</a><a class="" href="15_guardrails.html">15 Guardrails：在 Agency 之前先做安全边界</a><a class="" href="16_web_product.html">16 Web Product Surface：把 Workflow 变成可以用的产品</a><a class="" href="17_deployment.html">17 Deployment：从本地 demo 到公开 portfolio</a><a class="" href="18_debugging.html">18 调试一本 Agent 系统：从现象回到 state、trace、node</a><a class="" href="19_upgrade_choices.html">19 工程选择题：什么时候该升级技术栈</a><a class="" href="20_capstone.html">20 最终项目任务：把 JobAgent 改成你的 AI Infra Portfolio</a><a href="../agentic_course/index.html">返回旧版目录</a>
+  </nav>
+</aside>
+
+    <main class="reading">
+      <section class="hero">
+        <div class="kicker">Part 4 / 真实生产栈 / Lesson 11</div>
+        <h1>第 11 章：LLM Provider：把模型调用隔离成可替换接口</h1>
+        <p class="subtitle">不要让业务节点直接散落 OpenAI、Anthropic 或其他 SDK 调用。</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#lab">直接做实验</a>
+          <a class="button" href="index.html">课程目录</a>
+        </div>
+      </section>
+
+<article class="lesson">
+  <section class="lesson-section">
+    <h2>这一章先解决什么问题</h2>
+    <div class="article-prose">
+      <p>本项目把 LLM provider 放在独立模块，是为了保留 deterministic 默认路径，同时让真实模型调用成为可替换能力。</p><p>Provider abstraction 处理的不只是供应商切换，还包括 retry、timeout、JSON schema、token accounting、model version、fallback、mock testing。</p><p>对 agent 系统来说，模型是一个不稳定但强大的依赖，必须像外部服务一样隔离。</p>
+      <p>模型供应商像不同航空公司。乘客关心到达目的地，机场系统必须能处理不同航空公司的票号、延误、行李规则和取消策略。</p>
+    </div>
+  </section>
+
+  <section class="lesson-section">
+    <h2>系统图：把概念放回项目现场</h2>
+    <div class="article-prose">
+      <p>这张图不是装饰，而是本章的定位器。你可以先看图，再打开对应的项目文件。这样读代码时不会迷路：每个文件都不是孤立片段，而是在 JobAgent 这个 agentic workflow 里承担一个明确位置。</p>
+    </div>
+
+<div class="diagram" aria-label="Concept map">
+  <svg viewBox="0 0 980 300" role="img">
+    <rect x="18" y="24" width="944" height="226" rx="22" fill="#fff" stroke="#d8e0e5"/>
+    <text x="44" y="64" fill="#26323b" font-size="20" font-weight="900">Provider adapter 图：agent node -&gt; provider interface -&gt; concrete model SDK -&gt; trace/eval。</text>
+    <rect x="62" y="112" width="230" height="72" rx="16" fill="#e4f7f7" stroke="#007a83"/>
+    <rect x="374" y="112" width="230" height="72" rx="16" fill="#fbfcfd" stroke="#d8e0e5"/>
+    <rect x="686" y="112" width="230" height="72" rx="16" fill="#fff4df" stroke="#b36b00"/>
+    <text x="177" y="142" text-anchor="middle" fill="#005b62" font-size="15" font-weight="900">Concept</text>
+    <text x="489" y="142" text-anchor="middle" fill="#26323b" font-size="15" font-weight="900">Project Code</text>
+    <text x="801" y="142" text-anchor="middle" fill="#8a5200" font-size="15" font-weight="900">Production Pattern</text>
+    <text x="177" y="164" text-anchor="middle" fill="#5d6975" font-size="12">mental model</text>
+    <text x="489" y="164" text-anchor="middle" fill="#5d6975" font-size="12">files and tests</text>
+    <text x="801" y="164" text-anchor="middle" fill="#5d6975" font-size="12">industry reading</text>
+  </svg>
+</div>
+
+  </section>
+
+  <section class="lesson-section">
+    <h2>代码走读：眼睛先放在高亮行</h2>
+    <div class="article-prose">
+      <p>下面的代码摘录不是为了让你背实现细节，而是训练阅读顺序。青色行表示主路径，琥珀色行表示控制、停止、安全或恢复边界。读 agent 系统时，先找这些边界，通常比先看 prompt 更有效。</p>
+      <p>对应的项目文件在这里：<a href="../../jobagent/llm/provider.py"><code>jobagent/llm/provider.py</code></a>, <a href="../../jobagent/llm/openai_provider.py"><code>jobagent/llm/openai_provider.py</code></a>, <a href="../../jobagent/llm/anthropic_provider.py"><code>jobagent/llm/anthropic_provider.py</code></a>, <a href="../../pyproject.toml"><code>pyproject.toml</code></a>。</p>
+    </div>
+    <div class="annotated-code" role="region" aria-label="Annotated code excerpt"><div class="code-row hot"><span class="line">8</span><span class="src">class LLMRequest:</span><span class="comment">业务节点不直接依赖某个厂商 SDK</span></div><div class="code-row hot"><span class="line">26</span><span class="src">class LLMResponse:</span><span class="comment">输出、usage、metadata 要结构化</span></div><div class="code-row hot"><span class="line">32</span><span class="src">class LLMProvider(Protocol):</span><span class="comment">provider interface 是替换边界</span></div><div class="code-row warn"><span class="line">37</span><span class="src">class MockLLMProvider:</span><span class="comment">测试和默认路径可以不用真实模型</span></div><div class="code-row warn"><span class="line">63</span><span class="src">def _rough_tokens(text: str) -&gt; int:</span><span class="comment">成本估算也应进 provider 层</span></div></div>
+    <div class="split"><div class="panel"><strong><a href="../../jobagent/llm/provider.py"><code>jobagent/llm/provider.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div><div class="panel"><strong><a href="../../jobagent/llm/openai_provider.py"><code>jobagent/llm/openai_provider.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div><div class="split"><div class="panel"><strong><a href="../../jobagent/llm/anthropic_provider.py"><code>jobagent/llm/anthropic_provider.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div><div class="panel"><strong><a href="../../pyproject.toml"><code>pyproject.toml</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div>
+  </section>
+
+  <section class="lesson-section" id="lab">
+    <h2>动手实验：把知识点落到一次操作里</h2>
+    <div class="article-prose">
+      <p>这一章不只要求你“理解”。你应该至少跑一次命令、打开一次文件、观察一次 state 或 trace。JobAgent 的教学价值在于它是可运行项目，不是架构幻灯片。</p>
+    </div>
+    <div class="steps"><div class="step">阅读 provider interface，写一个 fake provider 的测试计划。</div><div class="step">列出真实 LLM 接入后每个 agent 可能新增的失败模式。</div><div class="step">设计 structured output parsing 失败时的 fallback 行为。</div></div>
+  </section>
+
+  <section class="lesson-section">
+    <h2>工程选择题：什么时候这样做，什么时候不要这样做</h2>
+    <div class="article-prose">
+      <p>是否应该一开始支持多模型？教学项目不必，但 provider 边界应该保留。 模型输出不稳定时靠 prompt 还是 eval？prompt 是实现，eval 是保护网。 高成本模型放在哪些节点？优先放在需要推理/写作质量的节点，而不是 deterministic extraction。</p>
+      <p>这些问题比答案本身更重要。Multi-agent 工程的成熟度，不在于堆多少框架，而在于你能说清楚每个边界为什么存在、什么时候需要升级、升级会带来什么新复杂度。</p>
+    </div>
+  </section>
+
+  <section class="lesson-section">
+    <h2>行业脉搏：把本章放到 2026 AI infra 里看</h2>
+    <div class="article-prose">
+      <p>Datadog 2026 AI Engineering 报告显示 multi-model 已成常态，OpenAI 仍广泛使用，同时 Anthropic 与 Gemini 增长明显。</p><p>这意味着 provider abstraction 是现实工程需求，不只是代码洁癖。</p>
+      <p>读这些链接时，不要只记产品名。更重要的是把它们映射回本项目：哪些能力已经在 JobAgent 里有教学版，哪些能力属于未来的生产升级。</p>
+    </div>
+    <div class="source-links"><a class="source-link" href="https://www.datadoghq.com/about/latest-news/press-releases/datadog-state-of-ai-engineering-report-2026/"><strong>Datadog State of AI Engineering 2026</strong><span>报告提到 multi-model 使用与 agent observability 挑战。</span></a><a class="source-link" href="https://openai.github.io/openai-agents-python/config/"><strong>OpenAI Agents SDK config</strong><span>SDK-wide defaults、client、tracing、logging 等配置入口。</span></a></div>
+  </section>
+</article>
+
+      <nav class="footer-nav"><a class="button" href="10_mcp.html">上一章：第 10 章：MCP：把工具世界标准化</a><a class="button primary" href="12_langgraph.html">下一章：第 12 章：LangGraph：从教学 GraphEngine 迁移到工业框架</a></nav>
+    </main>
+
+<aside class="inspector">
+  <div class="inspector-card">
+    <h3>本章目标</h3>
+    <p>不要让业务节点直接散落 OpenAI、Anthropic 或其他 SDK 调用。</p>
+  </div>
+  <div class="inspector-card">
+    <h3>阅读进度</h3>
+    <div class="progress"><span data-progress></span></div>
+  </div>
+  <div class="inspector-card">
+    <h3>Lab Checklist</h3>
+    <div class="checklist"><label><input data-check="11_llm_provider-1" type="checkbox"> 阅读 provider interface，写一个 fake provider 的测试计划。</label><label><input data-check="11_llm_provider-2" type="checkbox"> 列出真实 LLM 接入后每个 agent 可能新增的失败模式。</label><label><input data-check="11_llm_provider-3" type="checkbox"> 设计 structured output parsing 失败时的 fallback 行为。</label></div>
+  </div>
+  <div class="inspector-card">
+    <h3>Industry Pulse</h3>
+    <ul><li><a href="https://www.datadoghq.com/about/latest-news/press-releases/datadog-state-of-ai-engineering-report-2026/">Datadog State of AI Engineering 2026</a></li><li><a href="https://openai.github.io/openai-agents-python/config/">OpenAI Agents SDK config</a></li></ul>
+  </div>
+</aside>
+
+  </div>
+  <script src="assets/course.js"></script>
+</body>
+</html>

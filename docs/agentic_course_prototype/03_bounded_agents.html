@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第 3 章：Bounded Agent：为什么每个 agent 都应该小而窄 / JobAgent Course Prototype</title>
+  <link rel="stylesheet" href="assets/course.css">
+</head>
+<body>
+  <div class="shell">
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark">03</div>
+    <h1>Bounded Agent：为什么每个 agent 都应该小而窄</h1>
+    <p>一个万能 agent 看起来省事，长期会变成不可测、不可恢复、不可解释的 prompt monster。</p>
+  </div>
+  <nav class="nav-block" aria-label="Course">
+    <a href="index.html">Prototype 首页</a><a class="" href="00_overview.html">00 这不是聊天机器人，这是一个可运行的 Agentic Product</a><a class="" href="01_graph_engine.html">01 从 Pipeline 到 Graph：为什么 agent 工程首先是调度问题</a><a class="" href="02_shared_state.html">02 Shared State：Multi-Agent 系统里的唯一事实表</a><a class="active" href="03_bounded_agents.html">03 Bounded Agent：为什么每个 agent 都应该小而窄</a><a class="" href="04_stop_reason.html">04 StopReason：Agentic 系统不是一直跑到死</a><a class="" href="05_hitl.html">05 Human-in-the-loop：人工审批不是 UI 功能，是系统边界</a><a class="" href="06_checkpoint_resume.html">06 Checkpoint 与 Resume：Agentic Workflow 的耐久执行</a><a class="" href="07_tool_use.html">07 Tool Use：Agent 什么时候应该调用工具</a><a class="" href="08_memory_story_bank.html">08 Memory 与 Story Bank：不是所有上下文都该塞进 Prompt</a><a class="" href="09_local_rag.html">09 Local RAG：先理解检索，再上向量数据库</a><a class="" href="10_mcp.html">10 MCP：把工具世界标准化</a><a class="" href="11_llm_provider.html">11 LLM Provider：把模型调用隔离成可替换接口</a><a class="" href="12_langgraph.html">12 LangGraph：从教学 GraphEngine 迁移到工业框架</a><a class="" href="13_observability.html">13 Observability：Trace 是 Agent 系统的黑匣子</a><a class="" href="14_offline_eval.html">14 Offline Eval：别靠感觉判断 Agent 有没有变好</a><a class="" href="15_guardrails.html">15 Guardrails：在 Agency 之前先做安全边界</a><a class="" href="16_web_product.html">16 Web Product Surface：把 Workflow 变成可以用的产品</a><a class="" href="17_deployment.html">17 Deployment：从本地 demo 到公开 portfolio</a><a class="" href="18_debugging.html">18 调试一本 Agent 系统：从现象回到 state、trace、node</a><a class="" href="19_upgrade_choices.html">19 工程选择题：什么时候该升级技术栈</a><a class="" href="20_capstone.html">20 最终项目任务：把 JobAgent 改成你的 AI Infra Portfolio</a><a href="../agentic_course/index.html">返回旧版目录</a>
+  </nav>
+</aside>
+
+    <main class="reading">
+      <section class="hero">
+        <div class="kicker">Part 1 / 最小心智模型 / Lesson 03</div>
+        <h1>第 3 章：Bounded Agent：为什么每个 agent 都应该小而窄</h1>
+        <p class="subtitle">一个万能 agent 看起来省事，长期会变成不可测、不可恢复、不可解释的 prompt monster。</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#lab">直接做实验</a>
+          <a class="button" href="index.html">课程目录</a>
+        </div>
+      </section>
+
+<article class="lesson">
+  <section class="lesson-section">
+    <h2>这一章先解决什么问题</h2>
+    <div class="article-prose">
+      <p>本项目每个 agent 都是 bounded node：<code>ingestion</code> 只规范输入，<code>jd_extract</code> 只抽取 JD，<code>company_research</code> 只生成公司 brief，<code>fit_analysis</code> 只评分，<code>resume_tailor</code> 只产出简历建议。</p><p>这种拆分延续了传统工程里的 single responsibility 与 bounded context，只是 service 变成了 agent node。</p><p>Bounded agent 的核心不是 prompt 名字，而是输入字段、输出字段、失败方式、是否允许 side effect。</p>
+      <p>不要雇一个万能实习生从读 JD、查公司、改简历、更新表格到准备面试全包。你需要一支小团队，每个人都知道自己的桌面在哪里、交付物是什么。</p>
+    </div>
+  </section>
+
+  <section class="lesson-section">
+    <h2>系统图：把概念放回项目现场</h2>
+    <div class="article-prose">
+      <p>这张图不是装饰，而是本章的定位器。你可以先看图，再打开对应的项目文件。这样读代码时不会迷路：每个文件都不是孤立片段，而是在 JobAgent 这个 agentic workflow 里承担一个明确位置。</p>
+    </div>
+
+<div class="diagram" aria-label="Workflow orchestration diagram">
+  <svg viewBox="0 0 980 310" role="img">
+    <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#007a83"/></marker></defs>
+    <rect x="18" y="34" width="944" height="230" rx="22" fill="#fff" stroke="#d8e0e5"/>
+    <text x="42" y="72" fill="#26323b" font-size="20" font-weight="800">JobAgent workflow map</text>
+    <g fill="#e4f7f7" stroke="#007a83" stroke-width="2">
+      <rect x="48" y="128" width="96" height="48" rx="12"/><rect x="178" y="128" width="110" height="48" rx="12"/>
+      <rect x="322" y="128" width="142" height="48" rx="12"/><rect x="498" y="128" width="116" height="48" rx="12"/>
+      <rect x="648" y="128" width="132" height="48" rx="12"/><rect x="814" y="128" width="106" height="48" rx="12"/>
+    </g>
+    <g fill="#26323b" font-size="14" font-weight="800" text-anchor="middle">
+      <text x="96" y="158">ingest</text><text x="233" y="158">jd_extract</text><text x="393" y="158">company_research</text>
+      <text x="556" y="158">fit_analysis</text><text x="714" y="158">resume_tailor</text><text x="867" y="158">tracker</text>
+    </g>
+    <g stroke="#007a83" stroke-width="2.4" marker-end="url(#arrow)">
+      <line x1="144" y1="152" x2="170" y2="152"/><line x1="288" y1="152" x2="314" y2="152"/>
+      <line x1="464" y1="152" x2="490" y2="152"/><line x1="614" y1="152" x2="640" y2="152"/><line x1="780" y1="152" x2="806" y2="152"/>
+    </g>
+    <rect x="640" y="208" width="148" height="36" rx="18" fill="#fff4df" stroke="#b36b00"/>
+    <text x="714" y="231" text-anchor="middle" fill="#8a5200" font-size="13" font-weight="800">approval gate</text>
+  </svg>
+</div>
+
+  </section>
+
+  <section class="lesson-section">
+    <h2>代码走读：眼睛先放在高亮行</h2>
+    <div class="article-prose">
+      <p>下面的代码摘录不是为了让你背实现细节，而是训练阅读顺序。青色行表示主路径，琥珀色行表示控制、停止、安全或恢复边界。读 agent 系统时，先找这些边界，通常比先看 prompt 更有效。</p>
+      <p>对应的项目文件在这里：<a href="../../jobagent/agents/ingestion.py"><code>jobagent/agents/ingestion.py</code></a>, <a href="../../jobagent/agents/jd_extract.py"><code>jobagent/agents/jd_extract.py</code></a>, <a href="../../jobagent/agents/company_research.py"><code>jobagent/agents/company_research.py</code></a>, <a href="../../jobagent/agents/fit_analysis.py"><code>jobagent/agents/fit_analysis.py</code></a>。</p>
+    </div>
+    <div class="annotated-code" role="region" aria-label="Annotated code excerpt"><div class="code-row hot"><span class="line">20</span><span class="src">graph.add_node(&quot;ingest&quot;, ingest_job_text)</span><span class="comment">输入清洗是第一个 bounded node</span></div><div class="code-row hot"><span class="line">23</span><span class="src">graph.add_node(&quot;jd_extract&quot;, extract_jd)</span><span class="comment">抽取 JD，不研究公司</span></div><div class="code-row hot"><span class="line">24</span><span class="src">graph.add_node(&quot;company_research&quot;, research_company)</span><span class="comment">公司研究独立成 node</span></div><div class="code-row hot"><span class="line">25</span><span class="src">graph.add_node(&quot;fit_analysis&quot;, analyze_fit)</span><span class="comment">匹配度判断独立成 node</span></div><div class="code-row warn"><span class="line">26</span><span class="src">graph.add_node(&quot;resume_tailor&quot;, tailor_resume)</span><span class="comment">简历建议也是独立边界</span></div><div class="code-row warn"><span class="line">27</span><span class="src">graph.add_node(&quot;tracker&quot;, propose_tracker_update)</span><span class="comment">外部记录动作放在审批后</span></div></div>
+    <div class="split"><div class="panel"><strong><a href="../../jobagent/agents/ingestion.py"><code>jobagent/agents/ingestion.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div><div class="panel"><strong><a href="../../jobagent/agents/jd_extract.py"><code>jobagent/agents/jd_extract.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div><div class="split"><div class="panel"><strong><a href="../../jobagent/agents/company_research.py"><code>jobagent/agents/company_research.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div><div class="panel"><strong><a href="../../jobagent/agents/fit_analysis.py"><code>jobagent/agents/fit_analysis.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div>
+  </section>
+
+  <section class="lesson-section" id="lab">
+    <h2>动手实验：把知识点落到一次操作里</h2>
+    <div class="article-prose">
+      <p>这一章不只要求你“理解”。你应该至少跑一次命令、打开一次文件、观察一次 state 或 trace。JobAgent 的教学价值在于它是可运行项目，不是架构幻灯片。</p>
+    </div>
+    <div class="steps"><div class="step">给每个 agent 写一句 contract：读取哪些 state 字段、写入哪些字段、返回哪个 next node。</div><div class="step">故意让 <code>fit_analysis</code> 在没有 <code>company_brief</code> 时运行，观察错误边界是否清楚。</div><div class="step">新增一个只读 agent 草案，例如 <code>market_signal_analysis</code>，先写 contract 不写实现。</div></div>
+  </section>
+
+  <section class="lesson-section">
+    <h2>工程选择题：什么时候这样做，什么时候不要这样做</h2>
+    <div class="article-prose">
+      <p>Agent 拆分按任务、按风险、按工具权限还是按团队所有权？本项目主要按任务和风险拆分。 什么时候需要 agent handoff？当下一个 specialist 需要不同 instruction、tool set 或审批边界。 Agent 是否应该互相直接调用？一般不要，优先通过 graph 和 shared state 调度。</p>
+      <p>这些问题比答案本身更重要。Multi-agent 工程的成熟度，不在于堆多少框架，而在于你能说清楚每个边界为什么存在、什么时候需要升级、升级会带来什么新复杂度。</p>
+    </div>
+  </section>
+
+  <section class="lesson-section">
+    <h2>行业脉搏：把本章放到 2026 AI infra 里看</h2>
+    <div class="article-prose">
+      <p>2026 年行业正在从 generalist agent hype 回到 specialist agents + controlled handoff。OpenAI Agents SDK 的 handoffs 与 guardrails 就是这种趋势的体现。</p><p>企业落地时，最难的不是让 agent 更会说话，而是让它只在被授权的边界内行动。</p>
+      <p>读这些链接时，不要只记产品名。更重要的是把它们映射回本项目：哪些能力已经在 JobAgent 里有教学版，哪些能力属于未来的生产升级。</p>
+    </div>
+    <div class="source-links"><a class="source-link" href="https://openai.github.io/openai-agents-python/handoffs/"><strong>OpenAI Agents SDK handoffs</strong><span>解释 agent 之间如何交接任务以及 handoff 的边界。</span></a><a class="source-link" href="https://openai.github.io/openai-agents-python/guardrails/"><strong>OpenAI Agents SDK guardrails</strong><span>解释 input/output guardrails 与 tool guardrails。</span></a></div>
+  </section>
+</article>
+
+      <nav class="footer-nav"><a class="button" href="02_shared_state.html">上一章：第 2 章：Shared State：Multi-Agent 系统里的唯一事实表</a><a class="button primary" href="04_stop_reason.html">下一章：第 4 章：StopReason：Agentic 系统不是一直跑到死</a></nav>
+    </main>
+
+<aside class="inspector">
+  <div class="inspector-card">
+    <h3>本章目标</h3>
+    <p>一个万能 agent 看起来省事，长期会变成不可测、不可恢复、不可解释的 prompt monster。</p>
+  </div>
+  <div class="inspector-card">
+    <h3>阅读进度</h3>
+    <div class="progress"><span data-progress></span></div>
+  </div>
+  <div class="inspector-card">
+    <h3>Lab Checklist</h3>
+    <div class="checklist"><label><input data-check="03_bounded_agents-1" type="checkbox"> 给每个 agent 写一句 contract：读取哪些 state 字段、写入哪些字段、返回哪个 next node。</label><label><input data-check="03_bounded_agents-2" type="checkbox"> 故意让 <code>fit_analysis</code> 在没有 <code>company_brief</code> 时运行，观察错误边界是否清楚。</label><label><input data-check="03_bounded_agents-3" type="checkbox"> 新增一个只读 agent 草案，例如 <code>market_signal_analysis</code>，先写 contract 不写实现。</label></div>
+  </div>
+  <div class="inspector-card">
+    <h3>Industry Pulse</h3>
+    <ul><li><a href="https://openai.github.io/openai-agents-python/handoffs/">OpenAI Agents SDK handoffs</a></li><li><a href="https://openai.github.io/openai-agents-python/guardrails/">OpenAI Agents SDK guardrails</a></li></ul>
+  </div>
+</aside>
+
+  </div>
+  <script src="assets/course.js"></script>
+</body>
+</html>

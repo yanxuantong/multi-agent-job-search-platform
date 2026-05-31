@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第 17 章：Deployment：从本地 demo 到公开 portfolio / JobAgent Course Prototype</title>
+  <link rel="stylesheet" href="assets/course.css">
+</head>
+<body>
+  <div class="shell">
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark">17</div>
+    <h1>Deployment：从本地 demo 到公开 portfolio</h1>
+    <p>部署 agent product，不只是把 API 跑起来，还要说明状态、成本和安全边界。</p>
+  </div>
+  <nav class="nav-block" aria-label="Course">
+    <a href="index.html">Prototype 首页</a><a class="" href="00_overview.html">00 这不是聊天机器人，这是一个可运行的 Agentic Product</a><a class="" href="01_graph_engine.html">01 从 Pipeline 到 Graph：为什么 agent 工程首先是调度问题</a><a class="" href="02_shared_state.html">02 Shared State：Multi-Agent 系统里的唯一事实表</a><a class="" href="03_bounded_agents.html">03 Bounded Agent：为什么每个 agent 都应该小而窄</a><a class="" href="04_stop_reason.html">04 StopReason：Agentic 系统不是一直跑到死</a><a class="" href="05_hitl.html">05 Human-in-the-loop：人工审批不是 UI 功能，是系统边界</a><a class="" href="06_checkpoint_resume.html">06 Checkpoint 与 Resume：Agentic Workflow 的耐久执行</a><a class="" href="07_tool_use.html">07 Tool Use：Agent 什么时候应该调用工具</a><a class="" href="08_memory_story_bank.html">08 Memory 与 Story Bank：不是所有上下文都该塞进 Prompt</a><a class="" href="09_local_rag.html">09 Local RAG：先理解检索，再上向量数据库</a><a class="" href="10_mcp.html">10 MCP：把工具世界标准化</a><a class="" href="11_llm_provider.html">11 LLM Provider：把模型调用隔离成可替换接口</a><a class="" href="12_langgraph.html">12 LangGraph：从教学 GraphEngine 迁移到工业框架</a><a class="" href="13_observability.html">13 Observability：Trace 是 Agent 系统的黑匣子</a><a class="" href="14_offline_eval.html">14 Offline Eval：别靠感觉判断 Agent 有没有变好</a><a class="" href="15_guardrails.html">15 Guardrails：在 Agency 之前先做安全边界</a><a class="" href="16_web_product.html">16 Web Product Surface：把 Workflow 变成可以用的产品</a><a class="active" href="17_deployment.html">17 Deployment：从本地 demo 到公开 portfolio</a><a class="" href="18_debugging.html">18 调试一本 Agent 系统：从现象回到 state、trace、node</a><a class="" href="19_upgrade_choices.html">19 工程选择题：什么时候该升级技术栈</a><a class="" href="20_capstone.html">20 最终项目任务：把 JobAgent 改成你的 AI Infra Portfolio</a><a href="../agentic_course/index.html">返回旧版目录</a>
+  </nav>
+</aside>
+
+    <main class="reading">
+      <section class="hero">
+        <div class="kicker">Part 5 / Eval、安全与产品化 / Lesson 17</div>
+        <h1>第 17 章：Deployment：从本地 demo 到公开 portfolio</h1>
+        <p class="subtitle">部署 agent product，不只是把 API 跑起来，还要说明状态、成本和安全边界。</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#lab">直接做实验</a>
+          <a class="button" href="index.html">课程目录</a>
+        </div>
+      </section>
+
+<article class="lesson">
+  <section class="lesson-section">
+    <h2>这一章先解决什么问题</h2>
+    <div class="article-prose">
+      <p>本项目提供 Dockerfile、docker-compose、Render Blueprint、health/readiness/ops endpoints。</p><p>Hosted demo 默认不用 managed Postgres，因此 run state 在 free web instance 内可能 ephemeral。这不是失败，而是清楚标注 demo 边界。</p><p>更接近 production 的路径是：durable Postgres state、queue-backed worker、auth、edge rate limit、budget tracking、observability backend。</p>
+      <p>临时展台可以用折叠桌，但你要告诉观众它不是永久门店。Portfolio deployment 也一样：能用、好看、边界诚实，比假装 enterprise SaaS 更可信。</p>
+    </div>
+  </section>
+
+  <section class="lesson-section">
+    <h2>系统图：把概念放回项目现场</h2>
+    <div class="article-prose">
+      <p>这张图不是装饰，而是本章的定位器。你可以先看图，再打开对应的项目文件。这样读代码时不会迷路：每个文件都不是孤立片段，而是在 JobAgent 这个 agentic workflow 里承担一个明确位置。</p>
+    </div>
+
+<div class="diagram" aria-label="Concept map">
+  <svg viewBox="0 0 980 300" role="img">
+    <rect x="18" y="24" width="944" height="226" rx="22" fill="#fff" stroke="#d8e0e5"/>
+    <text x="44" y="64" fill="#26323b" font-size="20" font-weight="900">部署层级图：local CLI -&gt; local web -&gt; Docker -&gt; Render -&gt; durable production stack。</text>
+    <rect x="62" y="112" width="230" height="72" rx="16" fill="#e4f7f7" stroke="#007a83"/>
+    <rect x="374" y="112" width="230" height="72" rx="16" fill="#fbfcfd" stroke="#d8e0e5"/>
+    <rect x="686" y="112" width="230" height="72" rx="16" fill="#fff4df" stroke="#b36b00"/>
+    <text x="177" y="142" text-anchor="middle" fill="#005b62" font-size="15" font-weight="900">Concept</text>
+    <text x="489" y="142" text-anchor="middle" fill="#26323b" font-size="15" font-weight="900">Project Code</text>
+    <text x="801" y="142" text-anchor="middle" fill="#8a5200" font-size="15" font-weight="900">Production Pattern</text>
+    <text x="177" y="164" text-anchor="middle" fill="#5d6975" font-size="12">mental model</text>
+    <text x="489" y="164" text-anchor="middle" fill="#5d6975" font-size="12">files and tests</text>
+    <text x="801" y="164" text-anchor="middle" fill="#5d6975" font-size="12">industry reading</text>
+  </svg>
+</div>
+
+  </section>
+
+  <section class="lesson-section">
+    <h2>代码走读：眼睛先放在高亮行</h2>
+    <div class="article-prose">
+      <p>下面的代码摘录不是为了让你背实现细节，而是训练阅读顺序。青色行表示主路径，琥珀色行表示控制、停止、安全或恢复边界。读 agent 系统时，先找这些边界，通常比先看 prompt 更有效。</p>
+      <p>对应的项目文件在这里：<a href="../../Dockerfile"><code>Dockerfile</code></a>, <a href="../../docker-compose.yml"><code>docker-compose.yml</code></a>, <a href="../../render.yaml"><code>render.yaml</code></a>, <a href="../../deploy/langfuse/README.md"><code>deploy/langfuse/README.md</code></a>。</p>
+    </div>
+    <div class="annotated-code" role="region" aria-label="Annotated code excerpt"><div class="code-row hot"><span class="line">1</span><span class="src">Dockerfile -&gt; uvicorn jobagent.web.app:app</span><span class="comment">部署的是 web product，不只是脚本</span></div><div class="code-row hot"><span class="line">2</span><span class="src">render.yaml -&gt; healthCheckPath: /healthz</span><span class="comment">公开 demo 需要健康检查</span></div><div class="code-row warn"><span class="line">3</span><span class="src">JOBAGENT_PUBLIC_DEMO_MODE=true</span><span class="comment">public mode 要明确边界</span></div><div class="code-row warn"><span class="line">4</span><span class="src">JOBAGENT_DATABASE_URL -&gt; Postgres run store</span><span class="comment">durable state 是生产升级点</span></div></div>
+    <div class="split"><div class="panel"><strong><a href="../../Dockerfile"><code>Dockerfile</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div><div class="panel"><strong><a href="../../docker-compose.yml"><code>docker-compose.yml</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div><div class="split"><div class="panel"><strong><a href="../../render.yaml"><code>render.yaml</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div><div class="panel"><strong><a href="../../deploy/langfuse/README.md"><code>deploy/langfuse/README.md</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div>
+  </section>
+
+  <section class="lesson-section" id="lab">
+    <h2>动手实验：把知识点落到一次操作里</h2>
+    <div class="article-prose">
+      <p>这一章不只要求你“理解”。你应该至少跑一次命令、打开一次文件、观察一次 state 或 trace。JobAgent 的教学价值在于它是可运行项目，不是架构幻灯片。</p>
+    </div>
+    <div class="steps"><div class="step">运行 web app 后访问 <code>/healthz</code>、<code>/readyz</code>、<code>/ops/status</code>。</div><div class="step">阅读 <code>render.yaml</code>，指出 health check 和 public demo mode。</div><div class="step">设计 production hardening checklist。</div></div>
+  </section>
+
+  <section class="lesson-section">
+    <h2>工程选择题：什么时候这样做，什么时候不要这样做</h2>
+    <div class="article-prose">
+      <p>什么时候需要 queue？当 workflow 长、外部 API 慢、并发高或需要 retry/backoff。 什么时候需要 Postgres？当 checkpoint/run state 不能丢，或者多 instance 需要共享状态。 什么时候需要 auth？任何个人数据、真实申请、外部写入、团队使用场景。</p>
+      <p>这些问题比答案本身更重要。Multi-agent 工程的成熟度，不在于堆多少框架，而在于你能说清楚每个边界为什么存在、什么时候需要升级、升级会带来什么新复杂度。</p>
+    </div>
+  </section>
+
+  <section class="lesson-section">
+    <h2>行业脉搏：把本章放到 2026 AI infra 里看</h2>
+    <div class="article-prose">
+      <p>AWS AgentCore 的定位反映了行业变化：agent deployment 需要 runtime、memory、identity、observability、evaluation、policy，不只是 serverless endpoint。</p><p>这给 JobAgent 的升级路线提供了很好的工业参照。</p>
+      <p>读这些链接时，不要只记产品名。更重要的是把它们映射回本项目：哪些能力已经在 JobAgent 里有教学版，哪些能力属于未来的生产升级。</p>
+    </div>
+    <div class="source-links"><a class="source-link" href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/release-notes.html"><strong>AWS AgentCore release notes</strong><span>AgentCore runtime、memory、observability、MCP server、framework support 的持续更新。</span></a><a class="source-link" href="https://aws.amazon.com/blogs/machine-learning/build-trustworthy-ai-agents-with-amazon-bedrock-agentcore-observability/"><strong>AWS AgentCore Observability</strong><span>用 CloudWatch/GenAI observability trace 和 debug agents。</span></a></div>
+  </section>
+</article>
+
+      <nav class="footer-nav"><a class="button" href="16_web_product.html">上一章：第 16 章：Web Product Surface：把 Workflow 变成可以用的产品</a><a class="button primary" href="18_debugging.html">下一章：第 18 章：调试一本 Agent 系统：从现象回到 state、trace、node</a></nav>
+    </main>
+
+<aside class="inspector">
+  <div class="inspector-card">
+    <h3>本章目标</h3>
+    <p>部署 agent product，不只是把 API 跑起来，还要说明状态、成本和安全边界。</p>
+  </div>
+  <div class="inspector-card">
+    <h3>阅读进度</h3>
+    <div class="progress"><span data-progress></span></div>
+  </div>
+  <div class="inspector-card">
+    <h3>Lab Checklist</h3>
+    <div class="checklist"><label><input data-check="17_deployment-1" type="checkbox"> 运行 web app 后访问 <code>/healthz</code>、<code>/readyz</code>、<code>/ops/status</code>。</label><label><input data-check="17_deployment-2" type="checkbox"> 阅读 <code>render.yaml</code>，指出 health check 和 public demo mode。</label><label><input data-check="17_deployment-3" type="checkbox"> 设计 production hardening checklist。</label></div>
+  </div>
+  <div class="inspector-card">
+    <h3>Industry Pulse</h3>
+    <ul><li><a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/release-notes.html">AWS AgentCore release notes</a></li><li><a href="https://aws.amazon.com/blogs/machine-learning/build-trustworthy-ai-agents-with-amazon-bedrock-agentcore-observability/">AWS AgentCore Observability</a></li></ul>
+  </div>
+</aside>
+
+  </div>
+  <script src="assets/course.js"></script>
+</body>
+</html>

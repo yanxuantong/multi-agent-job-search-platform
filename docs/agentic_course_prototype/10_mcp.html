@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第 10 章：MCP：把工具世界标准化 / JobAgent Course Prototype</title>
+  <link rel="stylesheet" href="assets/course.css">
+</head>
+<body>
+  <div class="shell">
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark">10</div>
+    <h1>MCP：把工具世界标准化</h1>
+    <p>MCP 可以理解为 agent 的工具协议层，但协议标准化不等于安全自动解决。</p>
+  </div>
+  <nav class="nav-block" aria-label="Course">
+    <a href="index.html">Prototype 首页</a><a class="" href="00_overview.html">00 这不是聊天机器人，这是一个可运行的 Agentic Product</a><a class="" href="01_graph_engine.html">01 从 Pipeline 到 Graph：为什么 agent 工程首先是调度问题</a><a class="" href="02_shared_state.html">02 Shared State：Multi-Agent 系统里的唯一事实表</a><a class="" href="03_bounded_agents.html">03 Bounded Agent：为什么每个 agent 都应该小而窄</a><a class="" href="04_stop_reason.html">04 StopReason：Agentic 系统不是一直跑到死</a><a class="" href="05_hitl.html">05 Human-in-the-loop：人工审批不是 UI 功能，是系统边界</a><a class="" href="06_checkpoint_resume.html">06 Checkpoint 与 Resume：Agentic Workflow 的耐久执行</a><a class="" href="07_tool_use.html">07 Tool Use：Agent 什么时候应该调用工具</a><a class="" href="08_memory_story_bank.html">08 Memory 与 Story Bank：不是所有上下文都该塞进 Prompt</a><a class="" href="09_local_rag.html">09 Local RAG：先理解检索，再上向量数据库</a><a class="active" href="10_mcp.html">10 MCP：把工具世界标准化</a><a class="" href="11_llm_provider.html">11 LLM Provider：把模型调用隔离成可替换接口</a><a class="" href="12_langgraph.html">12 LangGraph：从教学 GraphEngine 迁移到工业框架</a><a class="" href="13_observability.html">13 Observability：Trace 是 Agent 系统的黑匣子</a><a class="" href="14_offline_eval.html">14 Offline Eval：别靠感觉判断 Agent 有没有变好</a><a class="" href="15_guardrails.html">15 Guardrails：在 Agency 之前先做安全边界</a><a class="" href="16_web_product.html">16 Web Product Surface：把 Workflow 变成可以用的产品</a><a class="" href="17_deployment.html">17 Deployment：从本地 demo 到公开 portfolio</a><a class="" href="18_debugging.html">18 调试一本 Agent 系统：从现象回到 state、trace、node</a><a class="" href="19_upgrade_choices.html">19 工程选择题：什么时候该升级技术栈</a><a class="" href="20_capstone.html">20 最终项目任务：把 JobAgent 改成你的 AI Infra Portfolio</a><a href="../agentic_course/index.html">返回旧版目录</a>
+  </nav>
+</aside>
+
+    <main class="reading">
+      <section class="hero">
+        <div class="kicker">Part 3 / 工具、记忆、检索 / Lesson 10</div>
+        <h1>第 10 章：MCP：把工具世界标准化</h1>
+        <p class="subtitle">MCP 可以理解为 agent 的工具协议层，但协议标准化不等于安全自动解决。</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#lab">直接做实验</a>
+          <a class="button" href="index.html">课程目录</a>
+        </div>
+      </section>
+
+<article class="lesson">
+  <section class="lesson-section">
+    <h2>这一章先解决什么问题</h2>
+    <div class="article-prose">
+      <p>本项目提供 dependency-free MCP-shaped teaching stub 和 SDK server，让读者理解 tool/resource/server 的边界。</p><p>MCP 的价值在于把 agent 连接外部工具、数据源和服务的方式标准化，减少每个应用自定义 glue code。</p><p>但 MCP server 也扩大了攻击面：本地进程、凭证、文件、网络、工具权限都必须治理。</p>
+      <p>MCP 像 USB-C：统一接口很方便，但你仍然要知道插上的设备是什么、能读什么数据、会不会反向供电烧坏机器。</p>
+    </div>
+  </section>
+
+  <section class="lesson-section">
+    <h2>系统图：把概念放回项目现场</h2>
+    <div class="article-prose">
+      <p>这张图不是装饰，而是本章的定位器。你可以先看图，再打开对应的项目文件。这样读代码时不会迷路：每个文件都不是孤立片段，而是在 JobAgent 这个 agentic workflow 里承担一个明确位置。</p>
+    </div>
+
+<div class="diagram" aria-label="Concept map">
+  <svg viewBox="0 0 980 300" role="img">
+    <rect x="18" y="24" width="944" height="226" rx="22" fill="#fff" stroke="#d8e0e5"/>
+    <text x="44" y="64" fill="#26323b" font-size="20" font-weight="900">协议边界图：agent client -&gt; MCP server -&gt; tools/resources -&gt; audit log。</text>
+    <rect x="62" y="112" width="230" height="72" rx="16" fill="#e4f7f7" stroke="#007a83"/>
+    <rect x="374" y="112" width="230" height="72" rx="16" fill="#fbfcfd" stroke="#d8e0e5"/>
+    <rect x="686" y="112" width="230" height="72" rx="16" fill="#fff4df" stroke="#b36b00"/>
+    <text x="177" y="142" text-anchor="middle" fill="#005b62" font-size="15" font-weight="900">Concept</text>
+    <text x="489" y="142" text-anchor="middle" fill="#26323b" font-size="15" font-weight="900">Project Code</text>
+    <text x="801" y="142" text-anchor="middle" fill="#8a5200" font-size="15" font-weight="900">Production Pattern</text>
+    <text x="177" y="164" text-anchor="middle" fill="#5d6975" font-size="12">mental model</text>
+    <text x="489" y="164" text-anchor="middle" fill="#5d6975" font-size="12">files and tests</text>
+    <text x="801" y="164" text-anchor="middle" fill="#5d6975" font-size="12">industry reading</text>
+  </svg>
+</div>
+
+  </section>
+
+  <section class="lesson-section">
+    <h2>代码走读：眼睛先放在高亮行</h2>
+    <div class="article-prose">
+      <p>下面的代码摘录不是为了让你背实现细节，而是训练阅读顺序。青色行表示主路径，琥珀色行表示控制、停止、安全或恢复边界。读 agent 系统时，先找这些边界，通常比先看 prompt 更有效。</p>
+      <p>对应的项目文件在这里：<a href="../../mcp_server/career_research_server.py"><code>mcp_server/career_research_server.py</code></a>, <a href="../../mcp_server/career_research_sdk_server.py"><code>mcp_server/career_research_sdk_server.py</code></a>, <a href="../../jobagent/integrations/external_mcp_tracker.py"><code>jobagent/integrations/external_mcp_tracker.py</code></a>。</p>
+    </div>
+    <div class="annotated-code" role="region" aria-label="Annotated code excerpt"><div class="code-row "><span class="line">14</span><span class="src">def main() -&gt; int:</span><span class="comment">教学版 MCP-shaped server 从简单入口开始</span></div><div class="code-row hot"><span class="line">17</span><span class="src">print(json.dumps({...}))</span><span class="comment">先表达 tool/resource contract，再接 SDK</span></div><div class="code-row warn"><span class="line">1</span><span class="src">MCP server boundary = tools + resources + credentials + audit</span><span class="comment">协议标准化不等于安全自动解决</span></div></div>
+    <div class="split"><div class="panel"><strong><a href="../../mcp_server/career_research_server.py"><code>mcp_server/career_research_server.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div><div class="panel"><strong><a href="../../mcp_server/career_research_sdk_server.py"><code>mcp_server/career_research_sdk_server.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div><div class="split"><div class="panel"><strong><a href="../../jobagent/integrations/external_mcp_tracker.py"><code>jobagent/integrations/external_mcp_tracker.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div>
+  </section>
+
+  <section class="lesson-section" id="lab">
+    <h2>动手实验：把知识点落到一次操作里</h2>
+    <div class="article-prose">
+      <p>这一章不只要求你“理解”。你应该至少跑一次命令、打开一次文件、观察一次 state 或 trace。JobAgent 的教学价值在于它是可运行项目，不是架构幻灯片。</p>
+    </div>
+    <div class="steps"><div class="step">阅读 career research MCP stub，写出它暴露了哪些能力。</div><div class="step">设计一个 <code>company_research</code> MCP tool 的 input/output schema。</div><div class="step">列出 MCP server 需要的权限清单和审计字段。</div></div>
+  </section>
+
+  <section class="lesson-section">
+    <h2>工程选择题：什么时候这样做，什么时候不要这样做</h2>
+    <div class="article-prose">
+      <p>什么时候用 MCP，什么时候直接写 integration？跨客户端复用时用 MCP，单应用内部逻辑可先直接 integration。 MCP tool 是否应该有网络访问？取决于任务，但必须限制域名、超时和输出大小。 MCP server 如何鉴权？本地 demo 可简单，生产环境要 identity、policy、audit。</p>
+      <p>这些问题比答案本身更重要。Multi-agent 工程的成熟度，不在于堆多少框架，而在于你能说清楚每个边界为什么存在、什么时候需要升级、升级会带来什么新复杂度。</p>
+    </div>
+  </section>
+
+  <section class="lesson-section">
+    <h2>行业脉搏：把本章放到 2026 AI infra 里看</h2>
+    <div class="article-prose">
+      <p>MCP 在 2024-2026 快速成为 agent-tool integration 的事实标准之一，同时安全讨论也明显升温。</p><p>教程需要同时讲 adoption 和 risk，避免把协议当成魔法安全层。</p>
+      <p>读这些链接时，不要只记产品名。更重要的是把它们映射回本项目：哪些能力已经在 JobAgent 里有教学版，哪些能力属于未来的生产升级。</p>
+    </div>
+    <div class="source-links"><a class="source-link" href="https://www.anthropic.com/news/model-context-protocol"><strong>Anthropic MCP intro</strong><span>MCP 初始介绍，解释为什么需要统一连接数据源和工具。</span></a><a class="source-link" href="https://modelcontextprotocol.io/docs/concepts/resources"><strong>MCP resources docs</strong><span>MCP resources、URI、metadata、annotations 的官方概念说明。</span></a></div>
+  </section>
+</article>
+
+      <nav class="footer-nav"><a class="button" href="09_local_rag.html">上一章：第 9 章：Local RAG：先理解检索，再上向量数据库</a><a class="button primary" href="11_llm_provider.html">下一章：第 11 章：LLM Provider：把模型调用隔离成可替换接口</a></nav>
+    </main>
+
+<aside class="inspector">
+  <div class="inspector-card">
+    <h3>本章目标</h3>
+    <p>MCP 可以理解为 agent 的工具协议层，但协议标准化不等于安全自动解决。</p>
+  </div>
+  <div class="inspector-card">
+    <h3>阅读进度</h3>
+    <div class="progress"><span data-progress></span></div>
+  </div>
+  <div class="inspector-card">
+    <h3>Lab Checklist</h3>
+    <div class="checklist"><label><input data-check="10_mcp-1" type="checkbox"> 阅读 career research MCP stub，写出它暴露了哪些能力。</label><label><input data-check="10_mcp-2" type="checkbox"> 设计一个 <code>company_research</code> MCP tool 的 input/output schema。</label><label><input data-check="10_mcp-3" type="checkbox"> 列出 MCP server 需要的权限清单和审计字段。</label></div>
+  </div>
+  <div class="inspector-card">
+    <h3>Industry Pulse</h3>
+    <ul><li><a href="https://www.anthropic.com/news/model-context-protocol">Anthropic MCP intro</a></li><li><a href="https://modelcontextprotocol.io/docs/concepts/resources">MCP resources docs</a></li></ul>
+  </div>
+</aside>
+
+  </div>
+  <script src="assets/course.js"></script>
+</body>
+</html>

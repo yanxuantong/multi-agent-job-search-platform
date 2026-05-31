@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第 8 章：Memory 与 Story Bank：不是所有上下文都该塞进 Prompt / JobAgent Course Prototype</title>
+  <link rel="stylesheet" href="assets/course.css">
+</head>
+<body>
+  <div class="shell">
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark">08</div>
+    <h1>Memory 与 Story Bank：不是所有上下文都该塞进 Prompt</h1>
+    <p>Memory 的第一原则：该结构化的结构化，该检索的检索，该短期的不要伪装长期。</p>
+  </div>
+  <nav class="nav-block" aria-label="Course">
+    <a href="index.html">Prototype 首页</a><a class="" href="00_overview.html">00 这不是聊天机器人，这是一个可运行的 Agentic Product</a><a class="" href="01_graph_engine.html">01 从 Pipeline 到 Graph：为什么 agent 工程首先是调度问题</a><a class="" href="02_shared_state.html">02 Shared State：Multi-Agent 系统里的唯一事实表</a><a class="" href="03_bounded_agents.html">03 Bounded Agent：为什么每个 agent 都应该小而窄</a><a class="" href="04_stop_reason.html">04 StopReason：Agentic 系统不是一直跑到死</a><a class="" href="05_hitl.html">05 Human-in-the-loop：人工审批不是 UI 功能，是系统边界</a><a class="" href="06_checkpoint_resume.html">06 Checkpoint 与 Resume：Agentic Workflow 的耐久执行</a><a class="" href="07_tool_use.html">07 Tool Use：Agent 什么时候应该调用工具</a><a class="active" href="08_memory_story_bank.html">08 Memory 与 Story Bank：不是所有上下文都该塞进 Prompt</a><a class="" href="09_local_rag.html">09 Local RAG：先理解检索，再上向量数据库</a><a class="" href="10_mcp.html">10 MCP：把工具世界标准化</a><a class="" href="11_llm_provider.html">11 LLM Provider：把模型调用隔离成可替换接口</a><a class="" href="12_langgraph.html">12 LangGraph：从教学 GraphEngine 迁移到工业框架</a><a class="" href="13_observability.html">13 Observability：Trace 是 Agent 系统的黑匣子</a><a class="" href="14_offline_eval.html">14 Offline Eval：别靠感觉判断 Agent 有没有变好</a><a class="" href="15_guardrails.html">15 Guardrails：在 Agency 之前先做安全边界</a><a class="" href="16_web_product.html">16 Web Product Surface：把 Workflow 变成可以用的产品</a><a class="" href="17_deployment.html">17 Deployment：从本地 demo 到公开 portfolio</a><a class="" href="18_debugging.html">18 调试一本 Agent 系统：从现象回到 state、trace、node</a><a class="" href="19_upgrade_choices.html">19 工程选择题：什么时候该升级技术栈</a><a class="" href="20_capstone.html">20 最终项目任务：把 JobAgent 改成你的 AI Infra Portfolio</a><a href="../agentic_course/index.html">返回旧版目录</a>
+  </nav>
+</aside>
+
+    <main class="reading">
+      <section class="hero">
+        <div class="kicker">Part 3 / 工具、记忆、检索 / Lesson 08</div>
+        <h1>第 8 章：Memory 与 Story Bank：不是所有上下文都该塞进 Prompt</h1>
+        <p class="subtitle">Memory 的第一原则：该结构化的结构化，该检索的检索，该短期的不要伪装长期。</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#lab">直接做实验</a>
+          <a class="button" href="index.html">课程目录</a>
+        </div>
+      </section>
+
+<article class="lesson">
+  <section class="lesson-section">
+    <h2>这一章先解决什么问题</h2>
+    <div class="article-prose">
+      <p><code>story_bank.json</code> 是用户职业素材库，帮助 interview prep 和 resume narrative 选择合适故事。</p><p>它不同于 workflow state：state 是一次 run 的工作台，story bank 是跨 run 的用户资产。</p><p>真正的 agent memory 应该分层：当前任务 state、用户 profile、长期经验库、可检索文档、外部系统记录。</p>
+      <p>不要把整间图书馆都塞进会议室。开会时带目录、索引和几本相关书就够了。Memory 工程就是决定什么留在会议桌上，什么留在书架里。</p>
+    </div>
+  </section>
+
+  <section class="lesson-section">
+    <h2>系统图：把概念放回项目现场</h2>
+    <div class="article-prose">
+      <p>这张图不是装饰，而是本章的定位器。你可以先看图，再打开对应的项目文件。这样读代码时不会迷路：每个文件都不是孤立片段，而是在 JobAgent 这个 agentic workflow 里承担一个明确位置。</p>
+    </div>
+
+<div class="diagram" aria-label="State evolution diagram">
+  <svg viewBox="0 0 980 360" role="img">
+    <rect x="18" y="24" width="944" height="294" rx="22" fill="#fff" stroke="#d8e0e5"/>
+    <text x="44" y="64" fill="#26323b" font-size="20" font-weight="900">JobSearchState grows through the run</text>
+    <g fill="#fbfcfd" stroke="#d8e0e5">
+      <rect x="56" y="98" width="160" height="74" rx="14"/><rect x="250" y="98" width="160" height="74" rx="14"/>
+      <rect x="444" y="98" width="160" height="74" rx="14"/><rect x="638" y="98" width="160" height="74" rx="14"/>
+      <rect x="250" y="214" width="160" height="74" rx="14"/><rect x="444" y="214" width="160" height="74" rx="14"/><rect x="638" y="214" width="160" height="74" rx="14"/>
+    </g>
+    <g fill="#007a83" font-size="13" font-weight="900">
+      <text x="76" y="126">raw_job_text</text><text x="270" y="126">normalized_jd</text><text x="464" y="126">company_brief</text><text x="658" y="126">fit_analysis</text>
+      <text x="270" y="242">resume_proposal</text><text x="464" y="242">tracker_update</text><text x="658" y="242">interview_pack</text>
+    </g>
+    <g fill="#5d6975" font-size="12">
+      <text x="76" y="148">user input</text><text x="270" y="148">extract</text><text x="464" y="148">research</text><text x="658" y="148">score</text>
+      <text x="270" y="264">HITL</text><text x="464" y="264">approve</text><text x="658" y="264">prepare</text>
+    </g>
+    <rect x="806" y="104" width="112" height="178" rx="16" fill="#fff4df" stroke="#b36b00"/>
+    <text x="862" y="134" text-anchor="middle" fill="#8a5200" font-size="13" font-weight="900">control</text>
+    <text x="830" y="166" fill="#5d6975" font-size="12">budget</text><text x="830" y="190" fill="#5d6975" font-size="12">errors</text>
+    <text x="830" y="214" fill="#5d6975" font-size="12">approved</text><text x="830" y="238" fill="#5d6975" font-size="12">stop_reason</text><text x="830" y="262" fill="#5d6975" font-size="12">pending_node</text>
+  </svg>
+</div>
+
+  </section>
+
+  <section class="lesson-section">
+    <h2>代码走读：眼睛先放在高亮行</h2>
+    <div class="article-prose">
+      <p>下面的代码摘录不是为了让你背实现细节，而是训练阅读顺序。青色行表示主路径，琥珀色行表示控制、停止、安全或恢复边界。读 agent 系统时，先找这些边界，通常比先看 prompt 更有效。</p>
+      <p>对应的项目文件在这里：<a href="../../jobagent/memory/story_bank.py"><code>jobagent/memory/story_bank.py</code></a>, <a href="../../samples/story_bank.json"><code>samples/story_bank.json</code></a>, <a href="../../jobagent/storage/postgres_memory.py"><code>jobagent/storage/postgres_memory.py</code></a>。</p>
+    </div>
+    <div class="annotated-code" role="region" aria-label="Annotated code excerpt"><div class="code-row hot"><span class="line">1</span><span class="src">story_bank = load_story_bank(&quot;samples/story_bank.json&quot;)</span><span class="comment">长期素材库不是聊天历史</span></div><div class="code-row hot"><span class="line">2</span><span class="src">state.story_bank = story_bank</span><span class="comment">一次 run 只拿需要的素材进入 state</span></div><div class="code-row hot"><span class="line">3</span><span class="src">interview_pack.story_matches = select_relevant_stories(state)</span><span class="comment">下游 agent 使用结构化素材</span></div><div class="code-row warn"><span class="line">4</span><span class="src">memory writes should be explicit and reviewable</span><span class="comment">长期记忆写入需要边界</span></div></div>
+    <div class="split"><div class="panel"><strong><a href="../../jobagent/memory/story_bank.py"><code>jobagent/memory/story_bank.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div><div class="panel"><strong><a href="../../samples/story_bank.json"><code>samples/story_bank.json</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div><div class="split"><div class="panel"><strong><a href="../../jobagent/storage/postgres_memory.py"><code>jobagent/storage/postgres_memory.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div>
+  </section>
+
+  <section class="lesson-section" id="lab">
+    <h2>动手实验：把知识点落到一次操作里</h2>
+    <div class="article-prose">
+      <p>这一章不只要求你“理解”。你应该至少跑一次命令、打开一次文件、观察一次 state 或 trace。JobAgent 的教学价值在于它是可运行项目，不是架构幻灯片。</p>
+    </div>
+    <div class="steps"><div class="step">修改 <code>samples/story_bank.json</code>，重新运行 auto-approve，观察 interview pack 的故事匹配变化。</div><div class="step">设计一个职业画像 schema：技能、行业偏好、项目故事、禁用信息、目标公司。</div><div class="step">写出哪些 memory 可以给模型看，哪些只能用于 deterministic filtering。</div></div>
+  </section>
+
+  <section class="lesson-section">
+    <h2>工程选择题：什么时候这样做，什么时候不要这样做</h2>
+    <div class="article-prose">
+      <p>Memory 是否应该自动写入？敏感用户画像最好需要用户确认。 长期 memory 用 Postgres、文件、向量库还是外部知识库？取决于规模、检索需求和隐私边界。 Context window 变大是否意味着不用 memory？不，长上下文也需要选择、排序和治理。</p>
+      <p>这些问题比答案本身更重要。Multi-agent 工程的成熟度，不在于堆多少框架，而在于你能说清楚每个边界为什么存在、什么时候需要升级、升级会带来什么新复杂度。</p>
+    </div>
+  </section>
+
+  <section class="lesson-section">
+    <h2>行业脉搏：把本章放到 2026 AI infra 里看</h2>
+    <div class="article-prose">
+      <p>2026 年 agent platform 普遍把 memory 做成 runtime primitive，但具体实现仍然要面对隐私、授权、更新、删除和评估问题。</p><p>JobAgent 的 story bank 是一个轻量起点，可以逐步升级成用户职业 ledger。</p>
+      <p>读这些链接时，不要只记产品名。更重要的是把它们映射回本项目：哪些能力已经在 JobAgent 里有教学版，哪些能力属于未来的生产升级。</p>
+    </div>
+    <div class="source-links"><a class="source-link" href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/release-notes.html"><strong>AWS AgentCore release notes</strong><span>AgentCore release notes 多次提到 memory、runtime、identity 与 observability。</span></a><a class="source-link" href="https://docs.langchain.com/oss/python/langgraph"><strong>LangGraph overview</strong><span>LangGraph 将 short-term working memory 与 long-term memory 放在核心能力中。</span></a></div>
+  </section>
+</article>
+
+      <nav class="footer-nav"><a class="button" href="07_tool_use.html">上一章：第 7 章：Tool Use：Agent 什么时候应该调用工具</a><a class="button primary" href="09_local_rag.html">下一章：第 9 章：Local RAG：先理解检索，再上向量数据库</a></nav>
+    </main>
+
+<aside class="inspector">
+  <div class="inspector-card">
+    <h3>本章目标</h3>
+    <p>Memory 的第一原则：该结构化的结构化，该检索的检索，该短期的不要伪装长期。</p>
+  </div>
+  <div class="inspector-card">
+    <h3>阅读进度</h3>
+    <div class="progress"><span data-progress></span></div>
+  </div>
+  <div class="inspector-card">
+    <h3>Lab Checklist</h3>
+    <div class="checklist"><label><input data-check="08_memory_story_bank-1" type="checkbox"> 修改 <code>samples/story_bank.json</code>，重新运行 auto-approve，观察 interview pack 的故事匹配变化。</label><label><input data-check="08_memory_story_bank-2" type="checkbox"> 设计一个职业画像 schema：技能、行业偏好、项目故事、禁用信息、目标公司。</label><label><input data-check="08_memory_story_bank-3" type="checkbox"> 写出哪些 memory 可以给模型看，哪些只能用于 deterministic filtering。</label></div>
+  </div>
+  <div class="inspector-card">
+    <h3>Industry Pulse</h3>
+    <ul><li><a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/release-notes.html">AWS AgentCore release notes</a></li><li><a href="https://docs.langchain.com/oss/python/langgraph">LangGraph overview</a></li></ul>
+  </div>
+</aside>
+
+  </div>
+  <script src="assets/course.js"></script>
+</body>
+</html>

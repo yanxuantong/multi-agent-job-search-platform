@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第 5 章：Human-in-the-loop：人工审批不是 UI 功能，是系统边界 / JobAgent Course Prototype</title>
+  <link rel="stylesheet" href="assets/course.css">
+</head>
+<body>
+  <div class="shell">
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark">05</div>
+    <h1>Human-in-the-loop：人工审批不是 UI 功能，是系统边界</h1>
+    <p>HITL 的本质是权限边界：哪些动作可以建议，哪些动作必须由人放行。</p>
+  </div>
+  <nav class="nav-block" aria-label="Course">
+    <a href="index.html">Prototype 首页</a><a class="" href="00_overview.html">00 这不是聊天机器人，这是一个可运行的 Agentic Product</a><a class="" href="01_graph_engine.html">01 从 Pipeline 到 Graph：为什么 agent 工程首先是调度问题</a><a class="" href="02_shared_state.html">02 Shared State：Multi-Agent 系统里的唯一事实表</a><a class="" href="03_bounded_agents.html">03 Bounded Agent：为什么每个 agent 都应该小而窄</a><a class="" href="04_stop_reason.html">04 StopReason：Agentic 系统不是一直跑到死</a><a class="active" href="05_hitl.html">05 Human-in-the-loop：人工审批不是 UI 功能，是系统边界</a><a class="" href="06_checkpoint_resume.html">06 Checkpoint 与 Resume：Agentic Workflow 的耐久执行</a><a class="" href="07_tool_use.html">07 Tool Use：Agent 什么时候应该调用工具</a><a class="" href="08_memory_story_bank.html">08 Memory 与 Story Bank：不是所有上下文都该塞进 Prompt</a><a class="" href="09_local_rag.html">09 Local RAG：先理解检索，再上向量数据库</a><a class="" href="10_mcp.html">10 MCP：把工具世界标准化</a><a class="" href="11_llm_provider.html">11 LLM Provider：把模型调用隔离成可替换接口</a><a class="" href="12_langgraph.html">12 LangGraph：从教学 GraphEngine 迁移到工业框架</a><a class="" href="13_observability.html">13 Observability：Trace 是 Agent 系统的黑匣子</a><a class="" href="14_offline_eval.html">14 Offline Eval：别靠感觉判断 Agent 有没有变好</a><a class="" href="15_guardrails.html">15 Guardrails：在 Agency 之前先做安全边界</a><a class="" href="16_web_product.html">16 Web Product Surface：把 Workflow 变成可以用的产品</a><a class="" href="17_deployment.html">17 Deployment：从本地 demo 到公开 portfolio</a><a class="" href="18_debugging.html">18 调试一本 Agent 系统：从现象回到 state、trace、node</a><a class="" href="19_upgrade_choices.html">19 工程选择题：什么时候该升级技术栈</a><a class="" href="20_capstone.html">20 最终项目任务：把 JobAgent 改成你的 AI Infra Portfolio</a><a href="../agentic_course/index.html">返回旧版目录</a>
+  </nav>
+</aside>
+
+    <main class="reading">
+      <section class="hero">
+        <div class="kicker">Part 2 / 控制、暂停、恢复 / Lesson 05</div>
+        <h1>第 5 章：Human-in-the-loop：人工审批不是 UI 功能，是系统边界</h1>
+        <p class="subtitle">HITL 的本质是权限边界：哪些动作可以建议，哪些动作必须由人放行。</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#lab">直接做实验</a>
+          <a class="button" href="index.html">课程目录</a>
+        </div>
+      </section>
+
+<article class="lesson">
+  <section class="lesson-section">
+    <h2>这一章先解决什么问题</h2>
+    <div class="article-prose">
+      <p>JobAgent 在 <code>resume_tailor</code> 后暂停，因为简历建议属于 application-facing output。系统可以生成 proposal，但不能假装用户已经接受。</p><p>HITL 不是一个按钮，而是一条系统 contract：暂停时保存 state，展示需要审批的内容，用户决定后从 <code>pending_node</code> 继续。</p><p>这类设计适用于邮件发送、简历投递、CRM 写入、支付、代码 merge、数据删除等高风险动作。</p>
+      <p>机场可以自动规划航线，但起飞许可必须由塔台给出。Resume proposal 就像起飞前的放行请求：系统准备好了，但还不能自作主张。</p>
+    </div>
+  </section>
+
+  <section class="lesson-section">
+    <h2>系统图：把概念放回项目现场</h2>
+    <div class="article-prose">
+      <p>这张图不是装饰，而是本章的定位器。你可以先看图，再打开对应的项目文件。这样读代码时不会迷路：每个文件都不是孤立片段，而是在 JobAgent 这个 agentic workflow 里承担一个明确位置。</p>
+    </div>
+
+<div class="diagram" aria-label="Concept map">
+  <svg viewBox="0 0 980 300" role="img">
+    <rect x="18" y="24" width="944" height="226" rx="22" fill="#fff" stroke="#d8e0e5"/>
+    <text x="44" y="64" fill="#26323b" font-size="20" font-weight="900">审批闸门图：proposal -&gt; human decision -&gt; resume tracker。</text>
+    <rect x="62" y="112" width="230" height="72" rx="16" fill="#e4f7f7" stroke="#007a83"/>
+    <rect x="374" y="112" width="230" height="72" rx="16" fill="#fbfcfd" stroke="#d8e0e5"/>
+    <rect x="686" y="112" width="230" height="72" rx="16" fill="#fff4df" stroke="#b36b00"/>
+    <text x="177" y="142" text-anchor="middle" fill="#005b62" font-size="15" font-weight="900">Concept</text>
+    <text x="489" y="142" text-anchor="middle" fill="#26323b" font-size="15" font-weight="900">Project Code</text>
+    <text x="801" y="142" text-anchor="middle" fill="#8a5200" font-size="15" font-weight="900">Production Pattern</text>
+    <text x="177" y="164" text-anchor="middle" fill="#5d6975" font-size="12">mental model</text>
+    <text x="489" y="164" text-anchor="middle" fill="#5d6975" font-size="12">files and tests</text>
+    <text x="801" y="164" text-anchor="middle" fill="#5d6975" font-size="12">industry reading</text>
+  </svg>
+</div>
+
+  </section>
+
+  <section class="lesson-section">
+    <h2>代码走读：眼睛先放在高亮行</h2>
+    <div class="article-prose">
+      <p>下面的代码摘录不是为了让你背实现细节，而是训练阅读顺序。青色行表示主路径，琥珀色行表示控制、停止、安全或恢复边界。读 agent 系统时，先找这些边界，通常比先看 prompt 更有效。</p>
+      <p>对应的项目文件在这里：<a href="../../jobagent/agents/resume_tailor.py"><code>jobagent/agents/resume_tailor.py</code></a>, <a href="../../jobagent/graph/workflow.py"><code>jobagent/graph/workflow.py</code></a>, <a href="../../jobagent/web/templates/run.html"><code>jobagent/web/templates/run.html</code></a>, <a href="../../tests/test_workflow.py"><code>tests/test_workflow.py</code></a>。</p>
+    </div>
+    <div class="annotated-code" role="region" aria-label="Annotated code excerpt"><div class="code-row "><span class="line">8</span><span class="src">def tailor_resume(state: JobSearchState) -&gt; NodeResult:</span><span class="comment">简历建议节点是 HITL 边界</span></div><div class="code-row warn"><span class="line">15</span><span class="src">    if not state.approved:</span><span class="comment">用户未批准时不能继续</span></div><div class="code-row warn"><span class="line">16</span><span class="src">        return NodeResult(next_node=&quot;tracker&quot;, stop_reason=StopReason.NEED_USER_APPROVAL)</span><span class="comment">保存下一站，但先暂停</span></div><div class="code-row hot"><span class="line">67</span><span class="src">state.approved = approved</span><span class="comment">resume 时写入人类决策</span></div><div class="code-row hot"><span class="line">70</span><span class="src">state = graph.run(state, state.pending_node)</span><span class="comment">从 pending node 继续，而不是重跑全部</span></div></div>
+    <div class="split"><div class="panel"><strong><a href="../../jobagent/agents/resume_tailor.py"><code>jobagent/agents/resume_tailor.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div><div class="panel"><strong><a href="../../jobagent/graph/workflow.py"><code>jobagent/graph/workflow.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div><div class="split"><div class="panel"><strong><a href="../../jobagent/web/templates/run.html"><code>jobagent/web/templates/run.html</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div><div class="panel"><strong><a href="../../tests/test_workflow.py"><code>tests/test_workflow.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div>
+  </section>
+
+  <section class="lesson-section" id="lab">
+    <h2>动手实验：把知识点落到一次操作里</h2>
+    <div class="article-prose">
+      <p>这一章不只要求你“理解”。你应该至少跑一次命令、打开一次文件、观察一次 state 或 trace。JobAgent 的教学价值在于它是可运行项目，不是架构幻灯片。</p>
+    </div>
+    <div class="steps"><div class="step">运行 <code>python3 -m jobagent.cli demo</code>，记录暂停时的 <code>stop_reason</code> 和 <code>pending_node</code>。</div><div class="step">运行 <code>python3 -m jobagent.cli resume &lt;run_id&gt; --approve</code>，确认 workflow 不重跑前序节点。</div><div class="step">在 web UI 上完成一次 approval，观察页面如何表达 pending 状态。</div></div>
+  </section>
+
+  <section class="lesson-section">
+    <h2>工程选择题：什么时候这样做，什么时候不要这样做</h2>
+    <div class="article-prose">
+      <p>HITL 应该暂停在 action 前还是 action 后？通常是 action 前，尤其是外部 side effect。 审批内容应该可编辑还是只可 approve/reject？生产系统通常需要 edit-and-resume。 谁有审批权？单用户 demo 可以简单处理，企业产品需要 identity、role、audit log。</p>
+      <p>这些问题比答案本身更重要。Multi-agent 工程的成熟度，不在于堆多少框架，而在于你能说清楚每个边界为什么存在、什么时候需要升级、升级会带来什么新复杂度。</p>
+    </div>
+  </section>
+
+  <section class="lesson-section">
+    <h2>行业脉搏：把本章放到 2026 AI infra 里看</h2>
+    <div class="article-prose">
+      <p>LangGraph 官方 HITL API 采用 interrupt + Command resume 模式，和本项目的 pending node mental model 很接近。</p><p>OpenAI Agents SDK 也强调 guardrails 与 handoffs 的边界，但要注意不同 guardrail 类型覆盖的调用路径并不完全一样。</p>
+      <p>读这些链接时，不要只记产品名。更重要的是把它们映射回本项目：哪些能力已经在 JobAgent 里有教学版，哪些能力属于未来的生产升级。</p>
+    </div>
+    <div class="source-links"><a class="source-link" href="https://docs.langchain.com/langgraph-platform/add-human-in-the-loop"><strong>LangGraph HITL server API</strong><span>展示 graph run 如何暂停、返回 interrupt、再用 Command resume。</span></a><a class="source-link" href="https://openai.github.io/openai-agents-js/guides/guardrails"><strong>OpenAI tool guardrails</strong><span>解释 tool guardrails 在工具调用前后如何验证或阻止动作。</span></a></div>
+  </section>
+</article>
+
+      <nav class="footer-nav"><a class="button" href="04_stop_reason.html">上一章：第 4 章：StopReason：Agentic 系统不是一直跑到死</a><a class="button primary" href="06_checkpoint_resume.html">下一章：第 6 章：Checkpoint 与 Resume：Agentic Workflow 的耐久执行</a></nav>
+    </main>
+
+<aside class="inspector">
+  <div class="inspector-card">
+    <h3>本章目标</h3>
+    <p>HITL 的本质是权限边界：哪些动作可以建议，哪些动作必须由人放行。</p>
+  </div>
+  <div class="inspector-card">
+    <h3>阅读进度</h3>
+    <div class="progress"><span data-progress></span></div>
+  </div>
+  <div class="inspector-card">
+    <h3>Lab Checklist</h3>
+    <div class="checklist"><label><input data-check="05_hitl-1" type="checkbox"> 运行 <code>python3 -m jobagent.cli demo</code>，记录暂停时的 <code>stop_reason</code> 和 <code>pending_node</code>。</label><label><input data-check="05_hitl-2" type="checkbox"> 运行 <code>python3 -m jobagent.cli resume &lt;run_id&gt; --approve</code>，确认 workflow 不重跑前序节点。</label><label><input data-check="05_hitl-3" type="checkbox"> 在 web UI 上完成一次 approval，观察页面如何表达 pending 状态。</label></div>
+  </div>
+  <div class="inspector-card">
+    <h3>Industry Pulse</h3>
+    <ul><li><a href="https://docs.langchain.com/langgraph-platform/add-human-in-the-loop">LangGraph HITL server API</a></li><li><a href="https://openai.github.io/openai-agents-js/guides/guardrails">OpenAI tool guardrails</a></li></ul>
+  </div>
+</aside>
+
+  </div>
+  <script src="assets/course.js"></script>
+</body>
+</html>

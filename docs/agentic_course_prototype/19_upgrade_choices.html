@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第 19 章：工程选择题：什么时候该升级技术栈 / JobAgent Course Prototype</title>
+  <link rel="stylesheet" href="assets/course.css">
+</head>
+<body>
+  <div class="shell">
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark">19</div>
+    <h1>工程选择题：什么时候该升级技术栈</h1>
+    <p>成熟的 AI infra 判断力，不是知道所有工具，而是知道什么时候不用它们。</p>
+  </div>
+  <nav class="nav-block" aria-label="Course">
+    <a href="index.html">Prototype 首页</a><a class="" href="00_overview.html">00 这不是聊天机器人，这是一个可运行的 Agentic Product</a><a class="" href="01_graph_engine.html">01 从 Pipeline 到 Graph：为什么 agent 工程首先是调度问题</a><a class="" href="02_shared_state.html">02 Shared State：Multi-Agent 系统里的唯一事实表</a><a class="" href="03_bounded_agents.html">03 Bounded Agent：为什么每个 agent 都应该小而窄</a><a class="" href="04_stop_reason.html">04 StopReason：Agentic 系统不是一直跑到死</a><a class="" href="05_hitl.html">05 Human-in-the-loop：人工审批不是 UI 功能，是系统边界</a><a class="" href="06_checkpoint_resume.html">06 Checkpoint 与 Resume：Agentic Workflow 的耐久执行</a><a class="" href="07_tool_use.html">07 Tool Use：Agent 什么时候应该调用工具</a><a class="" href="08_memory_story_bank.html">08 Memory 与 Story Bank：不是所有上下文都该塞进 Prompt</a><a class="" href="09_local_rag.html">09 Local RAG：先理解检索，再上向量数据库</a><a class="" href="10_mcp.html">10 MCP：把工具世界标准化</a><a class="" href="11_llm_provider.html">11 LLM Provider：把模型调用隔离成可替换接口</a><a class="" href="12_langgraph.html">12 LangGraph：从教学 GraphEngine 迁移到工业框架</a><a class="" href="13_observability.html">13 Observability：Trace 是 Agent 系统的黑匣子</a><a class="" href="14_offline_eval.html">14 Offline Eval：别靠感觉判断 Agent 有没有变好</a><a class="" href="15_guardrails.html">15 Guardrails：在 Agency 之前先做安全边界</a><a class="" href="16_web_product.html">16 Web Product Surface：把 Workflow 变成可以用的产品</a><a class="" href="17_deployment.html">17 Deployment：从本地 demo 到公开 portfolio</a><a class="" href="18_debugging.html">18 调试一本 Agent 系统：从现象回到 state、trace、node</a><a class="active" href="19_upgrade_choices.html">19 工程选择题：什么时候该升级技术栈</a><a class="" href="20_capstone.html">20 最终项目任务：把 JobAgent 改成你的 AI Infra Portfolio</a><a href="../agentic_course/index.html">返回旧版目录</a>
+  </nav>
+</aside>
+
+    <main class="reading">
+      <section class="hero">
+        <div class="kicker">Part 6 / Capstone / Lesson 19</div>
+        <h1>第 19 章：工程选择题：什么时候该升级技术栈</h1>
+        <p class="subtitle">成熟的 AI infra 判断力，不是知道所有工具，而是知道什么时候不用它们。</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#lab">直接做实验</a>
+          <a class="button" href="index.html">课程目录</a>
+        </div>
+      </section>
+
+<article class="lesson">
+  <section class="lesson-section">
+    <h2>这一章先解决什么问题</h2>
+    <div class="article-prose">
+      <p>本章把升级选项做成 decision matrix：LangGraph、真实 LLM、MCP、Postgres、pgvector、Langfuse、OpenTelemetry、queue、auth、cloud runtime。</p><p>每个升级都按同一结构分析：当前痛点、升级收益、新复杂度、JobAgent 落点、验证方式。</p><p>这样读者学到的是工程取舍，而不是技术名词收藏。</p>
+      <p>工具箱越大，越需要知道什么时候只用螺丝刀。把每个问题都用最大机器解决，最后会把小项目压垮。</p>
+    </div>
+  </section>
+
+  <section class="lesson-section">
+    <h2>系统图：把概念放回项目现场</h2>
+    <div class="article-prose">
+      <p>这张图不是装饰，而是本章的定位器。你可以先看图，再打开对应的项目文件。这样读代码时不会迷路：每个文件都不是孤立片段，而是在 JobAgent 这个 agentic workflow 里承担一个明确位置。</p>
+    </div>
+
+<div class="diagram" aria-label="Concept map">
+  <svg viewBox="0 0 980 300" role="img">
+    <rect x="18" y="24" width="944" height="226" rx="22" fill="#fff" stroke="#d8e0e5"/>
+    <text x="44" y="64" fill="#26323b" font-size="20" font-weight="900">技术升级决策矩阵：pain -&gt; trigger -&gt; tool -&gt; complexity -&gt; verification。</text>
+    <rect x="62" y="112" width="230" height="72" rx="16" fill="#e4f7f7" stroke="#007a83"/>
+    <rect x="374" y="112" width="230" height="72" rx="16" fill="#fbfcfd" stroke="#d8e0e5"/>
+    <rect x="686" y="112" width="230" height="72" rx="16" fill="#fff4df" stroke="#b36b00"/>
+    <text x="177" y="142" text-anchor="middle" fill="#005b62" font-size="15" font-weight="900">Concept</text>
+    <text x="489" y="142" text-anchor="middle" fill="#26323b" font-size="15" font-weight="900">Project Code</text>
+    <text x="801" y="142" text-anchor="middle" fill="#8a5200" font-size="15" font-weight="900">Production Pattern</text>
+    <text x="177" y="164" text-anchor="middle" fill="#5d6975" font-size="12">mental model</text>
+    <text x="489" y="164" text-anchor="middle" fill="#5d6975" font-size="12">files and tests</text>
+    <text x="801" y="164" text-anchor="middle" fill="#5d6975" font-size="12">industry reading</text>
+  </svg>
+</div>
+
+  </section>
+
+  <section class="lesson-section">
+    <h2>代码走读：眼睛先放在高亮行</h2>
+    <div class="article-prose">
+      <p>下面的代码摘录不是为了让你背实现细节，而是训练阅读顺序。青色行表示主路径，琥珀色行表示控制、停止、安全或恢复边界。读 agent 系统时，先找这些边界，通常比先看 prompt 更有效。</p>
+      <p>对应的项目文件在这里：<a href="../../pyproject.toml"><code>pyproject.toml</code></a>, <a href="../../docker-compose.yml"><code>docker-compose.yml</code></a>, <a href="../../jobagent/graph/langgraph_reference.py"><code>jobagent/graph/langgraph_reference.py</code></a>, <a href="../../jobagent/observability/langfuse_exporter.py"><code>jobagent/observability/langfuse_exporter.py</code></a>。</p>
+    </div>
+    <div class="annotated-code" role="region" aria-label="Annotated code excerpt"><div class="code-row hot"><span class="line">1</span><span class="src">Pain: local engine repeats durable execution logic -&gt; consider LangGraph</span><span class="comment">升级要由痛点触发</span></div><div class="code-row warn"><span class="line">2</span><span class="src">Pain: JSON state is ephemeral -&gt; add Postgres</span><span class="comment">状态不可丢时才上 durable store</span></div><div class="code-row hot"><span class="line">3</span><span class="src">Pain: traces need dashboards/evals -&gt; add Langfuse/OpenTelemetry</span><span class="comment">观察需求上来后再接平台</span></div><div class="code-row warn"><span class="line">4</span><span class="src">Pain: tools need cross-client reuse -&gt; expose MCP server</span><span class="comment">协议化是复用需求，不是装饰</span></div></div>
+    <div class="split"><div class="panel"><strong><a href="../../pyproject.toml"><code>pyproject.toml</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div><div class="panel"><strong><a href="../../docker-compose.yml"><code>docker-compose.yml</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div><div class="split"><div class="panel"><strong><a href="../../jobagent/graph/langgraph_reference.py"><code>jobagent/graph/langgraph_reference.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div><div class="panel"><strong><a href="../../jobagent/observability/langfuse_exporter.py"><code>jobagent/observability/langfuse_exporter.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div>
+  </section>
+
+  <section class="lesson-section" id="lab">
+    <h2>动手实验：把知识点落到一次操作里</h2>
+    <div class="article-prose">
+      <p>这一章不只要求你“理解”。你应该至少跑一次命令、打开一次文件、观察一次 state 或 trace。JobAgent 的教学价值在于它是可运行项目，不是架构幻灯片。</p>
+    </div>
+    <div class="steps"><div class="step">为每个 optional dependency 写出 adoption trigger。</div><div class="step">选择一个升级项，写出最小迁移 PR 的范围。</div><div class="step">为升级前后定义一条必须保持通过的 eval。</div></div>
+  </section>
+
+  <section class="lesson-section">
+    <h2>工程选择题：什么时候这样做，什么时候不要这样做</h2>
+    <div class="article-prose">
+      <p>LangGraph：当 workflow 复杂到本地 engine 开始复制 durable execution/interrupt 时引入。 Langfuse/OpenTelemetry：当 trace 不再只给开发者看，而要做质量、成本、latency、生产监控时引入。 MCP：当工具需要跨客户端复用，或外部生态集成比内部 adapter 更重要时引入。 Postgres/pgvector：当 state/memory 需要持久、并发、查询、语义检索时引入。</p>
+      <p>这些问题比答案本身更重要。Multi-agent 工程的成熟度，不在于堆多少框架，而在于你能说清楚每个边界为什么存在、什么时候需要升级、升级会带来什么新复杂度。</p>
+    </div>
+  </section>
+
+  <section class="lesson-section">
+    <h2>行业脉搏：把本章放到 2026 AI infra 里看</h2>
+    <div class="article-prose">
+      <p>2026 的 agent stack 趋势是组合式：runtime、protocol、observability、eval、deployment、identity 分别由不同工具覆盖。</p><p>未来的 AI infra 工程师要能在 OpenAI Agents SDK、LangGraph、MCP、Langfuse、OpenTelemetry、AWS AgentCore、Google A2A 等之间做边界判断。</p>
+      <p>读这些链接时，不要只记产品名。更重要的是把它们映射回本项目：哪些能力已经在 JobAgent 里有教学版，哪些能力属于未来的生产升级。</p>
+    </div>
+    <div class="source-links"><a class="source-link" href="https://openai.github.io/openai-agents-python/"><strong>OpenAI Agents SDK</strong><span>OpenAI 的 agent runtime SDK 文档入口。</span></a><a class="source-link" href="https://opentelemetry.io/docs/specs/semconv/gen-ai/"><strong>OpenTelemetry GenAI conventions</strong><span>跨平台观测 schema 的关键参考。</span></a><a class="source-link" href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/release-notes.html"><strong>AWS AgentCore release notes</strong><span>托管 agent platform 的工业参照。</span></a></div>
+  </section>
+</article>
+
+      <nav class="footer-nav"><a class="button" href="18_debugging.html">上一章：第 18 章：调试一本 Agent 系统：从现象回到 state、trace、node</a><a class="button primary" href="20_capstone.html">下一章：第 20 章：最终项目任务：把 JobAgent 改成你的 AI Infra Portfolio</a></nav>
+    </main>
+
+<aside class="inspector">
+  <div class="inspector-card">
+    <h3>本章目标</h3>
+    <p>成熟的 AI infra 判断力，不是知道所有工具，而是知道什么时候不用它们。</p>
+  </div>
+  <div class="inspector-card">
+    <h3>阅读进度</h3>
+    <div class="progress"><span data-progress></span></div>
+  </div>
+  <div class="inspector-card">
+    <h3>Lab Checklist</h3>
+    <div class="checklist"><label><input data-check="19_upgrade_choices-1" type="checkbox"> 为每个 optional dependency 写出 adoption trigger。</label><label><input data-check="19_upgrade_choices-2" type="checkbox"> 选择一个升级项，写出最小迁移 PR 的范围。</label><label><input data-check="19_upgrade_choices-3" type="checkbox"> 为升级前后定义一条必须保持通过的 eval。</label></div>
+  </div>
+  <div class="inspector-card">
+    <h3>Industry Pulse</h3>
+    <ul><li><a href="https://openai.github.io/openai-agents-python/">OpenAI Agents SDK</a></li><li><a href="https://opentelemetry.io/docs/specs/semconv/gen-ai/">OpenTelemetry GenAI conventions</a></li><li><a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/release-notes.html">AWS AgentCore release notes</a></li></ul>
+  </div>
+</aside>
+
+  </div>
+  <script src="assets/course.js"></script>
+</body>
+</html>

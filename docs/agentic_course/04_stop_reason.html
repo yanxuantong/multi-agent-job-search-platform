@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第 4 章：StopReason：Agentic 系统不是一直跑到死</title>
+  <style>
+:root {
+  --bg: #f6f7f8;
+  --paper: #ffffff;
+  --ink: #1f2328;
+  --muted: #5f6b76;
+  --line: #d8dee4;
+  --blue: #2457c5;
+  --teal: #0f766e;
+  --green: #15803d;
+  --amber: #b45309;
+  --code: #f1f5f9;
+  --dark: #111827;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 16px;
+  line-height: 1.72;
+}
+a { color: var(--blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.wrap { width: min(1160px, calc(100% - 32px)); margin: 0 auto; }
+header { background: var(--paper); border-bottom: 1px solid var(--line); }
+.hero { padding: 38px 0 28px; display: grid; gap: 14px; }
+.eyebrow { color: var(--teal); font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+h1, h2, h3 { margin: 0; line-height: 1.18; letter-spacing: 0; }
+h1 { max-width: 960px; font-size: clamp(32px, 5vw, 54px); }
+h2 { margin-top: 34px; font-size: 26px; }
+h3 { margin-top: 22px; font-size: 19px; }
+p { margin: 10px 0 0; }
+ul, ol { margin: 10px 0 0; padding-left: 22px; }
+li { margin: 6px 0; }
+code {
+  background: var(--code);
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  padding: 1px 5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .92em;
+}
+.lead { max-width: 920px; color: var(--muted); font-size: 18px; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.badge.green { color: var(--green); }
+.badge.blue { color: var(--blue); }
+.badge.amber { color: var(--amber); }
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(255,255,255,.94);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.toc { display: flex; gap: 8px; overflow-x: auto; padding: 12px 0; }
+.toc a {
+  flex: 0 0 auto;
+  color: var(--ink);
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 11px;
+  font-size: 14px;
+}
+main { padding: 18px 0 56px; }
+section { border-bottom: 1px solid var(--line); padding: 0 0 32px; }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 16px; }
+.grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+}
+.card strong { display: block; margin-bottom: 5px; color: #111827; }
+.callout {
+  margin-top: 16px;
+  border-left: 4px solid var(--teal);
+  border-radius: 0 8px 8px 0;
+  background: #ecfeff;
+  padding: 14px 16px;
+}
+.callout.warning { border-left-color: var(--amber); background: #fffbeb; }
+.chapter-nav { display: flex; justify-content: space-between; gap: 12px; margin: 24px 0 0; }
+.chapter-nav a {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  max-width: 48%;
+}
+.source-list li { margin-bottom: 8px; }
+.visual {
+  background: #f8fafc;
+  border: 1px dashed #b8c2cc;
+  border-radius: 8px;
+  padding: 14px 16px;
+  color: #334155;
+}
+.chapter-list { columns: 2; column-gap: 28px; }
+.chapter-list li { break-inside: avoid; }
+footer { color: var(--muted); padding: 28px 0 42px; font-size: 14px; }
+@media (max-width: 860px) {
+  .grid, .grid.two { grid-template-columns: 1fr; }
+  .chapter-list { columns: 1; }
+  .chapter-nav { display: block; }
+  .chapter-nav a { display: block; max-width: none; margin-top: 10px; }
+}
+</style>
+</head>
+<body>
+  <header>
+    <div class="wrap hero">
+      <div class="eyebrow">JobAgent Multi-Agent Course / Updated 2026-05-30</div>
+      <h1>第 4 章：StopReason：Agentic 系统不是一直跑到死</h1>
+      <p class="lead">StopReason 是 agent workflow 的刹车系统，也是调试与产品体验的共同语言。</p>
+      <div class="meta">
+        <span class="badge green">项目驱动</span>
+        <span class="badge blue">每章单页</span>
+        <span class="badge amber">含 2026 行业扩展</span>
+      </div>
+    </div>
+  </header>
+  <nav aria-label="Chapter navigation"><div class="wrap toc"><a href="index.html">目录</a><a href="mega_agentic_course_zh.html">Mega 合集</a><a href="#04_stop_reason">本章</a></div></nav>
+  <main class="wrap">
+
+<section id="04_stop_reason">
+  <div class="eyebrow">Part 2 / 控制、暂停、恢复</div>
+  <h2>第 4 章：StopReason：Agentic 系统不是一直跑到死</h2>
+  <p class="lead">StopReason 是 agent workflow 的刹车系统，也是调试与产品体验的共同语言。</p>
+
+  <div class="grid">
+    <div class="card">
+      <strong>概念解释</strong>
+      <ul><li>`StopReason` 把 workflow 结束原因显式化：成功、需要审批、需要更多输入、工具错误、预算用完、低置信度、不安全动作。</li><li>没有 stop reason 的系统只能表现为「转圈」「报错」或「胡乱继续」。有了 stop reason，UI、CLI、测试、恢复逻辑都能做正确反应。</li><li>这也是从 demo 到 product 的关键一步：系统必须知道自己为什么停。</li></ul>
+    </div>
+    <div class="card">
+      <strong>寓言 / 类比</strong>
+      <p>一辆车不只有油门。它需要刹车、手刹、故障灯、油量报警、车门未关提醒。Agent workflow 也一样，不能只有 continue。</p>
+    </div>
+    <div class="card">
+      <strong>建议配图</strong>
+      <p class="visual">刹车面板图：不同 stop reason 对应不同恢复动作。</p>
+    </div>
+  </div>
+
+  <div class="grid two">
+    <div class="card">
+      <strong>项目代码落点</strong>
+      <ul><li><a href="../../jobagent/models.py">jobagent/models.py</a></li><li><a href="../../jobagent/graph/engine.py">jobagent/graph/engine.py</a></li><li><a href="../../jobagent/agents/resume_tailor.py">jobagent/agents/resume_tailor.py</a></li></ul>
+    </div>
+    <div class="card">
+      <strong>运行 / 调试练习</strong>
+      <ul><li>把 `RunBudget.max_steps` 调小，触发 `BUDGET_EXCEEDED`。</li><li>构造一个缺失字段，让某个 node 抛错，观察 `TOOL_ERROR` 如何进入 state。</li><li>比较 `NEED_USER_APPROVAL` 与 `NEED_MORE_INPUT`：一个是放行问题，一个是信息不足问题。</li></ul>
+    </div>
+  </div>
+
+  <div class="grid two">
+    <div class="card">
+      <strong>工程选择题</strong>
+      <ul><li>Stop reason 应该多细？细到 UI/调用方能采取不同动作即可。</li><li>错误应该直接 raise 还是写入 state？node 内部可以 raise，graph 层应该转成可观察 state。</li><li>低置信度应该自动重试还是停给人？取决于成本、风险和是否有更强 evidence source。</li></ul>
+    </div>
+    <div class="card">
+      <strong>Industry Pulse / 行业脉搏</strong>
+      <ul><li>行业里 human-in-the-loop、guardrails、budget limits、policy controls 都是在给 agent 系统加停止条件。</li><li>LangGraph interrupts 直接把暂停、持久化、resume 做成 graph primitive。</li></ul>
+      <h3>扩展阅读</h3>
+      <ul class="source-list"><li><a href="https://docs.langchain.com/oss/python/langgraph/human-in-the-loop">LangGraph interrupts</a><br><span>解释 graph 如何动态暂停并等待外部输入。</span></li><li><a href="https://aws.amazon.com/blogs/aws/amazon-bedrock-agentcore-adds-quality-evaluations-and-policy-controls-for-deploying-trusted-ai-agents/">AWS AgentCore policy controls</a><br><span>AWS 把 policy controls 与 agent evaluation/observability 放到同一生产语境中。</span></li></ul>
+    </div>
+  </div>
+</section>
+<div class="chapter-nav"><a href="03_bounded_agents.html">上一章：第 3 章：Bounded Agent：为什么每个 agent 都应该小而窄</a><a href="05_hitl.html">下一章：第 5 章：Human-in-the-loop：人工审批不是 UI 功能，是系统边界</a></div>
+  </main>
+  <footer class="wrap">
+    Generated from <code>docs/agentic_course/build_agentic_course.py</code>. Industry links were refreshed on 2026-05-30; fast-moving AI infra references should be reviewed periodically.
+  </footer>
+</body>
+</html>

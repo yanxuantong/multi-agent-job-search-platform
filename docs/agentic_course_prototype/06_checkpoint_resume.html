@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第 6 章：Checkpoint 与 Resume：Agentic Workflow 的耐久执行 / JobAgent Course Prototype</title>
+  <link rel="stylesheet" href="assets/course.css">
+</head>
+<body>
+  <div class="shell">
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark">06</div>
+    <h1>Checkpoint 与 Resume：Agentic Workflow 的耐久执行</h1>
+    <p>能暂停不算难；能在正确位置恢复，而且不重复副作用，才是工程能力。</p>
+  </div>
+  <nav class="nav-block" aria-label="Course">
+    <a href="index.html">Prototype 首页</a><a class="" href="00_overview.html">00 这不是聊天机器人，这是一个可运行的 Agentic Product</a><a class="" href="01_graph_engine.html">01 从 Pipeline 到 Graph：为什么 agent 工程首先是调度问题</a><a class="" href="02_shared_state.html">02 Shared State：Multi-Agent 系统里的唯一事实表</a><a class="" href="03_bounded_agents.html">03 Bounded Agent：为什么每个 agent 都应该小而窄</a><a class="" href="04_stop_reason.html">04 StopReason：Agentic 系统不是一直跑到死</a><a class="" href="05_hitl.html">05 Human-in-the-loop：人工审批不是 UI 功能，是系统边界</a><a class="active" href="06_checkpoint_resume.html">06 Checkpoint 与 Resume：Agentic Workflow 的耐久执行</a><a class="" href="07_tool_use.html">07 Tool Use：Agent 什么时候应该调用工具</a><a class="" href="08_memory_story_bank.html">08 Memory 与 Story Bank：不是所有上下文都该塞进 Prompt</a><a class="" href="09_local_rag.html">09 Local RAG：先理解检索，再上向量数据库</a><a class="" href="10_mcp.html">10 MCP：把工具世界标准化</a><a class="" href="11_llm_provider.html">11 LLM Provider：把模型调用隔离成可替换接口</a><a class="" href="12_langgraph.html">12 LangGraph：从教学 GraphEngine 迁移到工业框架</a><a class="" href="13_observability.html">13 Observability：Trace 是 Agent 系统的黑匣子</a><a class="" href="14_offline_eval.html">14 Offline Eval：别靠感觉判断 Agent 有没有变好</a><a class="" href="15_guardrails.html">15 Guardrails：在 Agency 之前先做安全边界</a><a class="" href="16_web_product.html">16 Web Product Surface：把 Workflow 变成可以用的产品</a><a class="" href="17_deployment.html">17 Deployment：从本地 demo 到公开 portfolio</a><a class="" href="18_debugging.html">18 调试一本 Agent 系统：从现象回到 state、trace、node</a><a class="" href="19_upgrade_choices.html">19 工程选择题：什么时候该升级技术栈</a><a class="" href="20_capstone.html">20 最终项目任务：把 JobAgent 改成你的 AI Infra Portfolio</a><a href="../agentic_course/index.html">返回旧版目录</a>
+  </nav>
+</aside>
+
+    <main class="reading">
+      <section class="hero">
+        <div class="kicker">Part 2 / 控制、暂停、恢复 / Lesson 06</div>
+        <h1>第 6 章：Checkpoint 与 Resume：Agentic Workflow 的耐久执行</h1>
+        <p class="subtitle">能暂停不算难；能在正确位置恢复，而且不重复副作用，才是工程能力。</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#lab">直接做实验</a>
+          <a class="button" href="index.html">课程目录</a>
+        </div>
+      </section>
+
+<article class="lesson">
+  <section class="lesson-section">
+    <h2>这一章先解决什么问题</h2>
+    <div class="article-prose">
+      <p>本项目把每次 run 保存为 checkpoint。暂停后，<code>pending_node</code> 记录下一步该从哪里继续。</p><p>这让用户可以先看 resume proposal，再决定是否 approve。系统不需要重新解析 JD、重新研究公司、重新评分。</p><p>Checkpoint 是未来升级 Postgres、queue-backed worker、LangGraph checkpointer 的本地原型。</p>
+      <p>办签证时你不希望每补一份材料就重新排队、重新拍照、重新填表。Checkpoint 的价值就是保留已完成步骤，只从缺口继续。</p>
+    </div>
+  </section>
+
+  <section class="lesson-section">
+    <h2>系统图：把概念放回项目现场</h2>
+    <div class="article-prose">
+      <p>这张图不是装饰，而是本章的定位器。你可以先看图，再打开对应的项目文件。这样读代码时不会迷路：每个文件都不是孤立片段，而是在 JobAgent 这个 agentic workflow 里承担一个明确位置。</p>
+    </div>
+
+<div class="diagram" aria-label="State evolution diagram">
+  <svg viewBox="0 0 980 360" role="img">
+    <rect x="18" y="24" width="944" height="294" rx="22" fill="#fff" stroke="#d8e0e5"/>
+    <text x="44" y="64" fill="#26323b" font-size="20" font-weight="900">JobSearchState grows through the run</text>
+    <g fill="#fbfcfd" stroke="#d8e0e5">
+      <rect x="56" y="98" width="160" height="74" rx="14"/><rect x="250" y="98" width="160" height="74" rx="14"/>
+      <rect x="444" y="98" width="160" height="74" rx="14"/><rect x="638" y="98" width="160" height="74" rx="14"/>
+      <rect x="250" y="214" width="160" height="74" rx="14"/><rect x="444" y="214" width="160" height="74" rx="14"/><rect x="638" y="214" width="160" height="74" rx="14"/>
+    </g>
+    <g fill="#007a83" font-size="13" font-weight="900">
+      <text x="76" y="126">raw_job_text</text><text x="270" y="126">normalized_jd</text><text x="464" y="126">company_brief</text><text x="658" y="126">fit_analysis</text>
+      <text x="270" y="242">resume_proposal</text><text x="464" y="242">tracker_update</text><text x="658" y="242">interview_pack</text>
+    </g>
+    <g fill="#5d6975" font-size="12">
+      <text x="76" y="148">user input</text><text x="270" y="148">extract</text><text x="464" y="148">research</text><text x="658" y="148">score</text>
+      <text x="270" y="264">HITL</text><text x="464" y="264">approve</text><text x="658" y="264">prepare</text>
+    </g>
+    <rect x="806" y="104" width="112" height="178" rx="16" fill="#fff4df" stroke="#b36b00"/>
+    <text x="862" y="134" text-anchor="middle" fill="#8a5200" font-size="13" font-weight="900">control</text>
+    <text x="830" y="166" fill="#5d6975" font-size="12">budget</text><text x="830" y="190" fill="#5d6975" font-size="12">errors</text>
+    <text x="830" y="214" fill="#5d6975" font-size="12">approved</text><text x="830" y="238" fill="#5d6975" font-size="12">stop_reason</text><text x="830" y="262" fill="#5d6975" font-size="12">pending_node</text>
+  </svg>
+</div>
+
+  </section>
+
+  <section class="lesson-section">
+    <h2>代码走读：眼睛先放在高亮行</h2>
+    <div class="article-prose">
+      <p>下面的代码摘录不是为了让你背实现细节，而是训练阅读顺序。青色行表示主路径，琥珀色行表示控制、停止、安全或恢复边界。读 agent 系统时，先找这些边界，通常比先看 prompt 更有效。</p>
+      <p>对应的项目文件在这里：<a href="../../jobagent/storage/checkpoint.py"><code>jobagent/storage/checkpoint.py</code></a>, <a href="../../jobagent/graph/workflow.py"><code>jobagent/graph/workflow.py</code></a>, <a href="../../jobagent/web/store.py"><code>jobagent/web/store.py</code></a>, <a href="../../.jobagent/checkpoints/"><code>.jobagent/checkpoints/</code></a>。</p>
+    </div>
+    <div class="annotated-code" role="region" aria-label="Annotated code excerpt"><div class="code-row "><span class="line">9</span><span class="src">class JsonCheckpointStore:</span><span class="comment">本地 checkpointer</span></div><div class="code-row hot"><span class="line">13</span><span class="src">self.root.mkdir(parents=True, exist_ok=True)</span><span class="comment">确保 checkpoint 目录存在</span></div><div class="code-row hot"><span class="line">19</span><span class="src">path.write_text(json.dumps(state.to_dict(), indent=2, ensure_ascii=True), ...)</span><span class="comment">把 typed state 落盘</span></div><div class="code-row warn"><span class="line">24</span><span class="src">if not path.exists():</span><span class="comment">resume 前先确认 checkpoint 存在</span></div><div class="code-row hot"><span class="line">26</span><span class="src">return JobSearchState.from_dict(json.loads(path.read_text(...)))</span><span class="comment">从 JSON 恢复 dataclass state</span></div></div>
+    <div class="split"><div class="panel"><strong><a href="../../jobagent/storage/checkpoint.py"><code>jobagent/storage/checkpoint.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div><div class="panel"><strong><a href="../../jobagent/graph/workflow.py"><code>jobagent/graph/workflow.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div><div class="split"><div class="panel"><strong><a href="../../jobagent/web/store.py"><code>jobagent/web/store.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div><div class="panel"><strong><a href="../../.jobagent/checkpoints/"><code>.jobagent/checkpoints/</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div>
+  </section>
+
+  <section class="lesson-section" id="lab">
+    <h2>动手实验：把知识点落到一次操作里</h2>
+    <div class="article-prose">
+      <p>这一章不只要求你“理解”。你应该至少跑一次命令、打开一次文件、观察一次 state 或 trace。JobAgent 的教学价值在于它是可运行项目，不是架构幻灯片。</p>
+    </div>
+    <div class="steps"><div class="step">运行 demo 后删除 checkpoint，再尝试 resume，观察失败形态。</div><div class="step">对比 approve 前后 checkpoint JSON，确认哪些字段变化。</div><div class="step">思考如果 tracker 写入外部 Notion，resume 时如何避免重复写入。</div></div>
+  </section>
+
+  <section class="lesson-section">
+    <h2>工程选择题：什么时候这样做，什么时候不要这样做</h2>
+    <div class="article-prose">
+      <p>本地 JSON checkpoint 适合学习，但 hosted free instance 里 state 可能 ephemeral。 生产环境需要 durable store、idempotency key、side-effect record、schema version。 恢复逻辑应该从 node 边界恢复，不应该依赖 Python stack frame 还活着。</p>
+      <p>这些问题比答案本身更重要。Multi-agent 工程的成熟度，不在于堆多少框架，而在于你能说清楚每个边界为什么存在、什么时候需要升级、升级会带来什么新复杂度。</p>
+    </div>
+  </section>
+
+  <section class="lesson-section">
+    <h2>行业脉搏：把本章放到 2026 AI infra 里看</h2>
+    <div class="article-prose">
+      <p>LangGraph durable execution 文档明确指出，resume 不是从同一行代码继续，而是从合适起点 replay，因此 side effects 要包装、幂等或记录。</p><p>这也是 agent workflow 和普通 request/response API 最大的工程差异之一。</p>
+      <p>读这些链接时，不要只记产品名。更重要的是把它们映射回本项目：哪些能力已经在 JobAgent 里有教学版，哪些能力属于未来的生产升级。</p>
+    </div>
+    <div class="source-links"><a class="source-link" href="https://docs.langchain.com/oss/python/langgraph/durable-execution"><strong>LangGraph durable execution</strong><span>重点阅读 determinism、consistent replay、resuming workflows。</span></a><a class="source-link" href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/release-notes.html"><strong>AWS AgentCore release notes</strong><span>托管 agent runtime 对 memory、runtime、observability 的持续增强。</span></a></div>
+  </section>
+</article>
+
+      <nav class="footer-nav"><a class="button" href="05_hitl.html">上一章：第 5 章：Human-in-the-loop：人工审批不是 UI 功能，是系统边界</a><a class="button primary" href="07_tool_use.html">下一章：第 7 章：Tool Use：Agent 什么时候应该调用工具</a></nav>
+    </main>
+
+<aside class="inspector">
+  <div class="inspector-card">
+    <h3>本章目标</h3>
+    <p>能暂停不算难；能在正确位置恢复，而且不重复副作用，才是工程能力。</p>
+  </div>
+  <div class="inspector-card">
+    <h3>阅读进度</h3>
+    <div class="progress"><span data-progress></span></div>
+  </div>
+  <div class="inspector-card">
+    <h3>Lab Checklist</h3>
+    <div class="checklist"><label><input data-check="06_checkpoint_resume-1" type="checkbox"> 运行 demo 后删除 checkpoint，再尝试 resume，观察失败形态。</label><label><input data-check="06_checkpoint_resume-2" type="checkbox"> 对比 approve 前后 checkpoint JSON，确认哪些字段变化。</label><label><input data-check="06_checkpoint_resume-3" type="checkbox"> 思考如果 tracker 写入外部 Notion，resume 时如何避免重复写入。</label></div>
+  </div>
+  <div class="inspector-card">
+    <h3>Industry Pulse</h3>
+    <ul><li><a href="https://docs.langchain.com/oss/python/langgraph/durable-execution">LangGraph durable execution</a></li><li><a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/release-notes.html">AWS AgentCore release notes</a></li></ul>
+  </div>
+</aside>
+
+  </div>
+  <script src="assets/course.js"></script>
+</body>
+</html>
