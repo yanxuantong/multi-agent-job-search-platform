@@ -702,9 +702,52 @@ CHAPTERS: list[Chapter] = [
         "部署层级图：local CLI -> local web -> Docker -> Render -> durable production stack。",
     ),
     Chapter(
-        "18_debugging",
+        "18_10x_scale_readiness",
+        "Part 5 / Eval、安全与产品化",
+        "第 18 章：10x Scale 与 Production Readiness：什么时候可以说它准备好了",
+        "Production readiness 不是一句自信判断，而是一组关于流量、状态、恢复、安全和验证的证据。",
+        [
+            "JobAgent 现在可以诚实地称为 production-shaped：它有 FastAPI surface、Docker/Render 部署、typed state、HITL、checkpoint/resume、trace/audit、guardrails、ops endpoints 和 offline eval。但它还不应该被包装成 fully production-ready SaaS。",
+            "10x scale 先考验的不是 agent prompt，而是执行层：`POST /runs` 目前同步跑完整 workflow；默认 local checkpoint 在 Render free instance 上是 ephemeral；in-memory rate limit 不能跨进程共享；Postgres path 存在，但还缺 connection pooling、migration/versioning、idempotent approval 和 background worker。",
+            "这一章故意先不实现这些升级，而是把生产判断记录成可复述、可验证、可逐步落地的 checklist。对 portfolio 和面试来说，这种边界意识本身就是很重要的工程经历。",
+        ],
+        "一次小型展览可以靠一个工作人员现场登记、现场带路、现场收票。但如果人流变成十倍，你不会先训练他说话更漂亮，而是会先加排队系统、票据数据库、入口闸机、监控面板和应急流程。Agent product 的 10x scale 也是同一个逻辑。",
+        [
+            "jobagent/web/app.py",
+            "jobagent/web/store.py",
+            "jobagent/graph/workflow.py",
+            "jobagent/storage/checkpoint.py",
+            "samples/eval_suite.json",
+            "render.yaml",
+            "README.zh.md",
+        ],
+        [
+            "阅读 `create_run()`，说明为什么同步 workflow 在 10x traffic 下会成为 request latency 与 timeout 风险。",
+            "对比 `LocalRunStore` 与 `PostgresRunStore`，写出哪些 state 可以丢、哪些 state 一旦丢就破坏用户信任。",
+            "把 `/ops/status`、`/ops/evals`、`python3 -m jobagent.cli eval`、`python3 -m unittest discover -s tests` 组合成一个 release/readiness checklist。",
+            "写一个不实现代码的 migration note：从 public demo 到 production SaaS，需要先引入 queue、durable Postgres、auth、distributed rate limit 和 observability backend。",
+        ],
+        [
+            "10x 是什么？如果是 portfolio/demo traffic，当前形态大概率 okay；如果是真用户 SaaS traffic，需要先升级执行、状态和运维层。",
+            "什么时候必须引入 queue？当 run 时间不可控、外部 API 变慢、需要 retry/backoff、并发用户会阻塞 web workers，或 run 必须脱离 request 生命周期继续完成。",
+            "什么时候必须引入 durable store？当用户期望历史 run、approval、trace、tracker update 可恢复，或服务部署为多实例时。",
+            "什么时候可以说 production-ready？只有当 load、restart-resume、approval race、storage failure、guardrail bypass、eval regression 和 observability smoke 都有证据时。",
+        ],
+        [
+            "行业里的 agent platform 越来越把 runtime、durable execution、identity、policy、observability 和 eval 放在一起卖，原因很简单：agent 质量问题最后常常表现为系统可靠性问题。",
+            "这一章对应的能力不是某个新框架，而是 FDE/AI infra 面试里很有价值的判断力：能区分 demo-ready、production-shaped、production-ready，并能说清下一步工程升级顺序。",
+        ],
+        [
+            Link("LangGraph durable execution", "https://docs.langchain.com/oss/python/langgraph/durable-execution", "理解 long-running workflow、checkpoint、determinism 和 side-effect idempotency。"),
+            Link("OpenTelemetry GenAI conventions", "https://opentelemetry.io/docs/specs/semconv/gen-ai/", "生产观测需要稳定 schema，不能只靠本地日志。"),
+            Link("AWS AgentCore release notes", "https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/release-notes.html", "托管 agent runtime 对 memory、identity、observability、evaluation、policy 的平台化参照。"),
+        ],
+        "Readiness 分层图：demo traffic -> public portfolio -> durable beta -> production SaaS；每层标出 state、queue、auth、rate limit、observability、eval 证据。",
+    ),
+    Chapter(
+        "19_debugging",
         "Part 6 / Capstone",
-        "第 18 章：调试一本 Agent 系统：从现象回到 state、trace、node",
+        "第 19 章：调试一本 Agent 系统：从现象回到 state、trace、node",
         "Agent debug 不应该从改 prompt 开始，而应该从证据链开始。",
         [
             "一个系统输出奇怪结果时，先判断问题发生在输入、guardrail、state、node、tool、checkpoint、trace、UI 还是 eval 覆盖。",
@@ -741,9 +784,9 @@ CHAPTERS: list[Chapter] = [
         "Debug 决策树：symptom -> reproduce -> state -> trace -> node -> eval -> fix。",
     ),
     Chapter(
-        "19_upgrade_choices",
+        "20_upgrade_choices",
         "Part 6 / Capstone",
-        "第 19 章：工程选择题：什么时候该升级技术栈",
+        "第 20 章：工程选择题：什么时候该升级技术栈",
         "成熟的 AI infra 判断力，不是知道所有工具，而是知道什么时候不用它们。",
         [
             "本章把升级选项做成 decision matrix：LangGraph、真实 LLM、MCP、Postgres、pgvector、Langfuse、OpenTelemetry、queue、auth、cloud runtime。",
@@ -782,9 +825,9 @@ CHAPTERS: list[Chapter] = [
         "技术升级决策矩阵：pain -> trigger -> tool -> complexity -> verification。",
     ),
     Chapter(
-        "20_capstone",
+        "21_capstone",
         "Part 6 / Capstone",
-        "第 20 章：最终项目任务：把 JobAgent 改成你的 AI Infra Portfolio",
+        "第 21 章：最终项目任务：把 JobAgent 改成你的 AI Infra Portfolio",
         "最后一章不是阅读，而是让读者完整交付一个新的 bounded agent。",
         [
             "Capstone 任务：新增一个 agent，例如 `salary_analysis`、`networking_strategy` 或 `company_risk_analysis`。",
@@ -1032,6 +1075,7 @@ def render_chapter_body(chapter: Chapter, *, standalone: bool) -> str:
 
 
 def html_shell(title: str, subtitle: str, body: str, nav: str = "") -> str:
+    nav_block = f"  {nav}\n" if nav else ""
     return f"""<!doctype html>
 <html lang="zh-CN">
 <head>
@@ -1053,8 +1097,7 @@ def html_shell(title: str, subtitle: str, body: str, nav: str = "") -> str:
       </div>
     </div>
   </header>
-  {nav}
-  <main class="wrap">
+{nav_block}  <main class="wrap">
 {body}
   </main>
   <footer class="wrap">
@@ -1069,14 +1112,15 @@ def render_index() -> str:
     grouped: dict[str, list[Chapter]] = {}
     for chapter in CHAPTERS:
         grouped.setdefault(chapter.part, []).append(chapter)
+    chapter_count = len(CHAPTERS)
     blocks = [
-        """
+        f"""
 <section>
   <h2>怎么使用这套教程</h2>
   <div class="grid">
     <div class="card"><strong>读法</strong><p>先按章节顺序跑一遍，之后把每章当作一个工程 checklist。</p></div>
     <div class="card"><strong>重点</strong><p>每章都连接概念、代码、调试练习和行业扩展，避免只停留在架构图。</p></div>
-    <div class="card"><strong>产物</strong><p>本目录包含 21 个单章 HTML 和一个总合集 mega HTML。</p></div>
+    <div class="card"><strong>产物</strong><p>本目录包含 {chapter_count} 个单章 HTML 和一个总合集 mega HTML。</p></div>
   </div>
   <div class="callout warning">
     <strong>阅读体验 prototype：</strong>
@@ -1104,15 +1148,16 @@ def render_index() -> str:
 
 
 def render_mega() -> str:
+    chapter_count = len(CHAPTERS)
     nav = (
         '<nav aria-label="Table of contents"><div class="wrap toc">'
         + "".join(f'<a href="#{escape(ch.slug)}">{escape(ch.slug.split("_", 1)[0])}. {escape(ch.title.split("：", 1)[-1])}</a>' for ch in CHAPTERS)
         + "</div></nav>"
     )
-    intro = """
+    intro = f"""
 <section>
   <h2>总览</h2>
-  <p>这份 mega HTML 把 21 个单章教程合并在一起，适合连续阅读、分享或打印。每章仍然保留概念解释、寓言类比、项目代码落点、调试练习、工程选择题和行业扩展阅读。</p>
+  <p>这份 mega HTML 把 {chapter_count} 个单章教程合并在一起，适合连续阅读、分享或打印。每章仍然保留概念解释、寓言类比、项目代码落点、调试练习、工程选择题和行业扩展阅读。</p>
   <div class="callout">建议先用 <a href="index.html">目录入口</a> 按章节阅读；需要整体浏览时再打开本页。</div>
 </section>
 """

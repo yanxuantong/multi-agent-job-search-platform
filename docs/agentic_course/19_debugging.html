@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>第 19 章：工程选择题：什么时候该升级技术栈</title>
+  <title>第 19 章：调试一本 Agent 系统：从现象回到 state、trace、node</title>
   <style>
 :root {
   --bg: #f6f7f8;
@@ -132,8 +132,8 @@ footer { color: var(--muted); padding: 28px 0 42px; font-size: 14px; }
   <header>
     <div class="wrap hero">
       <div class="eyebrow">JobAgent Multi-Agent Course / Updated 2026-05-30</div>
-      <h1>第 19 章：工程选择题：什么时候该升级技术栈</h1>
-      <p class="lead">成熟的 AI infra 判断力，不是知道所有工具，而是知道什么时候不用它们。</p>
+      <h1>第 19 章：调试一本 Agent 系统：从现象回到 state、trace、node</h1>
+      <p class="lead">Agent debug 不应该从改 prompt 开始，而应该从证据链开始。</p>
       <div class="meta">
         <span class="badge green">项目驱动</span>
         <span class="badge blue">每章单页</span>
@@ -141,54 +141,54 @@ footer { color: var(--muted); padding: 28px 0 42px; font-size: 14px; }
       </div>
     </div>
   </header>
-  <nav aria-label="Chapter navigation"><div class="wrap toc"><a href="index.html">目录</a><a href="mega_agentic_course_zh.html">Mega 合集</a><a href="#19_upgrade_choices">本章</a></div></nav>
+  <nav aria-label="Chapter navigation"><div class="wrap toc"><a href="index.html">目录</a><a href="mega_agentic_course_zh.html">Mega 合集</a><a href="#19_debugging">本章</a></div></nav>
   <main class="wrap">
 
-<section id="19_upgrade_choices">
+<section id="19_debugging">
   <div class="eyebrow">Part 6 / Capstone</div>
-  <h2>第 19 章：工程选择题：什么时候该升级技术栈</h2>
-  <p class="lead">成熟的 AI infra 判断力，不是知道所有工具，而是知道什么时候不用它们。</p>
+  <h2>第 19 章：调试一本 Agent 系统：从现象回到 state、trace、node</h2>
+  <p class="lead">Agent debug 不应该从改 prompt 开始，而应该从证据链开始。</p>
 
   <div class="grid">
     <div class="card">
       <strong>概念解释</strong>
-      <ul><li>本章把升级选项做成 decision matrix：LangGraph、真实 LLM、MCP、Postgres、pgvector、Langfuse、OpenTelemetry、queue、auth、cloud runtime。</li><li>每个升级都按同一结构分析：当前痛点、升级收益、新复杂度、JobAgent 落点、验证方式。</li><li>这样读者学到的是工程取舍，而不是技术名词收藏。</li></ul>
+      <ul><li>一个系统输出奇怪结果时，先判断问题发生在输入、guardrail、state、node、tool、checkpoint、trace、UI 还是 eval 覆盖。</li><li>本项目适合建立一套可复用 debug playbook：CLI 复现、检查 checkpoint、阅读 trace、定位 node contract、补 eval case、再改实现。</li><li>这会训练真正的 agent engineering 手感：少猜，多看证据。</li></ul>
     </div>
     <div class="card">
       <strong>寓言 / 类比</strong>
-      <p>工具箱越大，越需要知道什么时候只用螺丝刀。把每个问题都用最大机器解决，最后会把小项目压垮。</p>
+      <p>医生不会一上来就开药。他会问症状、量体温、看化验单、查病史。Agent debug 也一样，prompt 只是最后可能调整的治疗方案之一。</p>
     </div>
     <div class="card">
       <strong>建议配图</strong>
-      <p class="visual">技术升级决策矩阵：pain -&gt; trigger -&gt; tool -&gt; complexity -&gt; verification。</p>
+      <p class="visual">Debug 决策树：symptom -&gt; reproduce -&gt; state -&gt; trace -&gt; node -&gt; eval -&gt; fix。</p>
     </div>
   </div>
 
   <div class="grid two">
     <div class="card">
       <strong>项目代码落点</strong>
-      <ul><li><a href="../../pyproject.toml">pyproject.toml</a></li><li><a href="../../docker-compose.yml">docker-compose.yml</a></li><li><a href="../../jobagent/graph/langgraph_reference.py">jobagent/graph/langgraph_reference.py</a></li><li><a href="../../jobagent/observability/langfuse_exporter.py">jobagent/observability/langfuse_exporter.py</a></li><li><a href="../../jobagent/storage/postgres_memory.py">jobagent/storage/postgres_memory.py</a></li><li><a href="../../mcp_server/">mcp_server/</a></li></ul>
+      <ul><li><a href="../../jobagent/graph/engine.py">jobagent/graph/engine.py</a></li><li><a href="../../jobagent/observability/tracer.py">jobagent/observability/tracer.py</a></li><li><a href="../../jobagent/storage/checkpoint.py">jobagent/storage/checkpoint.py</a></li><li><a href="../../tests/">tests/</a></li><li><a href="../../.jobagent/runs/">.jobagent/runs/</a></li><li><a href="../../.jobagent/checkpoints/">.jobagent/checkpoints/</a></li></ul>
     </div>
     <div class="card">
       <strong>运行 / 调试练习</strong>
-      <ul><li>为每个 optional dependency 写出 adoption trigger。</li><li>选择一个升级项，写出最小迁移 PR 的范围。</li><li>为升级前后定义一条必须保持通过的 eval。</li></ul>
+      <ul><li>制造一次 resume 失败，按 playbook 定位是 checkpoint 缺失还是 pending_node 问题。</li><li>制造一次 extraction 错误，先补 eval case，再修 extractor。</li><li>制造一次 UI 显示错误，确认 state 与 trace 是否正确，避免误修后端。</li></ul>
     </div>
   </div>
 
   <div class="grid two">
     <div class="card">
       <strong>工程选择题</strong>
-      <ul><li>LangGraph：当 workflow 复杂到本地 engine 开始复制 durable execution/interrupt 时引入。</li><li>Langfuse/OpenTelemetry：当 trace 不再只给开发者看，而要做质量、成本、latency、生产监控时引入。</li><li>MCP：当工具需要跨客户端复用，或外部生态集成比内部 adapter 更重要时引入。</li><li>Postgres/pgvector：当 state/memory 需要持久、并发、查询、语义检索时引入。</li></ul>
+      <ul><li>什么时候改 prompt？当 state、tool、retrieval、schema、guardrail 都证明没有问题，而语义质量仍不足。</li><li>Debug 输出应该保留多久？本地学习可保留，生产要考虑 PII、retention、redaction。</li><li>失败是否要自动恢复？只有可幂等、低风险、可观察的失败才适合自动恢复。</li></ul>
     </div>
     <div class="card">
       <strong>Industry Pulse / 行业脉搏</strong>
-      <ul><li>2026 的 agent stack 趋势是组合式：runtime、protocol、observability、eval、deployment、identity 分别由不同工具覆盖。</li><li>未来的 AI infra 工程师要能在 OpenAI Agents SDK、LangGraph、MCP、Langfuse、OpenTelemetry、AWS AgentCore、Google A2A 等之间做边界判断。</li></ul>
+      <ul><li>行业正在用 trace/span/eval 把 agent debugging 从手工猜测变成可观测流程。OpenAI Agents SDK 默认 tracing，Langfuse 将 trace 连接到 dataset、eval、dashboard。</li><li>这和本章 playbook 完全一致：先拿轨迹，再谈优化。</li></ul>
       <h3>扩展阅读</h3>
-      <ul class="source-list"><li><a href="https://openai.github.io/openai-agents-python/">OpenAI Agents SDK</a><br><span>OpenAI 的 agent runtime SDK 文档入口。</span></li><li><a href="https://opentelemetry.io/docs/specs/semconv/gen-ai/">OpenTelemetry GenAI conventions</a><br><span>跨平台观测 schema 的关键参考。</span></li><li><a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/release-notes.html">AWS AgentCore release notes</a><br><span>托管 agent platform 的工业参照。</span></li></ul>
+      <ul class="source-list"><li><a href="https://openai.github.io/openai-agents-python/tracing/">OpenAI Agents SDK tracing</a><br><span>默认 trace agent run、generation、tool、guardrail、handoff。</span></li><li><a href="https://langfuse.com/docs/tracing-data-model">Langfuse core concepts</a><br><span>解释 traces、sessions、observations 如何组织 agent 行为证据。</span></li></ul>
     </div>
   </div>
 </section>
-<div class="chapter-nav"><a href="18_debugging.html">上一章：第 18 章：调试一本 Agent 系统：从现象回到 state、trace、node</a><a href="20_capstone.html">下一章：第 20 章：最终项目任务：把 JobAgent 改成你的 AI Infra Portfolio</a></div>
+<div class="chapter-nav"><a href="18_10x_scale_readiness.html">上一章：第 18 章：10x Scale 与 Production Readiness：什么时候可以说它准备好了</a><a href="20_upgrade_choices.html">下一章：第 20 章：工程选择题：什么时候该升级技术栈</a></div>
   </main>
   <footer class="wrap">
     Generated from <code>docs/agentic_course/build_agentic_course.py</code>. Industry links were refreshed on 2026-05-30; fast-moving AI infra references should be reviewed periodically.

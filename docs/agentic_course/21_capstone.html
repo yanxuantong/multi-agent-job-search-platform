@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>第 18 章：调试一本 Agent 系统：从现象回到 state、trace、node</title>
+  <title>第 21 章：最终项目任务：把 JobAgent 改成你的 AI Infra Portfolio</title>
   <style>
 :root {
   --bg: #f6f7f8;
@@ -132,8 +132,8 @@ footer { color: var(--muted); padding: 28px 0 42px; font-size: 14px; }
   <header>
     <div class="wrap hero">
       <div class="eyebrow">JobAgent Multi-Agent Course / Updated 2026-05-30</div>
-      <h1>第 18 章：调试一本 Agent 系统：从现象回到 state、trace、node</h1>
-      <p class="lead">Agent debug 不应该从改 prompt 开始，而应该从证据链开始。</p>
+      <h1>第 21 章：最终项目任务：把 JobAgent 改成你的 AI Infra Portfolio</h1>
+      <p class="lead">最后一章不是阅读，而是让读者完整交付一个新的 bounded agent。</p>
       <div class="meta">
         <span class="badge green">项目驱动</span>
         <span class="badge blue">每章单页</span>
@@ -141,54 +141,54 @@ footer { color: var(--muted); padding: 28px 0 42px; font-size: 14px; }
       </div>
     </div>
   </header>
-  <nav aria-label="Chapter navigation"><div class="wrap toc"><a href="index.html">目录</a><a href="mega_agentic_course_zh.html">Mega 合集</a><a href="#18_debugging">本章</a></div></nav>
+  <nav aria-label="Chapter navigation"><div class="wrap toc"><a href="index.html">目录</a><a href="mega_agentic_course_zh.html">Mega 合集</a><a href="#21_capstone">本章</a></div></nav>
   <main class="wrap">
 
-<section id="18_debugging">
+<section id="21_capstone">
   <div class="eyebrow">Part 6 / Capstone</div>
-  <h2>第 18 章：调试一本 Agent 系统：从现象回到 state、trace、node</h2>
-  <p class="lead">Agent debug 不应该从改 prompt 开始，而应该从证据链开始。</p>
+  <h2>第 21 章：最终项目任务：把 JobAgent 改成你的 AI Infra Portfolio</h2>
+  <p class="lead">最后一章不是阅读，而是让读者完整交付一个新的 bounded agent。</p>
 
   <div class="grid">
     <div class="card">
       <strong>概念解释</strong>
-      <ul><li>一个系统输出奇怪结果时，先判断问题发生在输入、guardrail、state、node、tool、checkpoint、trace、UI 还是 eval 覆盖。</li><li>本项目适合建立一套可复用 debug playbook：CLI 复现、检查 checkpoint、阅读 trace、定位 node contract、补 eval case、再改实现。</li><li>这会训练真正的 agent engineering 手感：少猜，多看证据。</li></ul>
+      <ul><li>Capstone 任务：新增一个 agent，例如 `salary_analysis`、`networking_strategy` 或 `company_risk_analysis`。</li><li>要求完整接入 state、workflow、checkpoint/resume、eval、trace、web UI，并写出 portfolio narrative。</li><li>目标是证明读者掌握 agentic infra 的完整闭环，而不是只会加一个函数。</li></ul>
     </div>
     <div class="card">
       <strong>寓言 / 类比</strong>
-      <p>医生不会一上来就开药。他会问症状、量体温、看化验单、查病史。Agent debug 也一样，prompt 只是最后可能调整的治疗方案之一。</p>
+      <p>毕业设计不是背诵机场规则，而是让你真正新增一个服务窗口：写清职责、接入调度、留下记录、接受检查、让乘客看得懂。</p>
     </div>
     <div class="card">
       <strong>建议配图</strong>
-      <p class="visual">Debug 决策树：symptom -&gt; reproduce -&gt; state -&gt; trace -&gt; node -&gt; eval -&gt; fix。</p>
+      <p class="visual">Capstone 交付图：new artifact -&gt; node -&gt; graph -&gt; eval -&gt; trace -&gt; UI -&gt; portfolio story。</p>
     </div>
   </div>
 
   <div class="grid two">
     <div class="card">
       <strong>项目代码落点</strong>
-      <ul><li><a href="../../jobagent/graph/engine.py">jobagent/graph/engine.py</a></li><li><a href="../../jobagent/observability/tracer.py">jobagent/observability/tracer.py</a></li><li><a href="../../jobagent/storage/checkpoint.py">jobagent/storage/checkpoint.py</a></li><li><a href="../../tests/">tests/</a></li><li><a href="../../.jobagent/runs/">.jobagent/runs/</a></li><li><a href="../../.jobagent/checkpoints/">.jobagent/checkpoints/</a></li></ul>
+      <ul><li><a href="../../jobagent/models.py">jobagent/models.py</a></li><li><a href="../../jobagent/agents/">jobagent/agents/</a></li><li><a href="../../jobagent/graph/workflow.py">jobagent/graph/workflow.py</a></li><li><a href="../../jobagent/evals/runner.py">jobagent/evals/runner.py</a></li><li><a href="../../samples/eval_suite.json">samples/eval_suite.json</a></li><li><a href="../../jobagent/web/templates/run.html">jobagent/web/templates/run.html</a></li><li><a href="../../tests/">tests/</a></li></ul>
     </div>
     <div class="card">
       <strong>运行 / 调试练习</strong>
-      <ul><li>制造一次 resume 失败，按 playbook 定位是 checkpoint 缺失还是 pending_node 问题。</li><li>制造一次 extraction 错误，先补 eval case，再修 extractor。</li><li>制造一次 UI 显示错误，确认 state 与 trace 是否正确，避免误修后端。</li></ul>
+      <ul><li>新增 typed artifact，例如 `SalaryAnalysis`。</li><li>新增 agent node，并接入 graph。</li><li>新增 eval case，覆盖 trajectory 与关键输出。</li><li>更新 web UI，让用户能看到新 agent 结果。</li><li>写一段 README/portfolio 叙事：你如何设计 bounded multi-agent workflow。</li></ul>
     </div>
   </div>
 
   <div class="grid two">
     <div class="card">
       <strong>工程选择题</strong>
-      <ul><li>什么时候改 prompt？当 state、tool、retrieval、schema、guardrail 都证明没有问题，而语义质量仍不足。</li><li>Debug 输出应该保留多久？本地学习可保留，生产要考虑 PII、retention、redaction。</li><li>失败是否要自动恢复？只有可幂等、低风险、可观察的失败才适合自动恢复。</li></ul>
+      <ul><li>新 agent 放在哪个位置？取决于它依赖 JD、company brief、fit score 还是 resume proposal。</li><li>是否需要 HITL？如果输出会影响真实申请或外部写入，需要。</li><li>是否需要真实 LLM？先 deterministic baseline，再用 provider adapter 替换。</li></ul>
     </div>
     <div class="card">
       <strong>Industry Pulse / 行业脉搏</strong>
-      <ul><li>行业正在用 trace/span/eval 把 agent debugging 从手工猜测变成可观测流程。OpenAI Agents SDK 默认 tracing，Langfuse 将 trace 连接到 dataset、eval、dashboard。</li><li>这和本章 playbook 完全一致：先拿轨迹，再谈优化。</li></ul>
+      <ul><li>Langfuse 在 2026 年公开了 evaluate AI agent skills 的实践：把 prompts 做成 dataset，运行 agent，trace 行为，再迭代 skill。</li><li>这给 Capstone 一个更高阶方向：不仅评估业务输出，也评估 agent 是否遵守工程 playbook。</li></ul>
       <h3>扩展阅读</h3>
-      <ul class="source-list"><li><a href="https://openai.github.io/openai-agents-python/tracing/">OpenAI Agents SDK tracing</a><br><span>默认 trace agent run、generation、tool、guardrail、handoff。</span></li><li><a href="https://langfuse.com/docs/tracing-data-model">Langfuse core concepts</a><br><span>解释 traces、sessions、observations 如何组织 agent 行为证据。</span></li></ul>
+      <ul class="source-list"><li><a href="https://langfuse.com/blog/2026-02-26-evaluate-ai-agent-skills">Langfuse evaluating AI agent skills</a><br><span>展示如何用 dataset、trace、experiment 评估 agent skill。</span></li><li><a href="https://aws.amazon.com/about-aws/whats-new/2026/03/agentcore-evaluations-generally-available/">AWS AgentCore Evaluations GA</a><br><span>生产 agent eval 的托管平台参照。</span></li></ul>
     </div>
   </div>
 </section>
-<div class="chapter-nav"><a href="17_deployment.html">上一章：第 17 章：Deployment：从本地 demo 到公开 portfolio</a><a href="19_upgrade_choices.html">下一章：第 19 章：工程选择题：什么时候该升级技术栈</a></div>
+<div class="chapter-nav"><a href="20_upgrade_choices.html">上一章：第 20 章：工程选择题：什么时候该升级技术栈</a><a href="mega_agentic_course_zh.html">打开 Mega 合集</a></div>
   </main>
   <footer class="wrap">
     Generated from <code>docs/agentic_course/build_agentic_course.py</code>. Industry links were refreshed on 2026-05-30; fast-moving AI infra references should be reviewed periodically.

@@ -141,12 +141,12 @@ footer { color: var(--muted); padding: 28px 0 42px; font-size: 14px; }
       </div>
     </div>
   </header>
-  <nav aria-label="Table of contents"><div class="wrap toc"><a href="#00_overview">00. 这不是聊天机器人，这是一个可运行的 Agentic Product</a><a href="#01_graph_engine">01. 从 Pipeline 到 Graph：为什么 agent 工程首先是调度问题</a><a href="#02_shared_state">02. Shared State：Multi-Agent 系统里的唯一事实表</a><a href="#03_bounded_agents">03. Bounded Agent：为什么每个 agent 都应该小而窄</a><a href="#04_stop_reason">04. StopReason：Agentic 系统不是一直跑到死</a><a href="#05_hitl">05. Human-in-the-loop：人工审批不是 UI 功能，是系统边界</a><a href="#06_checkpoint_resume">06. Checkpoint 与 Resume：Agentic Workflow 的耐久执行</a><a href="#07_tool_use">07. Tool Use：Agent 什么时候应该调用工具</a><a href="#08_memory_story_bank">08. Memory 与 Story Bank：不是所有上下文都该塞进 Prompt</a><a href="#09_local_rag">09. Local RAG：先理解检索，再上向量数据库</a><a href="#10_mcp">10. MCP：把工具世界标准化</a><a href="#11_llm_provider">11. LLM Provider：把模型调用隔离成可替换接口</a><a href="#12_langgraph">12. LangGraph：从教学 GraphEngine 迁移到工业框架</a><a href="#13_observability">13. Observability：Trace 是 Agent 系统的黑匣子</a><a href="#14_offline_eval">14. Offline Eval：别靠感觉判断 Agent 有没有变好</a><a href="#15_guardrails">15. Guardrails：在 Agency 之前先做安全边界</a><a href="#16_web_product">16. Web Product Surface：把 Workflow 变成可以用的产品</a><a href="#17_deployment">17. Deployment：从本地 demo 到公开 portfolio</a><a href="#18_debugging">18. 调试一本 Agent 系统：从现象回到 state、trace、node</a><a href="#19_upgrade_choices">19. 工程选择题：什么时候该升级技术栈</a><a href="#20_capstone">20. 最终项目任务：把 JobAgent 改成你的 AI Infra Portfolio</a></div></nav>
+  <nav aria-label="Table of contents"><div class="wrap toc"><a href="#00_overview">00. 这不是聊天机器人，这是一个可运行的 Agentic Product</a><a href="#01_graph_engine">01. 从 Pipeline 到 Graph：为什么 agent 工程首先是调度问题</a><a href="#02_shared_state">02. Shared State：Multi-Agent 系统里的唯一事实表</a><a href="#03_bounded_agents">03. Bounded Agent：为什么每个 agent 都应该小而窄</a><a href="#04_stop_reason">04. StopReason：Agentic 系统不是一直跑到死</a><a href="#05_hitl">05. Human-in-the-loop：人工审批不是 UI 功能，是系统边界</a><a href="#06_checkpoint_resume">06. Checkpoint 与 Resume：Agentic Workflow 的耐久执行</a><a href="#07_tool_use">07. Tool Use：Agent 什么时候应该调用工具</a><a href="#08_memory_story_bank">08. Memory 与 Story Bank：不是所有上下文都该塞进 Prompt</a><a href="#09_local_rag">09. Local RAG：先理解检索，再上向量数据库</a><a href="#10_mcp">10. MCP：把工具世界标准化</a><a href="#11_llm_provider">11. LLM Provider：把模型调用隔离成可替换接口</a><a href="#12_langgraph">12. LangGraph：从教学 GraphEngine 迁移到工业框架</a><a href="#13_observability">13. Observability：Trace 是 Agent 系统的黑匣子</a><a href="#14_offline_eval">14. Offline Eval：别靠感觉判断 Agent 有没有变好</a><a href="#15_guardrails">15. Guardrails：在 Agency 之前先做安全边界</a><a href="#16_web_product">16. Web Product Surface：把 Workflow 变成可以用的产品</a><a href="#17_deployment">17. Deployment：从本地 demo 到公开 portfolio</a><a href="#18_10x_scale_readiness">18. 10x Scale 与 Production Readiness：什么时候可以说它准备好了</a><a href="#19_debugging">19. 调试一本 Agent 系统：从现象回到 state、trace、node</a><a href="#20_upgrade_choices">20. 工程选择题：什么时候该升级技术栈</a><a href="#21_capstone">21. 最终项目任务：把 JobAgent 改成你的 AI Infra Portfolio</a></div></nav>
   <main class="wrap">
 
 <section>
   <h2>总览</h2>
-  <p>这份 mega HTML 把 21 个单章教程合并在一起，适合连续阅读、分享或打印。每章仍然保留概念解释、寓言类比、项目代码落点、调试练习、工程选择题和行业扩展阅读。</p>
+  <p>这份 mega HTML 把 22 个单章教程合并在一起，适合连续阅读、分享或打印。每章仍然保留概念解释、寓言类比、项目代码落点、调试练习、工程选择题和行业扩展阅读。</p>
   <div class="callout">建议先用 <a href="index.html">目录入口</a> 按章节阅读；需要整体浏览时再打开本页。</div>
 </section>
 
@@ -978,9 +978,55 @@ footer { color: var(--muted); padding: 28px 0 42px; font-size: 14px; }
 </section>
 
 
-<section id="18_debugging">
+<section id="18_10x_scale_readiness">
+  <div class="eyebrow">Part 5 / Eval、安全与产品化</div>
+  <h2>第 18 章：10x Scale 与 Production Readiness：什么时候可以说它准备好了</h2>
+  <p class="lead">Production readiness 不是一句自信判断，而是一组关于流量、状态、恢复、安全和验证的证据。</p>
+
+  <div class="grid">
+    <div class="card">
+      <strong>概念解释</strong>
+      <ul><li>JobAgent 现在可以诚实地称为 production-shaped：它有 FastAPI surface、Docker/Render 部署、typed state、HITL、checkpoint/resume、trace/audit、guardrails、ops endpoints 和 offline eval。但它还不应该被包装成 fully production-ready SaaS。</li><li>10x scale 先考验的不是 agent prompt，而是执行层：`POST /runs` 目前同步跑完整 workflow；默认 local checkpoint 在 Render free instance 上是 ephemeral；in-memory rate limit 不能跨进程共享；Postgres path 存在，但还缺 connection pooling、migration/versioning、idempotent approval 和 background worker。</li><li>这一章故意先不实现这些升级，而是把生产判断记录成可复述、可验证、可逐步落地的 checklist。对 portfolio 和面试来说，这种边界意识本身就是很重要的工程经历。</li></ul>
+    </div>
+    <div class="card">
+      <strong>寓言 / 类比</strong>
+      <p>一次小型展览可以靠一个工作人员现场登记、现场带路、现场收票。但如果人流变成十倍，你不会先训练他说话更漂亮，而是会先加排队系统、票据数据库、入口闸机、监控面板和应急流程。Agent product 的 10x scale 也是同一个逻辑。</p>
+    </div>
+    <div class="card">
+      <strong>建议配图</strong>
+      <p class="visual">Readiness 分层图：demo traffic -&gt; public portfolio -&gt; durable beta -&gt; production SaaS；每层标出 state、queue、auth、rate limit、observability、eval 证据。</p>
+    </div>
+  </div>
+
+  <div class="grid two">
+    <div class="card">
+      <strong>项目代码落点</strong>
+      <ul><li><a href="../../jobagent/web/app.py">jobagent/web/app.py</a></li><li><a href="../../jobagent/web/store.py">jobagent/web/store.py</a></li><li><a href="../../jobagent/graph/workflow.py">jobagent/graph/workflow.py</a></li><li><a href="../../jobagent/storage/checkpoint.py">jobagent/storage/checkpoint.py</a></li><li><a href="../../samples/eval_suite.json">samples/eval_suite.json</a></li><li><a href="../../render.yaml">render.yaml</a></li><li><a href="../../README.zh.md">README.zh.md</a></li></ul>
+    </div>
+    <div class="card">
+      <strong>运行 / 调试练习</strong>
+      <ul><li>阅读 `create_run()`，说明为什么同步 workflow 在 10x traffic 下会成为 request latency 与 timeout 风险。</li><li>对比 `LocalRunStore` 与 `PostgresRunStore`，写出哪些 state 可以丢、哪些 state 一旦丢就破坏用户信任。</li><li>把 `/ops/status`、`/ops/evals`、`python3 -m jobagent.cli eval`、`python3 -m unittest discover -s tests` 组合成一个 release/readiness checklist。</li><li>写一个不实现代码的 migration note：从 public demo 到 production SaaS，需要先引入 queue、durable Postgres、auth、distributed rate limit 和 observability backend。</li></ul>
+    </div>
+  </div>
+
+  <div class="grid two">
+    <div class="card">
+      <strong>工程选择题</strong>
+      <ul><li>10x 是什么？如果是 portfolio/demo traffic，当前形态大概率 okay；如果是真用户 SaaS traffic，需要先升级执行、状态和运维层。</li><li>什么时候必须引入 queue？当 run 时间不可控、外部 API 变慢、需要 retry/backoff、并发用户会阻塞 web workers，或 run 必须脱离 request 生命周期继续完成。</li><li>什么时候必须引入 durable store？当用户期望历史 run、approval、trace、tracker update 可恢复，或服务部署为多实例时。</li><li>什么时候可以说 production-ready？只有当 load、restart-resume、approval race、storage failure、guardrail bypass、eval regression 和 observability smoke 都有证据时。</li></ul>
+    </div>
+    <div class="card">
+      <strong>Industry Pulse / 行业脉搏</strong>
+      <ul><li>行业里的 agent platform 越来越把 runtime、durable execution、identity、policy、observability 和 eval 放在一起卖，原因很简单：agent 质量问题最后常常表现为系统可靠性问题。</li><li>这一章对应的能力不是某个新框架，而是 FDE/AI infra 面试里很有价值的判断力：能区分 demo-ready、production-shaped、production-ready，并能说清下一步工程升级顺序。</li></ul>
+      <h3>扩展阅读</h3>
+      <ul class="source-list"><li><a href="https://docs.langchain.com/oss/python/langgraph/durable-execution">LangGraph durable execution</a><br><span>理解 long-running workflow、checkpoint、determinism 和 side-effect idempotency。</span></li><li><a href="https://opentelemetry.io/docs/specs/semconv/gen-ai/">OpenTelemetry GenAI conventions</a><br><span>生产观测需要稳定 schema，不能只靠本地日志。</span></li><li><a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/release-notes.html">AWS AgentCore release notes</a><br><span>托管 agent runtime 对 memory、identity、observability、evaluation、policy 的平台化参照。</span></li></ul>
+    </div>
+  </div>
+</section>
+
+
+<section id="19_debugging">
   <div class="eyebrow">Part 6 / Capstone</div>
-  <h2>第 18 章：调试一本 Agent 系统：从现象回到 state、trace、node</h2>
+  <h2>第 19 章：调试一本 Agent 系统：从现象回到 state、trace、node</h2>
   <p class="lead">Agent debug 不应该从改 prompt 开始，而应该从证据链开始。</p>
 
   <div class="grid">
@@ -1024,9 +1070,9 @@ footer { color: var(--muted); padding: 28px 0 42px; font-size: 14px; }
 </section>
 
 
-<section id="19_upgrade_choices">
+<section id="20_upgrade_choices">
   <div class="eyebrow">Part 6 / Capstone</div>
-  <h2>第 19 章：工程选择题：什么时候该升级技术栈</h2>
+  <h2>第 20 章：工程选择题：什么时候该升级技术栈</h2>
   <p class="lead">成熟的 AI infra 判断力，不是知道所有工具，而是知道什么时候不用它们。</p>
 
   <div class="grid">
@@ -1070,9 +1116,9 @@ footer { color: var(--muted); padding: 28px 0 42px; font-size: 14px; }
 </section>
 
 
-<section id="20_capstone">
+<section id="21_capstone">
   <div class="eyebrow">Part 6 / Capstone</div>
-  <h2>第 20 章：最终项目任务：把 JobAgent 改成你的 AI Infra Portfolio</h2>
+  <h2>第 21 章：最终项目任务：把 JobAgent 改成你的 AI Infra Portfolio</h2>
   <p class="lead">最后一章不是阅读，而是让读者完整交付一个新的 bounded agent。</p>
 
   <div class="grid">
