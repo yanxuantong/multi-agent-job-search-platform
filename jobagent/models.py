@@ -145,6 +145,7 @@ class AgentError:
 class JobSearchState:
     run_id: str
     user_goal: str
+    owner_session_hash: str | None = None
     job_url: str | None = None
     raw_job_text: str | None = None
     company_name: str | None = None

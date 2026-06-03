@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import hashlib
+import hmac
 import os
 import re
+import secrets
 import time
 from collections import defaultdict, deque
 from contextlib import asynccontextmanager
@@ -39,6 +42,8 @@ RUN_ID_PATTERN = re.compile(
 )
 RATE_LIMIT_WINDOW_SECONDS = int(os.environ.get("JOBAGENT_RATE_LIMIT_WINDOW_SECONDS", "60"))
 RATE_LIMIT_POST_RUNS = int(os.environ.get("JOBAGENT_RATE_LIMIT_POST_RUNS", "12"))
+SESSION_COOKIE_NAME = "jobagent_session"
+SESSION_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24
 
 
 def create_app(store: RunStore | None = None) -> FastAPI:
@@ -127,6 +132,8 @@ def create_app(store: RunStore | None = None) -> FastAPI:
 
     @app.get("/ops/evals")
     def ops_evals() -> dict[str, object]:
+        if _public_demo_mode():
+            raise HTTPException(status_code=404, detail="Not found")
         stories = load_story_bank(DEFAULT_STORY_BANK)
         result = run_eval_suite(DEFAULT_EVAL_SUITE, stories)
         return {
@@ -155,6 +162,9 @@ def create_app(store: RunStore | None = None) -> FastAPI:
 
     @app.post("/runs")
     async def create_run(request: Request) -> RedirectResponse:
+        session_token = _session_token(request)
+        if not session_token:
+            session_token = _new_session_token()
         form = await _read_urlencoded_form(request)
         job_text = form.get("job_text", "").strip()
         job_url = form.get("job_url", "").strip() or None
@@ -174,9 +184,12 @@ def create_app(store: RunStore | None = None) -> FastAPI:
 
         stories = load_story_bank(DEFAULT_STORY_BANK)
         state = run_job_workflow(job_text, stories, job_url=job_url, approved=approved)
+        state.owner_session_hash = _session_hash(session_token)
         app.state.run_store.save(state)
         app.state.metrics["runs_started_total"] += 1
-        return RedirectResponse(f"/runs/{state.run_id}", status_code=303)
+        response = RedirectResponse(f"/runs/{state.run_id}", status_code=303)
+        _set_session_cookie(response, request, session_token)
+        return response
 
     @app.get("/runs/{run_id}", response_class=HTMLResponse)
     def show_run(request: Request, run_id: str) -> HTMLResponse:
@@ -191,15 +204,22 @@ def create_app(store: RunStore | None = None) -> FastAPI:
                 "scores": _score_rows(state),
                 "run_steps": _run_steps(state),
                 "trace_rows": _trace_rows(state),
-                "can_approve": state.stop_reason == StopReason.NEED_USER_APPROVAL and bool(state.pending_node),
+                "can_approve": (
+                    state.stop_reason == StopReason.NEED_USER_APPROVAL
+                    and bool(state.pending_node)
+                    and _can_manage_run(request, state)
+                ),
                 "public_demo_mode": _public_demo_mode(),
             },
         )
 
     @app.post("/runs/{run_id}/approve")
-    def approve_run(run_id: str) -> RedirectResponse:
+    def approve_run(request: Request, run_id: str) -> RedirectResponse:
         _validate_run_id_or_404(run_id)
         state = _load_or_404(app.state.run_store, run_id)
+        if not _can_manage_run(request, state):
+            app.state.metrics["rejected_total"] += 1
+            raise HTTPException(status_code=403, detail="Run approval requires the creator session")
         state = resume_job_state(state, approved=True)
         app.state.run_store.save(state)
         return RedirectResponse(f"/runs/{state.run_id}", status_code=303)
@@ -218,6 +238,41 @@ def _load_or_404(store: RunStore, run_id: str) -> JobSearchState:
         return store.load(run_id)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+def _session_token(request: Request) -> str | None:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    if token and 32 <= len(token) <= 256:
+        return token
+    return None
+
+
+def _new_session_token() -> str:
+    return secrets.token_urlsafe(32)
+
+
+def _session_hash(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def _set_session_cookie(response: RedirectResponse, request: Request, token: str) -> None:
+    response.set_cookie(
+        SESSION_COOKIE_NAME,
+        token,
+        max_age=SESSION_COOKIE_MAX_AGE_SECONDS,
+        httponly=True,
+        samesite="lax",
+        secure=request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https",
+    )
+
+
+def _can_manage_run(request: Request, state: JobSearchState) -> bool:
+    if not state.owner_session_hash:
+        return False
+    token = _session_token(request)
+    if not token:
+        return False
+    return hmac.compare_digest(_session_hash(token), state.owner_session_hash)
 
 
 async def _read_urlencoded_form(request: Request) -> dict[str, str]:

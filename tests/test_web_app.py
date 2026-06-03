@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -53,6 +54,35 @@ class WebAppTest(unittest.TestCase):
                 self.assertIn("application_tracker_writer", completed.text)
                 self.assertIn("Run evaluation", completed.text)
 
+    def test_web_rejects_approval_from_non_creator_session(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            with self._client(tmp) as creator:
+                response = creator.post(
+                    "/runs",
+                    data={
+                        "job_url": "https://example.com/job",
+                        "job_text": (
+                            "Company: Anthropic\n"
+                            "Role: Applied AI Engineer\n"
+                            "Build Python services for RAG, LLM agents, evaluation, observability, and Postgres state."
+                        ),
+                    },
+                    follow_redirects=False,
+                )
+                self.assertEqual(response.status_code, 303)
+                run_url = response.headers["location"]
+
+            with self._client(tmp) as other_client:
+                detail = other_client.get(run_url)
+                self.assertEqual(detail.status_code, 200)
+                self.assertNotIn("Approve and continue", detail.text)
+
+                run_id = run_url.rsplit("/", 1)[-1]
+                approved = other_client.post(f"/runs/{run_id}/approve", follow_redirects=False)
+
+            self.assertEqual(approved.status_code, 403)
+            self.assertIn("creator session", approved.text)
+
     def test_web_responses_include_security_headers(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             with self._client(tmp) as client:
@@ -88,15 +118,38 @@ class WebAppTest(unittest.TestCase):
         self.assertGreaterEqual(payload["metrics"]["requests_total"], 2)
 
     def test_web_ops_evals_reports_regression_suite(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            with self._client(tmp) as client:
-                response = client.get("/ops/evals")
+        original_public_mode = os.environ.get("JOBAGENT_PUBLIC_DEMO_MODE")
+        os.environ["JOBAGENT_PUBLIC_DEMO_MODE"] = "false"
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                with self._client(tmp) as client:
+                    response = client.get("/ops/evals")
+        finally:
+            if original_public_mode is None:
+                os.environ.pop("JOBAGENT_PUBLIC_DEMO_MODE", None)
+            else:
+                os.environ["JOBAGENT_PUBLIC_DEMO_MODE"] = original_public_mode
 
         self.assertEqual(response.status_code, 200)
         payload = response.json()
         self.assertEqual(payload["status"], "ok")
         self.assertIn("pass_rate", payload["result"])
         self.assertIn("failure_categories", payload["result"])
+
+    def test_web_public_demo_hides_ops_evals(self) -> None:
+        original_public_mode = os.environ.get("JOBAGENT_PUBLIC_DEMO_MODE")
+        os.environ["JOBAGENT_PUBLIC_DEMO_MODE"] = "true"
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                with self._client(tmp) as client:
+                    response = client.get("/ops/evals")
+        finally:
+            if original_public_mode is None:
+                os.environ.pop("JOBAGENT_PUBLIC_DEMO_MODE", None)
+            else:
+                os.environ["JOBAGENT_PUBLIC_DEMO_MODE"] = original_public_mode
+
+        self.assertEqual(response.status_code, 404)
 
     def test_web_rejects_oversized_job_text(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
