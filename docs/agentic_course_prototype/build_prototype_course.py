@@ -1,25 +1,14 @@
 from __future__ import annotations
 
-import importlib.util
 import re
-import sys
 from dataclasses import dataclass
 from html import escape
 from pathlib import Path
 
+from course_content import CHAPTERS, DEEP_DIVES, UPDATED
 
 OUT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = OUT_DIR.parents[1]
-SOURCE = REPO_ROOT / "docs" / "agentic_course" / "build_agentic_course.py"
-UPDATED = "2026-05-30"
-
-
-spec = importlib.util.spec_from_file_location("agentic_course_source", SOURCE)
-source = importlib.util.module_from_spec(spec)
-assert spec and spec.loader
-sys.modules[spec.name] = source
-spec.loader.exec_module(source)
-CHAPTERS = source.CHAPTERS
 
 
 @dataclass(frozen=True)
@@ -102,10 +91,11 @@ CODE: dict[str, list[CodeRow]] = {
         CodeRow("4", "memory writes should be explicit and reviewable", "长期记忆写入需要边界", "warn"),
     ],
     "09_local_rag": [
-        CodeRow("16", "def chunk_text(text: str, *, source: str, max_words: int = 120, overlap_words: int = 20):", "先切 chunk，再谈向量库", "hot"),
-        CodeRow("41", "def rank_chunks(chunks: list[RetrievedChunk], query_terms: list[str], *, limit: int = 5):", "检索结果需要排序和限制", "hot"),
-        CodeRow("47", "score = sum(1 for term in query_terms if term.lower() in chunk.text.lower())", "教学版用可解释 keyword score", "hot"),
-        CodeRow("50", "return ranked[:limit]", "不要把所有资料都塞进 context", "warn"),
+        CodeRow("27", "class SourceDocument:", "资料先变成带治理字段的 source contract", "hot"),
+        CodeRow("71", "class RetrievalContext:", "一次检索要留下完整证据包", "hot"),
+        CodeRow("115", "def retrieve_context(...):", "context assembly 是 RAG 和 downstream agents 的边界", "hot"),
+        CodeRow("132", "freshness_warnings = [...]", "相关不够，还要判断信息是否过期", "warn"),
+        CodeRow("150", "def hybrid_rank_chunks(...):", "保留 keyword + semantic 的升级接口", "warn"),
     ],
     "10_mcp": [
         CodeRow("14", "def main() -> int:", "教学版 MCP-shaped server 从简单入口开始"),
@@ -133,9 +123,10 @@ CODE: dict[str, list[CodeRow]] = {
     ],
     "14_offline_eval": [
         CodeRow("11", "def run_eval_suite(path: str | Path, story_bank: list[dict]) -> dict:", "eval 是 agent workflow 的回归入口", "hot"),
-        CodeRow("30", "state = run_job_workflow(..., approved=True)", "用固定输入跑完整 workflow", "hot"),
-        CodeRow("58", "def _check_extraction_case(case: dict, state) -> list[dict]:", "结构化抽取可以 deterministic 检查", "hot"),
-        CodeRow("82", "def _check_trajectory_case(case: dict, state) -> list[dict]:", "trajectory 也应该被评估", "warn"),
+        CodeRow("28", "state = run_job_workflow(...)", "trajectory case 用固定输入跑完整 workflow", "hot"),
+        CodeRow("63", "\"failure_categories\": _suite_failure_categories(results)", "报告要能定位失败类型", "warn"),
+        CodeRow("115", "def _check_trajectory_case(case: dict, state) -> list[dict]:", "trajectory 也应该被 deterministic 检查", "hot"),
+        CodeRow("11", "def run_retrieval_eval_suite(...):", "RAG 单独有 retrieval-first eval runner", "warn"),
     ],
     "15_guardrails": [
         CodeRow("13", "SECRET_PATTERNS = (...)", "secrets 在 workflow 前拦截", "warn"),
@@ -199,12 +190,11 @@ def link_path(path: str) -> str:
 
 def sidebar(chapter) -> str:
     links = [
-        '<a href="index.html">Prototype 首页</a>',
+        '<a href="index.html">课程首页</a>',
         *[
             f'<a class="{"active" if other.slug == chapter.slug else ""}" href="{escape(link_for(other))}">{escape(chapter_number(other))} {escape(other.title.split("：", 1)[-1])}</a>'
             for other in CHAPTERS
         ],
-        '<a href="../agentic_course/index.html">返回旧版目录</a>',
     ]
     return f"""
 <aside class="sidebar">
@@ -340,6 +330,18 @@ def source_links(chapter) -> str:
     ) + "</div>"
 
 
+def deep_dive(slug: str) -> str:
+    content = DEEP_DIVES.get(slug)
+    if not content:
+        return ""
+    return f"""
+  <section class="lesson-section deep-dive-section">
+    <h2>扩展工程手册：把这一章做成可执行练习</h2>
+    {content}
+  </section>
+"""
+
+
 def file_panels(chapter) -> str:
     cards = []
     for anchor in chapter.anchors:
@@ -387,6 +389,8 @@ def article(chapter) -> str:
     {steps(chapter.labs)}
   </section>
 
+  {deep_dive(chapter.slug)}
+
   <section class="lesson-section">
     <h2>工程选择题：什么时候这样做，什么时候不要这样做</h2>
     <div class="article-prose">
@@ -411,15 +415,15 @@ def render_chapter(chapter, idx: int) -> str:
     prev_ch = CHAPTERS[idx - 1] if idx else None
     next_ch = CHAPTERS[idx + 1] if idx + 1 < len(CHAPTERS) else None
     footer = '<nav class="footer-nav">'
-    footer += f'<a class="button" href="{escape(link_for(prev_ch))}">上一章：{escape(prev_ch.title)}</a>' if prev_ch else '<a class="button" href="index.html">返回 Prototype 首页</a>'
-    footer += f'<a class="button primary" href="{escape(link_for(next_ch))}">下一章：{escape(next_ch.title)}</a>' if next_ch else '<a class="button primary" href="index.html">回到 Prototype 首页</a>'
+    footer += f'<a class="button" href="{escape(link_for(prev_ch))}">上一章：{escape(prev_ch.title)}</a>' if prev_ch else '<a class="button" href="index.html">返回课程首页</a>'
+    footer += f'<a class="button primary" href="{escape(link_for(next_ch))}">下一章：{escape(next_ch.title)}</a>' if next_ch else '<a class="button primary" href="index.html">回到课程首页</a>'
     footer += "</nav>"
     return f"""<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{escape(chapter.title)} / JobAgent Course Prototype</title>
+  <title>{escape(chapter.title)} / JobAgent Agentic Engineering Course</title>
   <link rel="stylesheet" href="assets/course.css">
 </head>
 <body>
@@ -457,27 +461,26 @@ def render_index() -> str:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>JobAgent Multi-Agent 工程教程 Prototype</title>
+  <title>JobAgent Agentic Engineering Course</title>
   <link rel="stylesheet" href="assets/course.css">
 </head>
 <body>
   <div class="shell">
-    {sidebar(fake_chapter).replace('class="active" href="00_overview.html"', 'href="00_overview.html"').replace('<a href="index.html">Prototype 首页</a>', '<a class="active" href="index.html">Prototype 首页</a>')}
+    {sidebar(fake_chapter).replace('class="active" href="00_overview.html"', 'href="00_overview.html"').replace('<a href="index.html">课程首页</a>', '<a class="active" href="index.html">课程首页</a>')}
     <main class="reading">
       <section class="hero">
-        <div class="kicker">Reading Experience Prototype / Updated {UPDATED}</div>
-        <h1>把教程从“信息卡片”改成“工程现场”</h1>
-        <p class="subtitle">这一版把 21 章都改成文章式教程：左侧课程地图，中间连续讲解，右侧 lab 和行业脉搏。正文里保留图解、代码高亮、项目文件链接和扩展阅读。</p>
+        <div class="kicker">Source of Truth / Updated {UPDATED}</div>
+        <h1>JobAgent Agentic Engineering Course</h1>
+        <p class="subtitle">这是现在唯一维护的课程版本：22 章文章式教程，左侧课程地图，中间连续讲解，右侧 lab 和行业脉搏。正文里保留图解、代码高亮、项目文件链接和扩展阅读。</p>
         <div class="hero-actions">
           <a class="button primary" href="00_overview.html">开始第 0 章</a>
-          <a class="button" href="../agentic_course/index.html">返回旧版目录</a>
         </div>
       </section>
       <article class="lesson">
         <section class="lesson-section">
           <h2>阅读方式</h2>
           <div class="article-prose">
-            <p>如果上一版像课程大纲，这一版更像工程实验手册。每章先给你一个问题，再把问题放回 JobAgent 的真实文件、真实命令和真实调试路径里。</p>
+            <p>这套课程更像工程实验手册。每章先给你一个问题，再把问题放回 JobAgent 的真实文件、真实命令和真实调试路径里。</p>
             <p>配图只承担教学任务：定位系统位置、解释状态变化、展示调试路径。代码块里的重点行会高亮，右侧注释告诉你为什么要看这一行。</p>
           </div>
           <img class="concept-img" src="assets/reading-experience-concept.png" alt="JobAgent course reading experience concept">
@@ -489,7 +492,7 @@ def render_index() -> str:
       </article>
     </main>
     <aside class="inspector">
-      <div class="inspector-card"><h3>Prototype 状态</h3><p>21 章已生成。下一步可以迁移到 MkDocs Material 或继续增强静态 HTML。</p></div>
+      <div class="inspector-card"><h3>课程状态</h3><p>22 章已生成。后续内容更新都从这套文章式课程生成。</p></div>
       <div class="inspector-card"><h3>阅读进度</h3><div class="progress"><span data-progress></span></div></div>
     </aside>
   </div>
@@ -499,11 +502,16 @@ def render_index() -> str:
 """
 
 
+def write_html(path: Path, content: str) -> None:
+    normalized = "\n".join(line.rstrip() for line in content.splitlines()) + "\n"
+    path.write_text(normalized, encoding="utf-8")
+
+
 def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    (OUT_DIR / "index.html").write_text(render_index(), encoding="utf-8")
+    write_html(OUT_DIR / "index.html", render_index())
     for idx, chapter in enumerate(CHAPTERS):
-        (OUT_DIR / link_for(chapter)).write_text(render_chapter(chapter, idx), encoding="utf-8")
+        write_html(OUT_DIR / link_for(chapter), render_chapter(chapter, idx))
 
 
 if __name__ == "__main__":

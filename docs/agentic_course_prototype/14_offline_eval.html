@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>第 14 章：Offline Eval：别靠感觉判断 Agent 有没有变好 / JobAgent Course Prototype</title>
+  <title>第 14 章：Offline Eval：别靠感觉判断 Agent 有没有变好 / JobAgent Agentic Engineering Course</title>
   <link rel="stylesheet" href="assets/course.css">
 </head>
 <body>
@@ -16,7 +16,7 @@
     <p>Agent 质量不能只靠肉眼体验，必须有回归样例和可重复评估。</p>
   </div>
   <nav class="nav-block" aria-label="Course">
-    <a href="index.html">Prototype 首页</a><a class="" href="00_overview.html">00 这不是聊天机器人，这是一个可运行的 Agentic Product</a><a class="" href="01_graph_engine.html">01 从 Pipeline 到 Graph：为什么 agent 工程首先是调度问题</a><a class="" href="02_shared_state.html">02 Shared State：Multi-Agent 系统里的唯一事实表</a><a class="" href="03_bounded_agents.html">03 Bounded Agent：为什么每个 agent 都应该小而窄</a><a class="" href="04_stop_reason.html">04 StopReason：Agentic 系统不是一直跑到死</a><a class="" href="05_hitl.html">05 Human-in-the-loop：人工审批不是 UI 功能，是系统边界</a><a class="" href="06_checkpoint_resume.html">06 Checkpoint 与 Resume：Agentic Workflow 的耐久执行</a><a class="" href="07_tool_use.html">07 Tool Use：Agent 什么时候应该调用工具</a><a class="" href="08_memory_story_bank.html">08 Memory 与 Story Bank：不是所有上下文都该塞进 Prompt</a><a class="" href="09_local_rag.html">09 Local RAG：先理解检索，再上向量数据库</a><a class="" href="10_mcp.html">10 MCP：把工具世界标准化</a><a class="" href="11_llm_provider.html">11 LLM Provider：把模型调用隔离成可替换接口</a><a class="" href="12_langgraph.html">12 LangGraph：从教学 GraphEngine 迁移到工业框架</a><a class="" href="13_observability.html">13 Observability：Trace 是 Agent 系统的黑匣子</a><a class="active" href="14_offline_eval.html">14 Offline Eval：别靠感觉判断 Agent 有没有变好</a><a class="" href="15_guardrails.html">15 Guardrails：在 Agency 之前先做安全边界</a><a class="" href="16_web_product.html">16 Web Product Surface：把 Workflow 变成可以用的产品</a><a class="" href="17_deployment.html">17 Deployment：从本地 demo 到公开 portfolio</a><a class="" href="18_debugging.html">18 调试一本 Agent 系统：从现象回到 state、trace、node</a><a class="" href="19_upgrade_choices.html">19 工程选择题：什么时候该升级技术栈</a><a class="" href="20_capstone.html">20 最终项目任务：把 JobAgent 改成你的 AI Infra Portfolio</a><a href="../agentic_course/index.html">返回旧版目录</a>
+    <a href="index.html">课程首页</a><a class="" href="00_overview.html">00 这不是聊天机器人，这是一个可运行的 Agentic Product</a><a class="" href="01_graph_engine.html">01 从 Pipeline 到 Graph：为什么 agent 工程首先是调度问题</a><a class="" href="02_shared_state.html">02 Shared State：Multi-Agent 系统里的唯一事实表</a><a class="" href="03_bounded_agents.html">03 Bounded Agent：为什么每个 agent 都应该小而窄</a><a class="" href="04_stop_reason.html">04 StopReason：Agentic 系统不是一直跑到死</a><a class="" href="05_hitl.html">05 Human-in-the-loop：人工审批不是 UI 功能，是系统边界</a><a class="" href="06_checkpoint_resume.html">06 Checkpoint 与 Resume：Agentic Workflow 的耐久执行</a><a class="" href="07_tool_use.html">07 Tool Use：Agent 什么时候应该调用工具</a><a class="" href="08_memory_story_bank.html">08 Memory 与 Story Bank：不是所有上下文都该塞进 Prompt</a><a class="" href="09_local_rag.html">09 Local RAG：先理解检索，再上向量数据库</a><a class="" href="10_mcp.html">10 MCP：把工具世界标准化</a><a class="" href="11_llm_provider.html">11 LLM Provider：把模型调用隔离成可替换接口</a><a class="" href="12_langgraph.html">12 LangGraph：从教学 GraphEngine 迁移到工业框架</a><a class="" href="13_observability.html">13 Observability：Trace 是 Agent 系统的黑匣子</a><a class="active" href="14_offline_eval.html">14 Offline Eval：别靠感觉判断 Agent 有没有变好</a><a class="" href="15_guardrails.html">15 Guardrails：在 Agency 之前先做安全边界</a><a class="" href="16_web_product.html">16 Web Product Surface：把 Workflow 变成可以用的产品</a><a class="" href="17_deployment.html">17 Deployment：从本地 demo 到公开 portfolio</a><a class="" href="18_10x_scale_readiness.html">18 10x Scale 与 Production Readiness：什么时候可以说它准备好了</a><a class="" href="19_debugging.html">19 调试一本 Agent 系统：从现象回到 state、trace、node</a><a class="" href="20_upgrade_choices.html">20 工程选择题：什么时候该升级技术栈</a><a class="" href="21_capstone.html">21 最终项目任务：把 JobAgent 改成你的 AI Infra Portfolio</a>
   </nav>
 </aside>
 
@@ -70,7 +70,7 @@
       <p>下面的代码摘录不是为了让你背实现细节，而是训练阅读顺序。青色行表示主路径，琥珀色行表示控制、停止、安全或恢复边界。读 agent 系统时，先找这些边界，通常比先看 prompt 更有效。</p>
       <p>对应的项目文件在这里：<a href="../../jobagent/evals/runner.py"><code>jobagent/evals/runner.py</code></a>, <a href="../../samples/eval_suite.json"><code>samples/eval_suite.json</code></a>, <a href="../../tests/test_eval_runner.py"><code>tests/test_eval_runner.py</code></a>, <a href="../../jobagent/cli.py"><code>jobagent/cli.py</code></a>。</p>
     </div>
-    <div class="annotated-code" role="region" aria-label="Annotated code excerpt"><div class="code-row hot"><span class="line">11</span><span class="src">def run_eval_suite(path: str | Path, story_bank: list[dict]) -&gt; dict:</span><span class="comment">eval 是 agent workflow 的回归入口</span></div><div class="code-row hot"><span class="line">30</span><span class="src">state = run_job_workflow(..., approved=True)</span><span class="comment">用固定输入跑完整 workflow</span></div><div class="code-row hot"><span class="line">58</span><span class="src">def _check_extraction_case(case: dict, state) -&gt; list[dict]:</span><span class="comment">结构化抽取可以 deterministic 检查</span></div><div class="code-row warn"><span class="line">82</span><span class="src">def _check_trajectory_case(case: dict, state) -&gt; list[dict]:</span><span class="comment">trajectory 也应该被评估</span></div></div>
+    <div class="annotated-code" role="region" aria-label="Annotated code excerpt"><div class="code-row hot"><span class="line">11</span><span class="src">def run_eval_suite(path: str | Path, story_bank: list[dict]) -&gt; dict:</span><span class="comment">eval 是 agent workflow 的回归入口</span></div><div class="code-row hot"><span class="line">28</span><span class="src">state = run_job_workflow(...)</span><span class="comment">trajectory case 用固定输入跑完整 workflow</span></div><div class="code-row warn"><span class="line">63</span><span class="src">&quot;failure_categories&quot;: _suite_failure_categories(results)</span><span class="comment">报告要能定位失败类型</span></div><div class="code-row hot"><span class="line">115</span><span class="src">def _check_trajectory_case(case: dict, state) -&gt; list[dict]:</span><span class="comment">trajectory 也应该被 deterministic 检查</span></div><div class="code-row warn"><span class="line">11</span><span class="src">def run_retrieval_eval_suite(...):</span><span class="comment">RAG 单独有 retrieval-first eval runner</span></div></div>
     <div class="split"><div class="panel"><strong><a href="../../jobagent/evals/runner.py"><code>jobagent/evals/runner.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div><div class="panel"><strong><a href="../../samples/eval_suite.json"><code>samples/eval_suite.json</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div><div class="split"><div class="panel"><strong><a href="../../tests/test_eval_runner.py"><code>tests/test_eval_runner.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div><div class="panel"><strong><a href="../../jobagent/cli.py"><code>jobagent/cli.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div>
   </section>
 
@@ -81,6 +81,70 @@
     </div>
     <div class="steps"><div class="step">运行 <code>python3 -m jobagent.cli eval</code>，阅读每个 case 的检查方式。</div><div class="step">新增一个 JD extraction case，确保 company 和 role 被正确抽取。</div><div class="step">故意改坏 extractor，确认 eval 能抓住失败。</div></div>
   </section>
+
+
+  <section class="lesson-section deep-dive-section">
+    <h2>扩展工程手册：把这一章做成可执行练习</h2>
+
+  <div class="deep-dive">
+    <h3>这章真正解决的问题</h3>
+    <p>第 14 章关注的是 agent 系统的质量控制：当你改了 extractor、workflow、RAG、prompt 或 UI 后，怎样知道系统没有退化。这里的 eval 不是 Kaggle 式 benchmark，而是工程回归套件。</p>
+    <div class="system-map">
+      <div class="map-row"><strong>Dataset</strong><span><code>samples/eval_suite.json</code> 保存固定案例。每个 case 描述输入 JD、期望 company、期望 skills、期望 stop reason、最低 fit score。</span></div>
+      <div class="map-row"><strong>Runner</strong><span><code>jobagent/evals/runner.py</code> 读取 suite，根据 <code>eval_type</code> 分派到 single-turn JD extraction 或完整 trajectory workflow。</span></div>
+      <div class="map-row"><strong>System Under Test</strong><span>single-turn case 只跑 <code>extract_jd()</code>；trajectory case 跑 <code>run_job_workflow()</code>，因此会覆盖 graph、agents、HITL、fit score、state serialization。</span></div>
+      <div class="map-row"><strong>Checks</strong><span>每个 case 产出一组 deterministic checks，例如 company 是否匹配、required skill 是否出现、stop_reason 是否正确、fit score 是否达标。</span></div>
+      <div class="map-row"><strong>Report</strong><span>runner 汇总 total、passed、failed、pass_rate、by_type、failure_categories、results。CLI 和 tests 都复用这个结构。</span></div>
+      <div class="map-row"><strong>Next Layer</strong><span>第 9 章新增 retrieval eval；未来还可以加 final-answer grounding、resume rubric、human-label calibration、LLM-as-judge。</span></div>
+    </div>
+
+    <h3>代码解读：每个文件负责什么</h3>
+    <div class="code-map">
+      <div class="code-item"><h4><code>samples/eval_suite.json</code></h4><p>这是离线 eval dataset。它应该尽量接近你真实关心的岗位类型：AI engineer、FDE、RAG backend、agent observability、MCP tooling 等。新增功能时，先补 case，再改实现。</p></div>
+      <div class="code-item"><h4><code>jobagent/evals/runner.py</code></h4><p>主 eval runner。重点看它如何读 JSON、如何按 case type 分派、如何把 check 结果汇总成 pass/fail 和 failure category。</p></div>
+      <div class="code-item"><h4><code>jobagent/evals/run_quality.py</code></h4><p>单次 workflow 的质量门。它不是 dataset eval，而是产品运行后检查本次 run 是否生成了关键 artifact，例如 JD、fit analysis、resume proposal、tool audit。</p></div>
+      <div class="code-item"><h4><code>jobagent/retrieval/eval_runner.py</code></h4><p>RAG 专属 eval runner。它补上第 14 章的一个重要分支：除了 workflow trajectory，也要评估 retrieval trajectory。</p></div>
+      <div class="code-item"><h4><code>tests/test_eval_runner.py</code></h4><p>把 eval runner 自身纳入单测。它验证 failure categories、pass rate、case parsing 等逻辑，避免 eval 工具本身悄悄坏掉。</p></div>
+      <div class="code-item"><h4><code>jobagent/cli.py</code></h4><p>把 eval 暴露成可执行命令：<code>eval</code> 跑 workflow/JD suite，<code>retrieval-eval</code> 跑 RAG suite。面试展示时，CLI 是最直接的证据。</p></div>
+    </div>
+
+    <h3>动手实验：按顺序执行</h3>
+    <div class="lab-steps">
+      <div class="lab-step"><h4>实验 1：跑主 eval suite</h4><p>目标：确认当前 workflow/JD extraction baseline。</p><pre><code>cd "/Users/xuantongyan/Documents/jobAgent 2"
+.venv/bin/python -m jobagent.cli eval</code></pre><p>看 <code>total</code>、<code>pass_rate</code>、<code>by_type</code>、<code>failure_categories</code>。如果 failed 不为 0，先看第一个失败 case，而不是直接改代码。</p></div>
+      <div class="lab-step"><h4>实验 2：定位一个 eval case</h4><p>目标：把 JSON case 和 runner check 对上。</p><pre><code>sed -n '1,120p' samples/eval_suite.json
+sed -n '1,240p' jobagent/evals/runner.py</code></pre><p>对照 case 里的 <code>expected_company</code>、<code>expected_required_skills</code>、<code>expected_stop_reason</code>，再看 runner 如何生成 checks。</p></div>
+      <div class="lab-step"><h4>实验 3：制造一个安全的失败 case</h4><p>目标：理解 failure category 怎么帮助定位。这个实验只写 <code>/tmp</code>。</p><pre><code>.venv/bin/python - &lt;&lt;'PY'
+import json
+from pathlib import Path
+case = {
+  "id": "intentional-skill-failure",
+  "eval_type": "single_turn_jd_extract",
+  "job_text": "Company: Example AI\nRole: AI Engineer\nBuild Python and RAG systems.",
+  "expected_company": "Example AI",
+  "expected_required_skills": ["kubernetes"],
+}
+Path("/tmp/jobagent_eval_failure.json").write_text(json.dumps([case]), encoding="utf-8")
+PY
+.venv/bin/python -m jobagent.cli eval --suite /tmp/jobagent_eval_failure.json || true</code></pre><p>预期这个 case 会失败，因为 JD 中没有 Kubernetes。重点观察输出里的 failed check 和 failure_categories。</p></div>
+      <div class="lab-step"><h4>实验 4：同时跑 workflow eval 和 retrieval eval</h4><p>目标：理解两类 eval 的边界。</p><pre><code>.venv/bin/python -m jobagent.cli eval
+.venv/bin/python -m jobagent.cli retrieval-eval</code></pre><p>主 eval 回答“workflow 有没有按预期运行”；retrieval eval 回答“RAG 是否命中正确证据”。这两个问题不要混在一个指标里。</p></div>
+      <div class="lab-step"><h4>实验 5：运行测试里的 eval 保护</h4><p>目标：确认 eval runner 自身也被回归测试保护。</p><pre><code>.venv/bin/python -m unittest tests.test_eval_runner tests.test_retrieval</code></pre><p>如果你未来修改 eval schema 或 runner，这组测试应该第一时间告诉你有没有破坏评估工具。</p></div>
+    </div>
+
+    <h3>工程选择 Q&amp;A</h3>
+    <div class="qa-grid">
+      <div class="qa-card"><h4>Q: Eval 应该覆盖最终输出还是中间轨迹？</h4><p><strong>A:</strong> 两者都要，但早期优先中间结构和 trajectory。因为它们稳定、便宜、可定位。最终输出质量要测，但最好建立在 typed artifact、retrieval context、tool audit 已经可靠的基础上。</p></div>
+      <div class="qa-card"><h4>Q: Deterministic checks 会不会太死板？</h4><p><strong>A:</strong> 对语义质量来说可能死板，但对 schema、路由、工具参数、stop reason、policy boundary 来说非常合适。AI 系统不是所有东西都要用 LLM judge。</p></div>
+      <div class="qa-card"><h4>Q: 什么时候引入 LLM-as-judge？</h4><p><strong>A:</strong> 当你要评估“答案是否充分”“语气是否适合”“是否忠实引用 retrieved context”这类开放问题时可以引入。但 judge prompt、judge model、抽样审计也要版本化，否则 judge 本身会漂。</p></div>
+      <div class="qa-card"><h4>Q: Eval suite 多大才有意义？</h4><p><strong>A:</strong> 初期 10-20 个高价值 case 就很有用，重点是覆盖真实风险：热门目标岗位、容易抽错的公司名、容易误判的技能、HITL 边界、RAG 证据命中。数量增长应该来自真实失败，而不是为了好看。</p></div>
+      <div class="qa-card"><h4>Q: Eval 是否应该进 CI？</h4><p><strong>A:</strong> 只要稳定、低成本、无外部凭证，就应该进。当前 deterministic suite 和 retrieval suite 都适合 CI；真实 LLM eval 可以先 nightly 或手动触发。</p></div>
+      <div class="qa-card"><h4>Q: Eval 失败后先改什么？</h4><p><strong>A:</strong> 先看 failure category，再看 trace/state。不要第一反应改 prompt。很多失败来自 extractor rule、state contract、retrieval source、stop reason 或 fixture 预期不清。</p></div>
+    </div>
+  </div>
+
+  </section>
+
 
   <section class="lesson-section">
     <h2>工程选择题：什么时候这样做，什么时候不要这样做</h2>

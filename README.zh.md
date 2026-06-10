@@ -10,11 +10,8 @@
 
 **完整中文 mega guide:** [docs/project1_ai_infra_tutorial_zh.html](docs/project1_ai_infra_tutorial_zh.html)
 
-**Multi-Agent 工程系列教程:** [docs/agentic_course/index.html](docs/agentic_course/index.html)<br>
-单章 HTML + [mega 合集](docs/agentic_course/mega_agentic_course_zh.html)，围绕本项目代码、调试练习和 2026 AI infra 行业动态展开。
-
-**新版阅读体验 prototype:** [docs/agentic_course_prototype/index.html](docs/agentic_course_prototype/index.html)<br>
-22 章文章式教程，包含重点代码行高亮、项目文件链接、图解、lab checklist 和扩展阅读。
+**Multi-Agent 工程系列教程:** [docs/agentic_course_prototype/index.html](docs/agentic_course_prototype/index.html)<br>
+这是现在唯一维护的中文课程版本：22 章文章式教程，包含重点代码行高亮、项目文件链接、图解、lab checklist 和 2026 AI infra 扩展阅读。
 
 ## 产品截图
 

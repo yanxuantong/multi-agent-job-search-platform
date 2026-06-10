@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>第 0 章：这不是聊天机器人，这是一个可运行的 Agentic Product / JobAgent Course Prototype</title>
+  <title>第 0 章：这不是聊天机器人，这是一个可运行的 Agentic Product / JobAgent Agentic Engineering Course</title>
   <link rel="stylesheet" href="assets/course.css">
 </head>
 <body>
@@ -16,7 +16,7 @@
     <p>先把 JobAgent 当成一个可以运行、暂停、恢复、验证、部署的产品，而不是一个 prompt demo。</p>
   </div>
   <nav class="nav-block" aria-label="Course">
-    <a href="index.html">Prototype 首页</a><a class="active" href="00_overview.html">00 这不是聊天机器人，这是一个可运行的 Agentic Product</a><a class="" href="01_graph_engine.html">01 从 Pipeline 到 Graph：为什么 agent 工程首先是调度问题</a><a class="" href="02_shared_state.html">02 Shared State：Multi-Agent 系统里的唯一事实表</a><a class="" href="03_bounded_agents.html">03 Bounded Agent：为什么每个 agent 都应该小而窄</a><a class="" href="04_stop_reason.html">04 StopReason：Agentic 系统不是一直跑到死</a><a class="" href="05_hitl.html">05 Human-in-the-loop：人工审批不是 UI 功能，是系统边界</a><a class="" href="06_checkpoint_resume.html">06 Checkpoint 与 Resume：Agentic Workflow 的耐久执行</a><a class="" href="07_tool_use.html">07 Tool Use：Agent 什么时候应该调用工具</a><a class="" href="08_memory_story_bank.html">08 Memory 与 Story Bank：不是所有上下文都该塞进 Prompt</a><a class="" href="09_local_rag.html">09 Local RAG：先理解检索，再上向量数据库</a><a class="" href="10_mcp.html">10 MCP：把工具世界标准化</a><a class="" href="11_llm_provider.html">11 LLM Provider：把模型调用隔离成可替换接口</a><a class="" href="12_langgraph.html">12 LangGraph：从教学 GraphEngine 迁移到工业框架</a><a class="" href="13_observability.html">13 Observability：Trace 是 Agent 系统的黑匣子</a><a class="" href="14_offline_eval.html">14 Offline Eval：别靠感觉判断 Agent 有没有变好</a><a class="" href="15_guardrails.html">15 Guardrails：在 Agency 之前先做安全边界</a><a class="" href="16_web_product.html">16 Web Product Surface：把 Workflow 变成可以用的产品</a><a class="" href="17_deployment.html">17 Deployment：从本地 demo 到公开 portfolio</a><a class="" href="18_debugging.html">18 调试一本 Agent 系统：从现象回到 state、trace、node</a><a class="" href="19_upgrade_choices.html">19 工程选择题：什么时候该升级技术栈</a><a class="" href="20_capstone.html">20 最终项目任务：把 JobAgent 改成你的 AI Infra Portfolio</a><a href="../agentic_course/index.html">返回旧版目录</a>
+    <a href="index.html">课程首页</a><a class="active" href="00_overview.html">00 这不是聊天机器人，这是一个可运行的 Agentic Product</a><a class="" href="01_graph_engine.html">01 从 Pipeline 到 Graph：为什么 agent 工程首先是调度问题</a><a class="" href="02_shared_state.html">02 Shared State：Multi-Agent 系统里的唯一事实表</a><a class="" href="03_bounded_agents.html">03 Bounded Agent：为什么每个 agent 都应该小而窄</a><a class="" href="04_stop_reason.html">04 StopReason：Agentic 系统不是一直跑到死</a><a class="" href="05_hitl.html">05 Human-in-the-loop：人工审批不是 UI 功能，是系统边界</a><a class="" href="06_checkpoint_resume.html">06 Checkpoint 与 Resume：Agentic Workflow 的耐久执行</a><a class="" href="07_tool_use.html">07 Tool Use：Agent 什么时候应该调用工具</a><a class="" href="08_memory_story_bank.html">08 Memory 与 Story Bank：不是所有上下文都该塞进 Prompt</a><a class="" href="09_local_rag.html">09 Local RAG：先理解检索，再上向量数据库</a><a class="" href="10_mcp.html">10 MCP：把工具世界标准化</a><a class="" href="11_llm_provider.html">11 LLM Provider：把模型调用隔离成可替换接口</a><a class="" href="12_langgraph.html">12 LangGraph：从教学 GraphEngine 迁移到工业框架</a><a class="" href="13_observability.html">13 Observability：Trace 是 Agent 系统的黑匣子</a><a class="" href="14_offline_eval.html">14 Offline Eval：别靠感觉判断 Agent 有没有变好</a><a class="" href="15_guardrails.html">15 Guardrails：在 Agency 之前先做安全边界</a><a class="" href="16_web_product.html">16 Web Product Surface：把 Workflow 变成可以用的产品</a><a class="" href="17_deployment.html">17 Deployment：从本地 demo 到公开 portfolio</a><a class="" href="18_10x_scale_readiness.html">18 10x Scale 与 Production Readiness：什么时候可以说它准备好了</a><a class="" href="19_debugging.html">19 调试一本 Agent 系统：从现象回到 state、trace、node</a><a class="" href="20_upgrade_choices.html">20 工程选择题：什么时候该升级技术栈</a><a class="" href="21_capstone.html">21 最终项目任务：把 JobAgent 改成你的 AI Infra Portfolio</a>
   </nav>
 </aside>
 
@@ -82,6 +82,8 @@
     <div class="steps"><div class="step">运行 <code>python3 -m jobagent.cli demo</code>，观察 workflow 停在 approval gate。</div><div class="step">运行 <code>python3 -m jobagent.cli demo --auto-approve</code>，观察完整结果。</div><div class="step">运行 <code>uvicorn jobagent.web.app:app --reload</code>，从浏览器提交一份 JD。</div></div>
   </section>
 
+
+
   <section class="lesson-section">
     <h2>工程选择题：什么时候这样做，什么时候不要这样做</h2>
     <div class="article-prose">
@@ -100,7 +102,7 @@
   </section>
 </article>
 
-      <nav class="footer-nav"><a class="button" href="index.html">返回 Prototype 首页</a><a class="button primary" href="01_graph_engine.html">下一章：第 1 章：从 Pipeline 到 Graph：为什么 agent 工程首先是调度问题</a></nav>
+      <nav class="footer-nav"><a class="button" href="index.html">返回课程首页</a><a class="button primary" href="01_graph_engine.html">下一章：第 1 章：从 Pipeline 到 Graph：为什么 agent 工程首先是调度问题</a></nav>
     </main>
 
 <aside class="inspector">

@@ -12,11 +12,8 @@ The default path is intentionally deterministic and low-cost: no API keys, no ho
 
 **Canonical learning guide:** [docs/project1_ai_infra_tutorial_zh.html](docs/project1_ai_infra_tutorial_zh.html)
 
-**Multi-agent engineering course:** [docs/agentic_course/index.html](docs/agentic_course/index.html)<br>
-Chinese chapter-by-chapter HTML course plus a [mega edition](docs/agentic_course/mega_agentic_course_zh.html), grounded in this codebase, debugging exercises, and 2026 AI infra industry references.
-
-**Reading-experience prototype:** [docs/agentic_course_prototype/index.html](docs/agentic_course_prototype/index.html)<br>
-All 21 chapters rewritten as article-style lessons with highlighted code lines, project file links, diagrams, lab checklists, and extended reading.
+**Multi-agent engineering course:** [docs/agentic_course_prototype/index.html](docs/agentic_course_prototype/index.html)<br>
+The canonical Chinese article-style course: 22 lessons with highlighted code lines, project file links, diagrams, lab checklists, and 2026 AI infra references.
 
 ## Product Snapshot
 

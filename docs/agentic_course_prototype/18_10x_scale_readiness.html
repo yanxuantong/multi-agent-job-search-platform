@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第 18 章：10x Scale 与 Production Readiness：什么时候可以说它准备好了 / JobAgent Agentic Engineering Course</title>
+  <link rel="stylesheet" href="assets/course.css">
+</head>
+<body>
+  <div class="shell">
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark">18</div>
+    <h1>10x Scale 与 Production Readiness：什么时候可以说它准备好了</h1>
+    <p>Production readiness 不是一句自信判断，而是一组关于流量、状态、恢复、安全和验证的证据。</p>
+  </div>
+  <nav class="nav-block" aria-label="Course">
+    <a href="index.html">课程首页</a><a class="" href="00_overview.html">00 这不是聊天机器人，这是一个可运行的 Agentic Product</a><a class="" href="01_graph_engine.html">01 从 Pipeline 到 Graph：为什么 agent 工程首先是调度问题</a><a class="" href="02_shared_state.html">02 Shared State：Multi-Agent 系统里的唯一事实表</a><a class="" href="03_bounded_agents.html">03 Bounded Agent：为什么每个 agent 都应该小而窄</a><a class="" href="04_stop_reason.html">04 StopReason：Agentic 系统不是一直跑到死</a><a class="" href="05_hitl.html">05 Human-in-the-loop：人工审批不是 UI 功能，是系统边界</a><a class="" href="06_checkpoint_resume.html">06 Checkpoint 与 Resume：Agentic Workflow 的耐久执行</a><a class="" href="07_tool_use.html">07 Tool Use：Agent 什么时候应该调用工具</a><a class="" href="08_memory_story_bank.html">08 Memory 与 Story Bank：不是所有上下文都该塞进 Prompt</a><a class="" href="09_local_rag.html">09 Local RAG：先理解检索，再上向量数据库</a><a class="" href="10_mcp.html">10 MCP：把工具世界标准化</a><a class="" href="11_llm_provider.html">11 LLM Provider：把模型调用隔离成可替换接口</a><a class="" href="12_langgraph.html">12 LangGraph：从教学 GraphEngine 迁移到工业框架</a><a class="" href="13_observability.html">13 Observability：Trace 是 Agent 系统的黑匣子</a><a class="" href="14_offline_eval.html">14 Offline Eval：别靠感觉判断 Agent 有没有变好</a><a class="" href="15_guardrails.html">15 Guardrails：在 Agency 之前先做安全边界</a><a class="" href="16_web_product.html">16 Web Product Surface：把 Workflow 变成可以用的产品</a><a class="" href="17_deployment.html">17 Deployment：从本地 demo 到公开 portfolio</a><a class="active" href="18_10x_scale_readiness.html">18 10x Scale 与 Production Readiness：什么时候可以说它准备好了</a><a class="" href="19_debugging.html">19 调试一本 Agent 系统：从现象回到 state、trace、node</a><a class="" href="20_upgrade_choices.html">20 工程选择题：什么时候该升级技术栈</a><a class="" href="21_capstone.html">21 最终项目任务：把 JobAgent 改成你的 AI Infra Portfolio</a>
+  </nav>
+</aside>
+
+    <main class="reading">
+      <section class="hero">
+        <div class="kicker">Part 5 / Eval、安全与产品化 / Lesson 18</div>
+        <h1>第 18 章：10x Scale 与 Production Readiness：什么时候可以说它准备好了</h1>
+        <p class="subtitle">Production readiness 不是一句自信判断，而是一组关于流量、状态、恢复、安全和验证的证据。</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#lab">直接做实验</a>
+          <a class="button" href="index.html">课程目录</a>
+        </div>
+      </section>
+
+<article class="lesson">
+  <section class="lesson-section">
+    <h2>这一章先解决什么问题</h2>
+    <div class="article-prose">
+      <p>JobAgent 现在可以诚实地称为 production-shaped：它有 FastAPI surface、Docker/Render 部署、typed state、HITL、checkpoint/resume、trace/audit、guardrails、ops endpoints 和 offline eval。但它还不应该被包装成 fully production-ready SaaS。</p><p>10x scale 先考验的不是 agent prompt，而是执行层：<code>POST /runs</code> 目前同步跑完整 workflow；默认 local checkpoint 在 Render free instance 上是 ephemeral；in-memory rate limit 不能跨进程共享；Postgres path 存在，但还缺 connection pooling、migration/versioning、idempotent approval 和 background worker。</p><p>这一章故意先不实现这些升级，而是把生产判断记录成可复述、可验证、可逐步落地的 checklist。对 portfolio 和面试来说，这种边界意识本身就是很重要的工程经历。</p>
+      <p>一次小型展览可以靠一个工作人员现场登记、现场带路、现场收票。但如果人流变成十倍，你不会先训练他说话更漂亮，而是会先加排队系统、票据数据库、入口闸机、监控面板和应急流程。Agent product 的 10x scale 也是同一个逻辑。</p>
+    </div>
+  </section>
+
+  <section class="lesson-section">
+    <h2>系统图：把概念放回项目现场</h2>
+    <div class="article-prose">
+      <p>这张图不是装饰，而是本章的定位器。你可以先看图，再打开对应的项目文件。这样读代码时不会迷路：每个文件都不是孤立片段，而是在 JobAgent 这个 agentic workflow 里承担一个明确位置。</p>
+    </div>
+
+<div class="diagram" aria-label="Concept map">
+  <svg viewBox="0 0 980 300" role="img">
+    <rect x="18" y="24" width="944" height="226" rx="22" fill="#fff" stroke="#d8e0e5"/>
+    <text x="44" y="64" fill="#26323b" font-size="20" font-weight="900">Readiness 分层图：demo traffic -&gt; public portfolio -&gt; durable beta -&gt; production SaaS；每层标出 state、queue、auth、rate limit、observability、eval 证据。</text>
+    <rect x="62" y="112" width="230" height="72" rx="16" fill="#e4f7f7" stroke="#007a83"/>
+    <rect x="374" y="112" width="230" height="72" rx="16" fill="#fbfcfd" stroke="#d8e0e5"/>
+    <rect x="686" y="112" width="230" height="72" rx="16" fill="#fff4df" stroke="#b36b00"/>
+    <text x="177" y="142" text-anchor="middle" fill="#005b62" font-size="15" font-weight="900">Concept</text>
+    <text x="489" y="142" text-anchor="middle" fill="#26323b" font-size="15" font-weight="900">Project Code</text>
+    <text x="801" y="142" text-anchor="middle" fill="#8a5200" font-size="15" font-weight="900">Production Pattern</text>
+    <text x="177" y="164" text-anchor="middle" fill="#5d6975" font-size="12">mental model</text>
+    <text x="489" y="164" text-anchor="middle" fill="#5d6975" font-size="12">files and tests</text>
+    <text x="801" y="164" text-anchor="middle" fill="#5d6975" font-size="12">industry reading</text>
+  </svg>
+</div>
+
+  </section>
+
+  <section class="lesson-section">
+    <h2>代码走读：眼睛先放在高亮行</h2>
+    <div class="article-prose">
+      <p>下面的代码摘录不是为了让你背实现细节，而是训练阅读顺序。青色行表示主路径，琥珀色行表示控制、停止、安全或恢复边界。读 agent 系统时，先找这些边界，通常比先看 prompt 更有效。</p>
+      <p>对应的项目文件在这里：<a href="../../jobagent/web/app.py"><code>jobagent/web/app.py</code></a>, <a href="../../jobagent/web/store.py"><code>jobagent/web/store.py</code></a>, <a href="../../jobagent/graph/workflow.py"><code>jobagent/graph/workflow.py</code></a>, <a href="../../jobagent/storage/checkpoint.py"><code>jobagent/storage/checkpoint.py</code></a>。</p>
+    </div>
+    <div class="annotated-code" role="region" aria-label="Annotated code excerpt"><div class="code-row hot"><span class="line">32</span><span class="src">def run_job_workflow(raw_job_text: str, story_bank: list[dict], *, approved: bool = False, ...):</span><span class="comment">产品入口先创建一次 run</span></div><div class="code-row hot"><span class="line">42</span><span class="src">state = JobSearchState(run_id=run_id, user_goal=user_goal, raw_job_text=raw_job_text, ...)</span><span class="comment">把用户输入装进 typed state</span></div><div class="code-row hot"><span class="line">50</span><span class="src">graph = build_graph(JsonlTracer(state.run_id))</span><span class="comment">每次 run 都带 trace</span></div><div class="code-row hot"><span class="line">51</span><span class="src">state = graph.run(state, &quot;ingest&quot;)</span><span class="comment">从 ingest 节点进入 agent workflow</span></div><div class="code-row warn"><span class="line">52</span><span class="src">JsonCheckpointStore().save(state)</span><span class="comment">结束或暂停后都保存 checkpoint</span></div></div>
+    <div class="split"><div class="panel"><strong><a href="../../jobagent/web/app.py"><code>jobagent/web/app.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div><div class="panel"><strong><a href="../../jobagent/web/store.py"><code>jobagent/web/store.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div><div class="split"><div class="panel"><strong><a href="../../jobagent/graph/workflow.py"><code>jobagent/graph/workflow.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div><div class="panel"><strong><a href="../../jobagent/storage/checkpoint.py"><code>jobagent/storage/checkpoint.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div>
+  </section>
+
+  <section class="lesson-section" id="lab">
+    <h2>动手实验：把知识点落到一次操作里</h2>
+    <div class="article-prose">
+      <p>这一章不只要求你“理解”。你应该至少跑一次命令、打开一次文件、观察一次 state 或 trace。JobAgent 的教学价值在于它是可运行项目，不是架构幻灯片。</p>
+    </div>
+    <div class="steps"><div class="step">阅读 <code>create_run()</code>，说明为什么同步 workflow 在 10x traffic 下会成为 request latency 与 timeout 风险。</div><div class="step">对比 <code>LocalRunStore</code> 与 <code>PostgresRunStore</code>，写出哪些 state 可以丢、哪些 state 一旦丢就破坏用户信任。</div><div class="step">把 <code>/ops/status</code>、<code>/ops/evals</code>、<code>python3 -m jobagent.cli eval</code>、<code>python3 -m unittest discover -s tests</code> 组合成一个 release/readiness checklist。</div><div class="step">写一个不实现代码的 migration note：从 public demo 到 production SaaS，需要先引入 queue、durable Postgres、auth、distributed rate limit 和 observability backend。</div></div>
+  </section>
+
+
+
+  <section class="lesson-section">
+    <h2>工程选择题：什么时候这样做，什么时候不要这样做</h2>
+    <div class="article-prose">
+      <p>10x 是什么？如果是 portfolio/demo traffic，当前形态大概率 okay；如果是真用户 SaaS traffic，需要先升级执行、状态和运维层。 什么时候必须引入 queue？当 run 时间不可控、外部 API 变慢、需要 retry/backoff、并发用户会阻塞 web workers，或 run 必须脱离 request 生命周期继续完成。 什么时候必须引入 durable store？当用户期望历史 run、approval、trace、tracker update 可恢复，或服务部署为多实例时。 什么时候可以说 production-ready？只有当 load、restart-resume、approval race、storage failure、guardrail bypass、eval regression 和 observability smoke 都有证据时。</p>
+      <p>这些问题比答案本身更重要。Multi-agent 工程的成熟度，不在于堆多少框架，而在于你能说清楚每个边界为什么存在、什么时候需要升级、升级会带来什么新复杂度。</p>
+    </div>
+  </section>
+
+  <section class="lesson-section">
+    <h2>行业脉搏：把本章放到 2026 AI infra 里看</h2>
+    <div class="article-prose">
+      <p>行业里的 agent platform 越来越把 runtime、durable execution、identity、policy、observability 和 eval 放在一起卖，原因很简单：agent 质量问题最后常常表现为系统可靠性问题。</p><p>这一章对应的能力不是某个新框架，而是 FDE/AI infra 面试里很有价值的判断力：能区分 demo-ready、production-shaped、production-ready，并能说清下一步工程升级顺序。</p>
+      <p>读这些链接时，不要只记产品名。更重要的是把它们映射回本项目：哪些能力已经在 JobAgent 里有教学版，哪些能力属于未来的生产升级。</p>
+    </div>
+    <div class="source-links"><a class="source-link" href="https://docs.langchain.com/oss/python/langgraph/durable-execution"><strong>LangGraph durable execution</strong><span>理解 long-running workflow、checkpoint、determinism 和 side-effect idempotency。</span></a><a class="source-link" href="https://opentelemetry.io/docs/specs/semconv/gen-ai/"><strong>OpenTelemetry GenAI conventions</strong><span>生产观测需要稳定 schema，不能只靠本地日志。</span></a><a class="source-link" href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/release-notes.html"><strong>AWS AgentCore release notes</strong><span>托管 agent runtime 对 memory、identity、observability、evaluation、policy 的平台化参照。</span></a></div>
+  </section>
+</article>
+
+      <nav class="footer-nav"><a class="button" href="17_deployment.html">上一章：第 17 章：Deployment：从本地 demo 到公开 portfolio</a><a class="button primary" href="19_debugging.html">下一章：第 19 章：调试一本 Agent 系统：从现象回到 state、trace、node</a></nav>
+    </main>
+
+<aside class="inspector">
+  <div class="inspector-card">
+    <h3>本章目标</h3>
+    <p>Production readiness 不是一句自信判断，而是一组关于流量、状态、恢复、安全和验证的证据。</p>
+  </div>
+  <div class="inspector-card">
+    <h3>阅读进度</h3>
+    <div class="progress"><span data-progress></span></div>
+  </div>
+  <div class="inspector-card">
+    <h3>Lab Checklist</h3>
+    <div class="checklist"><label><input data-check="18_10x_scale_readiness-1" type="checkbox"> 阅读 <code>create_run()</code>，说明为什么同步 workflow 在 10x traffic 下会成为 request latency 与 timeout 风险。</label><label><input data-check="18_10x_scale_readiness-2" type="checkbox"> 对比 <code>LocalRunStore</code> 与 <code>PostgresRunStore</code>，写出哪些 state 可以丢、哪些 state 一旦丢就破坏用户信任。</label><label><input data-check="18_10x_scale_readiness-3" type="checkbox"> 把 <code>/ops/status</code>、<code>/ops/evals</code>、<code>python3 -m jobagent.cli eval</code>、<code>python3 -m unittest discover -s tests</code> 组合成一个 release/readiness checklist。</label></div>
+  </div>
+  <div class="inspector-card">
+    <h3>Industry Pulse</h3>
+    <ul><li><a href="https://docs.langchain.com/oss/python/langgraph/durable-execution">LangGraph durable execution</a></li><li><a href="https://opentelemetry.io/docs/specs/semconv/gen-ai/">OpenTelemetry GenAI conventions</a></li><li><a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/release-notes.html">AWS AgentCore release notes</a></li></ul>
+  </div>
+</aside>
+
+  </div>
+  <script src="assets/course.js"></script>
+</body>
+</html>

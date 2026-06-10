@@ -346,6 +346,65 @@ h1 {
   background: var(--amber-soft);
 }
 
+.deep-dive {
+  margin-top: 18px;
+  display: grid;
+  gap: 22px;
+}
+
+.deep-dive h3 {
+  margin: 8px 0 0;
+  color: var(--slate);
+}
+
+.deep-dive h4 {
+  margin: 0;
+  color: var(--slate);
+  line-height: 1.35;
+}
+
+.system-map,
+.code-map,
+.lab-steps,
+.qa-grid {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.map-row,
+.code-item,
+.lab-step,
+.qa-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fbfcfd;
+  padding: 15px 16px;
+}
+
+.map-row {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 14px;
+}
+
+.map-row strong {
+  color: var(--cyan);
+}
+
+.code-map,
+.qa-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.lab-step {
+  border-left: 4px solid var(--cyan);
+}
+
+.lab-step pre {
+  margin-top: 12px;
+}
+
 .split {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -486,7 +545,7 @@ h1 {
   .nav-block { display: flex; overflow-x: auto; }
   .nav-block a { flex: 0 0 auto; }
   .reading { padding-top: 16px; }
-  .lead-card, .split { grid-template-columns: 1fr; }
+  .lead-card, .split, .code-map, .qa-grid, .map-row { grid-template-columns: 1fr; }
   h1 { font-size: 34px; }
   .footer-nav { display: grid; }
 }
