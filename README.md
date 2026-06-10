@@ -29,7 +29,15 @@ The default path is intentionally deterministic and low-cost. You can run the pr
 | Eval-first engineering | Offline workflow evals and retrieval-level RAG evals protect behavior from silent drift. |
 | Public demo hardening | Request limits, form-only submissions, guardrails, browser security headers, request ids, rate limits, and creator-session approval. |
 | Production upgrade path | Optional adapters cover LangGraph, Claude/OpenAI providers, Langfuse, MCP, Postgres, pgvector, Docker, and Render. |
-| Teaching depth | A 22-lesson Chinese course walks through the system with diagrams, highlighted code lines, repo links, and labs. |
+| Teaching depth | A 24-lesson Chinese course walks through the system with diagrams, highlighted code lines, repo links, and labs. |
+
+## Product Narrative
+
+JobAgent is built for two readers at once: job seekers who want a trustworthy application-prep cockpit, and engineers who want to see how agent systems become products. The user pain is not "I need another chatbot." It is that job-search work crosses messy boundaries: extracting role signals, deciding whether a resume angle is credible, preserving evidence, and stopping before anything application-facing becomes final.
+
+The design rationale is therefore a workflow cockpit, not an open-ended chat box. The backend keeps authority over state, approval, checkpoints, traces, and evals; the web layer makes those decisions visible to a user. The active frontend rewrite keeps that split: React and TypeScript own the interactive cockpit under `jobagent/web/frontend/*`, built assets are served from `jobagent/web/static/assets/*`, and Jinja templates shrink to React mount points.
+
+Good is defined by eval, not by how polished a single generated answer sounds. A run is good when it reaches the expected trajectory and `StopReason`, extracts the right JD signals, preserves the human approval gate, keeps retrieval evidence checkable, and produces the required artifacts for the UI. That is why workflow evals, retrieval evals, and per-run quality summaries all matter.
 
 ## Product Experience
 
@@ -187,7 +195,7 @@ These controls make the hosted product appropriate for portfolio/public-demo tra
 
 JobAgent is also a guided learning artifact for agent-system engineering:
 
-- [docs/agentic_course_prototype/index.html](docs/agentic_course_prototype/index.html) is the maintained 22-lesson Chinese article course.
+- [docs/agentic_course_prototype/index.html](docs/agentic_course_prototype/index.html) is the maintained 24-lesson Chinese article course.
 - [docs/project1_ai_infra_tutorial_zh.html](docs/project1_ai_infra_tutorial_zh.html) is the canonical mega guide.
 - Course chapters connect the running code to core agent-system topics: graph orchestration, shared state, bounded agents, stop reasons, HITL, checkpoint/resume, tool use, memory, local RAG, MCP, LLM provider boundaries, LangGraph migration, observability, offline evals, guardrails, web productization, deployment, scale readiness, debugging, and upgrade decisions.
 

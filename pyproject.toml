@@ -53,4 +53,4 @@ pythonpath = ["."]
 include = ["jobagent*", "mcp_server*"]
 
 [tool.setuptools.package-data]
-"jobagent.web" = ["templates/*.html", "static/*.css"]
+"jobagent.web" = ["templates/*.html", "static/*.css", "static/*.svg", "static/assets/*.css", "static/assets/*.js"]

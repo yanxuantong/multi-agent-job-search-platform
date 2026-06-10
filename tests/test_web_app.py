@@ -43,6 +43,10 @@ class WebAppTest(unittest.TestCase):
                 detail = client.get(run_url)
                 self.assertEqual(detail.status_code, 200)
                 self.assertIn("NEED_USER_APPROVAL", detail.text)
+                self.assertIn('id="scout-root"', detail.text)
+                self.assertIn('data-page="run"', detail.text)
+                self.assertIn("/static/assets/scout.js", detail.text)
+                self.assertNotIn("owner_session_hash", detail.text)
 
                 run_id = run_url.rsplit("/", 1)[-1]
                 approved = client.post(f"/runs/{run_id}/approve", follow_redirects=False)
@@ -91,6 +95,9 @@ class WebAppTest(unittest.TestCase):
                 response = client.get("/")
 
         self.assertEqual(response.status_code, 200)
+        self.assertIn('id="scout-root"', response.text)
+        self.assertIn('data-page="home"', response.text)
+        self.assertIn("/static/assets/scout.js", response.text)
         self.assertEqual(response.headers["x-content-type-options"], "nosniff")
         self.assertIn("x-request-id", response.headers)
         self.assertEqual(response.headers["x-frame-options"], "DENY")

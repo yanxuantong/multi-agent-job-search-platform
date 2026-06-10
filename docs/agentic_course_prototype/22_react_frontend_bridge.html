@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第 22 章：React/TypeScript Frontend Bridge：把 Agent 状态翻译成产品界面 / JobAgent Agentic Engineering Course</title>
+  <link rel="stylesheet" href="assets/course.css">
+</head>
+<body>
+  <div class="shell">
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark">22</div>
+    <h1>React/TypeScript Frontend Bridge：把 Agent 状态翻译成产品界面</h1>
+    <p>前端重写不是换皮，而是把后端 workflow、approval、trace 和 eval evidence 变成用户能操作的 cockpit。</p>
+  </div>
+  <nav class="nav-block" aria-label="Course">
+    <a href="index.html">课程首页</a><a class="" href="00_overview.html">00 这不是聊天机器人，这是一个可运行的 Agentic Product</a><a class="" href="01_graph_engine.html">01 从 Pipeline 到 Graph：为什么 agent 工程首先是调度问题</a><a class="" href="02_shared_state.html">02 Shared State：Multi-Agent 系统里的唯一事实表</a><a class="" href="03_bounded_agents.html">03 Bounded Agent：为什么每个 agent 都应该小而窄</a><a class="" href="04_stop_reason.html">04 StopReason：Agentic 系统不是一直跑到死</a><a class="" href="05_hitl.html">05 Human-in-the-loop：人工审批不是 UI 功能，是系统边界</a><a class="" href="06_checkpoint_resume.html">06 Checkpoint 与 Resume：Agentic Workflow 的耐久执行</a><a class="" href="07_tool_use.html">07 Tool Use：Agent 什么时候应该调用工具</a><a class="" href="08_memory_story_bank.html">08 Memory 与 Story Bank：不是所有上下文都该塞进 Prompt</a><a class="" href="09_local_rag.html">09 Local RAG：先理解检索，再上向量数据库</a><a class="" href="10_mcp.html">10 MCP：把工具世界标准化</a><a class="" href="11_llm_provider.html">11 LLM Provider：把模型调用隔离成可替换接口</a><a class="" href="12_langgraph.html">12 LangGraph：从教学 GraphEngine 迁移到工业框架</a><a class="" href="13_observability.html">13 Observability：Trace 是 Agent 系统的黑匣子</a><a class="" href="14_offline_eval.html">14 Offline Eval：别靠感觉判断 Agent 有没有变好</a><a class="" href="15_guardrails.html">15 Guardrails：在 Agency 之前先做安全边界</a><a class="" href="16_web_product.html">16 Web Product Surface：把 Workflow 变成可以用的产品</a><a class="" href="17_deployment.html">17 Deployment：从本地 demo 到公开 portfolio</a><a class="" href="18_10x_scale_readiness.html">18 10x Scale 与 Production Readiness：什么时候可以说它准备好了</a><a class="" href="19_debugging.html">19 调试一本 Agent 系统：从现象回到 state、trace、node</a><a class="" href="20_upgrade_choices.html">20 工程选择题：什么时候该升级技术栈</a><a class="" href="21_capstone.html">21 综合项目任务：把 JobAgent 改成你的 AI Infra Portfolio</a><a class="active" href="22_react_frontend_bridge.html">22 React/TypeScript Frontend Bridge：把 Agent 状态翻译成产品界面</a><a class="" href="23_typescript_eval_ui.html">23 TypeScript UI Contracts：让 Eval 定义什么叫好界面</a>
+  </nav>
+</aside>
+
+    <main class="reading">
+      <section class="hero">
+        <div class="kicker">Part 7 / Full-stack bridge / Lesson 22</div>
+        <h1>第 22 章：React/TypeScript Frontend Bridge：把 Agent 状态翻译成产品界面</h1>
+        <p class="subtitle">前端重写不是换皮，而是把后端 workflow、approval、trace 和 eval evidence 变成用户能操作的 cockpit。</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#lab">直接做实验</a>
+          <a class="button" href="index.html">课程目录</a>
+        </div>
+      </section>
+
+<article class="lesson">
+  <section class="lesson-section">
+    <h2>这一章先解决什么问题</h2>
+    <div class="article-prose">
+      <p>JobAgent 的 active frontend rewrite 把交互层移动到 <code>jobagent/web/frontend/*</code>，再把 build 产物交给 <code>jobagent/web/static/assets/*</code>。Jinja 不再承担复杂 UI，而是保留 FastAPI route 与 React mount point。</p><p>这个边界很重要：后端仍然拥有 run state、creator session、approval ownership、checkpoint、trace、eval summary 和 safety controls；React 负责把这些状态组织成清晰的产品操作面。</p><p>对 full-stack agent product 来说，前端不是附属品。用户是否信任 agent，取决于他能不能看见系统做到了哪一步、为什么停下、哪些输出只是 proposal、哪些证据支持当前结论。</p>
+      <p>把后端想成机场运行系统，把 React 想成航站楼大屏和登机口操作台。大屏不能自己批准起飞，也不能修改飞行计划；它要准确展示状态，让乘客和工作人员做正确动作。</p>
+    </div>
+  </section>
+
+  <section class="lesson-section">
+    <h2>系统图：把概念放回项目现场</h2>
+    <div class="article-prose">
+      <p>这张图不是装饰，而是本章的定位器。你可以先看图，再打开对应的项目文件。这样读代码时不会迷路：每个文件都不是孤立片段，而是在 JobAgent 这个 agentic workflow 里承担一个明确位置。</p>
+    </div>
+
+<div class="diagram" aria-label="Concept map">
+  <svg viewBox="0 0 980 300" role="img">
+    <rect x="18" y="24" width="944" height="226" rx="22" fill="#fff" stroke="#d8e0e5"/>
+    <text x="44" y="64" fill="#26323b" font-size="20" font-weight="900">Full-stack bridge 图：FastAPI route/store/eval -&gt; React mount -&gt; cockpit components -&gt; user action -&gt; backend approval route。</text>
+    <rect x="62" y="112" width="230" height="72" rx="16" fill="#e4f7f7" stroke="#007a83"/>
+    <rect x="374" y="112" width="230" height="72" rx="16" fill="#fbfcfd" stroke="#d8e0e5"/>
+    <rect x="686" y="112" width="230" height="72" rx="16" fill="#fff4df" stroke="#b36b00"/>
+    <text x="177" y="142" text-anchor="middle" fill="#005b62" font-size="15" font-weight="900">Concept</text>
+    <text x="489" y="142" text-anchor="middle" fill="#26323b" font-size="15" font-weight="900">Project Code</text>
+    <text x="801" y="142" text-anchor="middle" fill="#8a5200" font-size="15" font-weight="900">Production Pattern</text>
+    <text x="177" y="164" text-anchor="middle" fill="#5d6975" font-size="12">mental model</text>
+    <text x="489" y="164" text-anchor="middle" fill="#5d6975" font-size="12">files and tests</text>
+    <text x="801" y="164" text-anchor="middle" fill="#5d6975" font-size="12">industry reading</text>
+  </svg>
+</div>
+
+  </section>
+
+  <section class="lesson-section">
+    <h2>代码走读：眼睛先放在高亮行</h2>
+    <div class="article-prose">
+      <p>下面的代码摘录不是为了让你背实现细节，而是训练阅读顺序。青色行表示主路径，琥珀色行表示控制、停止、安全或恢复边界。读 agent 系统时，先找这些边界，通常比先看 prompt 更有效。</p>
+      <p>对应的项目文件在这里：<a href="../../jobagent/web/app.py"><code>jobagent/web/app.py</code></a>, <a href="../../jobagent/web/frontend/"><code>jobagent/web/frontend/</code></a>, <a href="../../jobagent/web/static/assets/"><code>jobagent/web/static/assets/</code></a>, <a href="../../jobagent/web/templates/index.html"><code>jobagent/web/templates/index.html</code></a>。</p>
+    </div>
+    <div class="annotated-code" role="region" aria-label="Annotated code excerpt"><div class="code-row warn"><span class="line">contract</span><span class="src">FastAPI owns routes, store, approval, checkpoint, trace, and eval evidence</span><span class="comment">后端仍是系统事实源</span></div><div class="code-row hot"><span class="line">mount</span><span class="src">Jinja template -&gt; &lt;div id=&quot;scout-root&quot;&gt;&lt;/div&gt; + built asset tags</span><span class="comment">template 收缩成 React 入口</span></div><div class="code-row hot"><span class="line">source</span><span class="src">jobagent/web/frontend/*</span><span class="comment">React/TypeScript 交互层的 source path</span></div><div class="code-row hot"><span class="line">assets</span><span class="src">jobagent/web/static/assets/*</span><span class="comment">Vite/build 输出由 FastAPI 静态服务提供</span></div><div class="code-row warn"><span class="line">boundary</span><span class="src">React renders state; it does not decide approval ownership or run validity</span><span class="comment">产品边界不能搬到浏览器里</span></div></div>
+    <div class="split"><div class="panel"><strong><a href="../../jobagent/web/app.py"><code>jobagent/web/app.py</code></a></strong><p>阅读这一章时，把这个路径当作项目里的实物锚点或 active rewrite contract。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div><div class="panel"><strong><a href="../../jobagent/web/frontend/"><code>jobagent/web/frontend/</code></a></strong><p>阅读这一章时，把这个路径当作项目里的实物锚点或 active rewrite contract。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div><div class="split"><div class="panel"><strong><a href="../../jobagent/web/static/assets/"><code>jobagent/web/static/assets/</code></a></strong><p>阅读这一章时，把这个路径当作项目里的实物锚点或 active rewrite contract。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div><div class="panel"><strong><a href="../../jobagent/web/templates/index.html"><code>jobagent/web/templates/index.html</code></a></strong><p>阅读这一章时，把这个路径当作项目里的实物锚点或 active rewrite contract。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div>
+  </section>
+
+  <section class="lesson-section" id="lab">
+    <h2>动手实验：把知识点落到一次操作里</h2>
+    <div class="article-prose">
+      <p>这一章不只要求你“理解”。你应该至少跑一次命令、打开一次文件、观察一次 state 或 trace。JobAgent 的教学价值在于它是可运行项目，不是架构幻灯片。</p>
+    </div>
+    <div class="steps"><div class="step">阅读 <code>jobagent/web/app.py</code> 里当前 <code>TemplateResponse</code> 的数据流，标出哪些字段必须继续由后端提供。</div><div class="step">在 active rewrite 落地后，对比 Jinja template：它应该只剩 mount point、asset 引用和必要的初始配置。</div><div class="step">为首页和 run detail 写一张 data ownership 表：backend authoritative、frontend derived、user action 三列。</div></div>
+  </section>
+
+  <section class="lesson-section">
+    <h2>工程选择题：什么时候这样做，什么时候不要这样做</h2>
+    <div class="article-prose">
+      <p>为什么不用 Jinja 继续堆 UI？当页面开始有 workflow strip、approval branch、trace table、RAG evidence、loading/error states 时，组件化前端更容易保持交互一致。 为什么不能把业务判断搬到 React？浏览器状态不可信，approval ownership、run id validation、guardrail 和 checkpoint 必须留在服务端。 什么是好的 full-stack bridge？API contract 稳定、UI state 可推导、错误状态明确、测试能证明 run 创建和 approval 没退化。</p>
+      <p>这些问题比答案本身更重要。Multi-agent 工程的成熟度，不在于堆多少框架，而在于你能说清楚每个边界为什么存在、什么时候需要升级、升级会带来什么新复杂度。</p>
+    </div>
+  </section>
+
+
+  <section class="lesson-section">
+    <h2>行业脉搏：把本章放到 2026 AI infra 里看</h2>
+    <div class="article-prose">
+      <p>现代 agent 产品越来越像运行控制台，而不是聊天窗口。前端要表达 workflow、证据、风险和下一步动作，否则用户无法判断 agent 是否可靠。</p><p>React/TypeScript 的价值不只是组件库，而是让 UI 层也拥有显式 contract：props、状态枚举、事件处理、loading/error 分支都能被审查和测试。</p>
+      <p>读这些链接时，不要只记产品名。更重要的是把它们映射回本项目：哪些能力已经在 JobAgent 里有教学版，哪些能力属于未来的生产升级。</p>
+    </div>
+    <div class="source-links"><a class="source-link" href="https://react.dev/learn/typescript"><strong>React TypeScript guide</strong><span>用 TypeScript 给 React component props、hooks 和事件处理建立类型边界。</span></a><a class="source-link" href="https://vite.dev/guide/static-deploy"><strong>Vite static deploy guide</strong><span>理解 build assets 如何交给静态服务或后端框架提供。</span></a></div>
+  </section>
+</article>
+
+      <nav class="footer-nav"><a class="button" href="21_capstone.html">上一章：第 21 章：综合项目任务：把 JobAgent 改成你的 AI Infra Portfolio</a><a class="button primary" href="23_typescript_eval_ui.html">下一章：第 23 章：TypeScript UI Contracts：让 Eval 定义什么叫好界面</a></nav>
+    </main>
+
+<aside class="inspector">
+  <div class="inspector-card">
+    <h3>本章目标</h3>
+    <p>前端重写不是换皮，而是把后端 workflow、approval、trace 和 eval evidence 变成用户能操作的 cockpit。</p>
+  </div>
+  <div class="inspector-card">
+    <h3>阅读进度</h3>
+    <div class="progress"><span data-progress></span></div>
+  </div>
+  <div class="inspector-card">
+    <h3>Lab Checklist</h3>
+    <div class="checklist"><label><input data-check="22_react_frontend_bridge-1" type="checkbox"> 阅读 <code>jobagent/web/app.py</code> 里当前 <code>TemplateResponse</code> 的数据流，标出哪些字段必须继续由后端提供。</label><label><input data-check="22_react_frontend_bridge-2" type="checkbox"> 在 active rewrite 落地后，对比 Jinja template：它应该只剩 mount point、asset 引用和必要的初始配置。</label><label><input data-check="22_react_frontend_bridge-3" type="checkbox"> 为首页和 run detail 写一张 data ownership 表：backend authoritative、frontend derived、user action 三列。</label></div>
+  </div>
+  <div class="inspector-card">
+    <h3>Industry Pulse</h3>
+    <ul><li><a href="https://react.dev/learn/typescript">React TypeScript guide</a></li><li><a href="https://vite.dev/guide/static-deploy">Vite static deploy guide</a></li></ul>
+  </div>
+</aside>
+
+  </div>
+  <script src="assets/course.js"></script>
+</body>
+</html>

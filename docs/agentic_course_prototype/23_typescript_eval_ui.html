@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第 23 章：TypeScript UI Contracts：让 Eval 定义什么叫好界面 / JobAgent Agentic Engineering Course</title>
+  <link rel="stylesheet" href="assets/course.css">
+</head>
+<body>
+  <div class="shell">
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark">23</div>
+    <h1>TypeScript UI Contracts：让 Eval 定义什么叫好界面</h1>
+    <p>Agent UI 的质量不只看视觉 polish，还要看它是否忠实表达 workflow state、approval gate 和 evidence。</p>
+  </div>
+  <nav class="nav-block" aria-label="Course">
+    <a href="index.html">课程首页</a><a class="" href="00_overview.html">00 这不是聊天机器人，这是一个可运行的 Agentic Product</a><a class="" href="01_graph_engine.html">01 从 Pipeline 到 Graph：为什么 agent 工程首先是调度问题</a><a class="" href="02_shared_state.html">02 Shared State：Multi-Agent 系统里的唯一事实表</a><a class="" href="03_bounded_agents.html">03 Bounded Agent：为什么每个 agent 都应该小而窄</a><a class="" href="04_stop_reason.html">04 StopReason：Agentic 系统不是一直跑到死</a><a class="" href="05_hitl.html">05 Human-in-the-loop：人工审批不是 UI 功能，是系统边界</a><a class="" href="06_checkpoint_resume.html">06 Checkpoint 与 Resume：Agentic Workflow 的耐久执行</a><a class="" href="07_tool_use.html">07 Tool Use：Agent 什么时候应该调用工具</a><a class="" href="08_memory_story_bank.html">08 Memory 与 Story Bank：不是所有上下文都该塞进 Prompt</a><a class="" href="09_local_rag.html">09 Local RAG：先理解检索，再上向量数据库</a><a class="" href="10_mcp.html">10 MCP：把工具世界标准化</a><a class="" href="11_llm_provider.html">11 LLM Provider：把模型调用隔离成可替换接口</a><a class="" href="12_langgraph.html">12 LangGraph：从教学 GraphEngine 迁移到工业框架</a><a class="" href="13_observability.html">13 Observability：Trace 是 Agent 系统的黑匣子</a><a class="" href="14_offline_eval.html">14 Offline Eval：别靠感觉判断 Agent 有没有变好</a><a class="" href="15_guardrails.html">15 Guardrails：在 Agency 之前先做安全边界</a><a class="" href="16_web_product.html">16 Web Product Surface：把 Workflow 变成可以用的产品</a><a class="" href="17_deployment.html">17 Deployment：从本地 demo 到公开 portfolio</a><a class="" href="18_10x_scale_readiness.html">18 10x Scale 与 Production Readiness：什么时候可以说它准备好了</a><a class="" href="19_debugging.html">19 调试一本 Agent 系统：从现象回到 state、trace、node</a><a class="" href="20_upgrade_choices.html">20 工程选择题：什么时候该升级技术栈</a><a class="" href="21_capstone.html">21 综合项目任务：把 JobAgent 改成你的 AI Infra Portfolio</a><a class="" href="22_react_frontend_bridge.html">22 React/TypeScript Frontend Bridge：把 Agent 状态翻译成产品界面</a><a class="active" href="23_typescript_eval_ui.html">23 TypeScript UI Contracts：让 Eval 定义什么叫好界面</a>
+  </nav>
+</aside>
+
+    <main class="reading">
+      <section class="hero">
+        <div class="kicker">Part 7 / Full-stack bridge / Lesson 23</div>
+        <h1>第 23 章：TypeScript UI Contracts：让 Eval 定义什么叫好界面</h1>
+        <p class="subtitle">Agent UI 的质量不只看视觉 polish，还要看它是否忠实表达 workflow state、approval gate 和 evidence。</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#lab">直接做实验</a>
+          <a class="button" href="index.html">课程目录</a>
+        </div>
+      </section>
+
+<article class="lesson">
+  <section class="lesson-section">
+    <h2>这一章先解决什么问题</h2>
+    <div class="article-prose">
+      <p>React rewrite 之后，TypeScript 类型应该贴着后端 artifact 走：<code>RunSummary</code>、<code>WorkflowStep</code>、<code>EvalSummary</code>、retrieval citation、tool audit row、trace row 都应该有清楚的前端形状。</p><p>界面状态应该由后端事实推导，而不是前端自己猜。<code>NEED_USER_APPROVAL</code>、<code>COMPLETED</code>、<code>TOOL_ERROR</code>、<code>UNSAFE_OR_DISALLOWED_ACTION</code> 这些 stop reason 会决定按钮、提示、证据区和下一步动作。</p><p>这就是 eval 和 UI 的连接点：一个好的 run 不只是页面显示成功，而是 trajectory、artifact、retrieval evidence、quality summary 和 approval boundary 都符合预期。</p>
+      <p>如果第 22 章是在搭航站楼大屏，这一章就是给每块屏幕写验收标准：延误不能显示成已登机，待审批不能显示成已完成，安全拦截不能显示成普通错误。</p>
+    </div>
+  </section>
+
+  <section class="lesson-section">
+    <h2>系统图：把概念放回项目现场</h2>
+    <div class="article-prose">
+      <p>这张图不是装饰，而是本章的定位器。你可以先看图，再打开对应的项目文件。这样读代码时不会迷路：每个文件都不是孤立片段，而是在 JobAgent 这个 agentic workflow 里承担一个明确位置。</p>
+    </div>
+
+<div class="diagram" aria-label="Concept map">
+  <svg viewBox="0 0 980 300" role="img">
+    <rect x="18" y="24" width="944" height="226" rx="22" fill="#fff" stroke="#d8e0e5"/>
+    <text x="44" y="64" fill="#26323b" font-size="20" font-weight="900">Eval-to-UI 图：eval case -&gt; expected stop_reason/artifacts -&gt; typed API shape -&gt; React state branch -&gt; visible user decision。</text>
+    <rect x="62" y="112" width="230" height="72" rx="16" fill="#e4f7f7" stroke="#007a83"/>
+    <rect x="374" y="112" width="230" height="72" rx="16" fill="#fbfcfd" stroke="#d8e0e5"/>
+    <rect x="686" y="112" width="230" height="72" rx="16" fill="#fff4df" stroke="#b36b00"/>
+    <text x="177" y="142" text-anchor="middle" fill="#005b62" font-size="15" font-weight="900">Concept</text>
+    <text x="489" y="142" text-anchor="middle" fill="#26323b" font-size="15" font-weight="900">Project Code</text>
+    <text x="801" y="142" text-anchor="middle" fill="#8a5200" font-size="15" font-weight="900">Production Pattern</text>
+    <text x="177" y="164" text-anchor="middle" fill="#5d6975" font-size="12">mental model</text>
+    <text x="489" y="164" text-anchor="middle" fill="#5d6975" font-size="12">files and tests</text>
+    <text x="801" y="164" text-anchor="middle" fill="#5d6975" font-size="12">industry reading</text>
+  </svg>
+</div>
+
+  </section>
+
+  <section class="lesson-section">
+    <h2>代码走读：眼睛先放在高亮行</h2>
+    <div class="article-prose">
+      <p>下面的代码摘录不是为了让你背实现细节，而是训练阅读顺序。青色行表示主路径，琥珀色行表示控制、停止、安全或恢复边界。读 agent 系统时，先找这些边界，通常比先看 prompt 更有效。</p>
+      <p>对应的项目文件在这里：<a href="../../jobagent/models.py"><code>jobagent/models.py</code></a>, <a href="../../jobagent/evals/runner.py"><code>jobagent/evals/runner.py</code></a>, <a href="../../jobagent/web/frontend/"><code>jobagent/web/frontend/</code></a>, <a href="../../jobagent/evals/run_quality.py"><code>jobagent/evals/run_quality.py</code></a>。</p>
+    </div>
+    <div class="annotated-code" role="region" aria-label="Annotated code excerpt"><div class="code-row hot"><span class="line">types</span><span class="src">RunSummary / WorkflowStep / EvalSummary mirror backend contracts</span><span class="comment">TypeScript 类型要贴着 Python artifact</span></div><div class="code-row warn"><span class="line">state</span><span class="src">pending approval, completed, failed, and unsafe states need distinct UI branches</span><span class="comment">stop reason 驱动界面状态</span></div><div class="code-row hot"><span class="line">evidence</span><span class="src">RAG citations, trace rows, and tool audit stay visible in the cockpit</span><span class="comment">用户信任来自证据链</span></div><div class="code-row warn"><span class="line">eval</span><span class="src">good = expected trajectory + artifacts + approval gate + retrieval evidence</span><span class="comment">好坏由 eval 和质量门定义</span></div><div class="code-row warn"><span class="line">regression</span><span class="src">web tests should prove mount route, assets, approval, and run detail still work</span><span class="comment">前端重写也要保护产品闭环</span></div></div>
+    <div class="split"><div class="panel"><strong><a href="../../jobagent/models.py"><code>jobagent/models.py</code></a></strong><p>阅读这一章时，把这个路径当作项目里的实物锚点或 active rewrite contract。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div><div class="panel"><strong><a href="../../jobagent/evals/runner.py"><code>jobagent/evals/runner.py</code></a></strong><p>阅读这一章时，把这个路径当作项目里的实物锚点或 active rewrite contract。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div><div class="split"><div class="panel"><strong><a href="../../jobagent/web/frontend/"><code>jobagent/web/frontend/</code></a></strong><p>阅读这一章时，把这个路径当作项目里的实物锚点或 active rewrite contract。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div><div class="panel"><strong><a href="../../jobagent/evals/run_quality.py"><code>jobagent/evals/run_quality.py</code></a></strong><p>阅读这一章时，把这个路径当作项目里的实物锚点或 active rewrite contract。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div>
+  </section>
+
+  <section class="lesson-section" id="lab">
+    <h2>动手实验：把知识点落到一次操作里</h2>
+    <div class="article-prose">
+      <p>这一章不只要求你“理解”。你应该至少跑一次命令、打开一次文件、观察一次 state 或 trace。JobAgent 的教学价值在于它是可运行项目，不是架构幻灯片。</p>
+    </div>
+    <div class="steps"><div class="step">列出 UI 至少需要的 TypeScript 类型：run summary、workflow step、artifact card、quality check、trace row、tool audit row。</div><div class="step">把 <code>StopReason</code> 映射成 UI state matrix：允许哪些按钮、显示哪些解释、是否展示 approval form。</div><div class="step">在 frontend rewrite 落地后，确认 web regression tests 仍覆盖 run creation、approval ownership、run detail 和 ops/public mode 边界。</div></div>
+  </section>
+
+  <section class="lesson-section">
+    <h2>工程选择题：什么时候这样做，什么时候不要这样做</h2>
+    <div class="article-prose">
+      <p>UI test 是否等于 eval？不是。UI test 证明产品闭环可操作；workflow eval 证明 agent trajectory 正确；retrieval eval 证明证据召回正确；per-run quality 证明单次 run 的 artifact 足够。 TypeScript 类型应该从哪里来？短期可以手写并贴近后端 schema；长期可考虑 OpenAPI/codegen，但只有当 API contract 稳定后才值得引入生成链路。 哪些 UI 状态最容易误导用户？pending 被显示成 done、proposal 被显示成 final、unsafe 被显示成普通 validation error、trace/evidence 被隐藏导致用户无法判断可信度。</p>
+      <p>这些问题比答案本身更重要。Multi-agent 工程的成熟度，不在于堆多少框架，而在于你能说清楚每个边界为什么存在、什么时候需要升级、升级会带来什么新复杂度。</p>
+    </div>
+  </section>
+
+
+  <section class="lesson-section">
+    <h2>行业脉搏：把本章放到 2026 AI infra 里看</h2>
+    <div class="article-prose">
+      <p>AI 产品的前端质量正在从“漂亮展示结果”转向“解释系统行为”。这对 agent workflow 尤其关键，因为用户需要理解状态、权限、证据和失败原因。</p><p>Eval-first frontend 的核心思想是：界面不是独立于系统质量之外的装饰层。它必须把 eval 关心的内容显性化，让用户和开发者都能看见系统是否真的达标。</p>
+      <p>读这些链接时，不要只记产品名。更重要的是把它们映射回本项目：哪些能力已经在 JobAgent 里有教学版，哪些能力属于未来的生产升级。</p>
+    </div>
+    <div class="source-links"><a class="source-link" href="https://react.dev/learn/conditional-rendering"><strong>React conditional rendering</strong><span>不同 stop reason 对应不同 UI 分支时，条件渲染是核心基础。</span></a><a class="source-link" href="https://www.typescriptlang.org/docs/handbook/intro.html"><strong>TypeScript handbook</strong><span>TypeScript 类型系统是前端 contract 的基础工具。</span></a></div>
+  </section>
+</article>
+
+      <nav class="footer-nav"><a class="button" href="22_react_frontend_bridge.html">上一章：第 22 章：React/TypeScript Frontend Bridge：把 Agent 状态翻译成产品界面</a><a class="button primary" href="index.html">回到课程首页</a></nav>
+    </main>
+
+<aside class="inspector">
+  <div class="inspector-card">
+    <h3>本章目标</h3>
+    <p>Agent UI 的质量不只看视觉 polish，还要看它是否忠实表达 workflow state、approval gate 和 evidence。</p>
+  </div>
+  <div class="inspector-card">
+    <h3>阅读进度</h3>
+    <div class="progress"><span data-progress></span></div>
+  </div>
+  <div class="inspector-card">
+    <h3>Lab Checklist</h3>
+    <div class="checklist"><label><input data-check="23_typescript_eval_ui-1" type="checkbox"> 列出 UI 至少需要的 TypeScript 类型：run summary、workflow step、artifact card、quality check、trace row、tool audit row。</label><label><input data-check="23_typescript_eval_ui-2" type="checkbox"> 把 <code>StopReason</code> 映射成 UI state matrix：允许哪些按钮、显示哪些解释、是否展示 approval form。</label><label><input data-check="23_typescript_eval_ui-3" type="checkbox"> 在 frontend rewrite 落地后，确认 web regression tests 仍覆盖 run creation、approval ownership、run detail 和 ops/public mode 边界。</label></div>
+  </div>
+  <div class="inspector-card">
+    <h3>Industry Pulse</h3>
+    <ul><li><a href="https://react.dev/learn/conditional-rendering">React conditional rendering</a></li><li><a href="https://www.typescriptlang.org/docs/handbook/intro.html">TypeScript handbook</a></li></ul>
+  </div>
+</aside>
+
+  </div>
+  <script src="assets/course.js"></script>
+</body>
+</html>

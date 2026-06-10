@@ -6,6 +6,7 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .jobagent/
+node_modules/
 dist/
 build/
 *.egg-info/

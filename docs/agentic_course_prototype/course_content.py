@@ -828,8 +828,8 @@ CHAPTERS: list[Chapter] = [
     Chapter(
         "21_capstone",
         "Part 6 / Capstone",
-        "第 21 章：最终项目任务：把 JobAgent 改成你的 AI Infra Portfolio",
-        "最后一章不是阅读，而是让读者完整交付一个新的 bounded agent。",
+        "第 21 章：综合项目任务：把 JobAgent 改成你的 AI Infra Portfolio",
+        "这一章不是阅读，而是让读者完整交付一个新的 bounded agent。",
         [
             "Capstone 任务：新增一个 agent，例如 `salary_analysis`、`networking_strategy` 或 `company_risk_analysis`。",
             "要求完整接入 state、workflow、checkpoint/resume、eval、trace、web UI，并写出 portfolio narrative。",
@@ -866,6 +866,84 @@ CHAPTERS: list[Chapter] = [
             Link("AWS AgentCore Evaluations GA", "https://aws.amazon.com/about-aws/whats-new/2026/03/agentcore-evaluations-generally-available/", "生产 agent eval 的托管平台参照。"),
         ],
         "Capstone 交付图：new artifact -> node -> graph -> eval -> trace -> UI -> portfolio story。",
+    ),
+    Chapter(
+        "22_react_frontend_bridge",
+        "Part 7 / Full-stack bridge",
+        "第 22 章：React/TypeScript Frontend Bridge：把 Agent 状态翻译成产品界面",
+        "前端重写不是换皮，而是把后端 workflow、approval、trace 和 eval evidence 变成用户能操作的 cockpit。",
+        [
+            "JobAgent 的 active frontend rewrite 把交互层移动到 `jobagent/web/frontend/*`，再把 build 产物交给 `jobagent/web/static/assets/*`。Jinja 不再承担复杂 UI，而是保留 FastAPI route 与 React mount point。",
+            "这个边界很重要：后端仍然拥有 run state、creator session、approval ownership、checkpoint、trace、eval summary 和 safety controls；React 负责把这些状态组织成清晰的产品操作面。",
+            "对 full-stack agent product 来说，前端不是附属品。用户是否信任 agent，取决于他能不能看见系统做到了哪一步、为什么停下、哪些输出只是 proposal、哪些证据支持当前结论。",
+        ],
+        "把后端想成机场运行系统，把 React 想成航站楼大屏和登机口操作台。大屏不能自己批准起飞，也不能修改飞行计划；它要准确展示状态，让乘客和工作人员做正确动作。",
+        [
+            "jobagent/web/app.py",
+            "jobagent/web/frontend/",
+            "jobagent/web/static/assets/",
+            "jobagent/web/templates/index.html",
+            "jobagent/web/templates/run.html",
+            "tests/test_web_app.py",
+        ],
+        [
+            "阅读 `jobagent/web/app.py` 里当前 `TemplateResponse` 的数据流，标出哪些字段必须继续由后端提供。",
+            "在 active rewrite 落地后，对比 Jinja template：它应该只剩 mount point、asset 引用和必要的初始配置。",
+            "为首页和 run detail 写一张 data ownership 表：backend authoritative、frontend derived、user action 三列。",
+        ],
+        [
+            "为什么不用 Jinja 继续堆 UI？当页面开始有 workflow strip、approval branch、trace table、RAG evidence、loading/error states 时，组件化前端更容易保持交互一致。",
+            "为什么不能把业务判断搬到 React？浏览器状态不可信，approval ownership、run id validation、guardrail 和 checkpoint 必须留在服务端。",
+            "什么是好的 full-stack bridge？API contract 稳定、UI state 可推导、错误状态明确、测试能证明 run 创建和 approval 没退化。",
+        ],
+        [
+            "现代 agent 产品越来越像运行控制台，而不是聊天窗口。前端要表达 workflow、证据、风险和下一步动作，否则用户无法判断 agent 是否可靠。",
+            "React/TypeScript 的价值不只是组件库，而是让 UI 层也拥有显式 contract：props、状态枚举、事件处理、loading/error 分支都能被审查和测试。",
+        ],
+        [
+            Link("React TypeScript guide", "https://react.dev/learn/typescript", "用 TypeScript 给 React component props、hooks 和事件处理建立类型边界。"),
+            Link("Vite static deploy guide", "https://vite.dev/guide/static-deploy", "理解 build assets 如何交给静态服务或后端框架提供。"),
+        ],
+        "Full-stack bridge 图：FastAPI route/store/eval -> React mount -> cockpit components -> user action -> backend approval route。",
+    ),
+    Chapter(
+        "23_typescript_eval_ui",
+        "Part 7 / Full-stack bridge",
+        "第 23 章：TypeScript UI Contracts：让 Eval 定义什么叫好界面",
+        "Agent UI 的质量不只看视觉 polish，还要看它是否忠实表达 workflow state、approval gate 和 evidence。",
+        [
+            "React rewrite 之后，TypeScript 类型应该贴着后端 artifact 走：`RunSummary`、`WorkflowStep`、`EvalSummary`、retrieval citation、tool audit row、trace row 都应该有清楚的前端形状。",
+            "界面状态应该由后端事实推导，而不是前端自己猜。`NEED_USER_APPROVAL`、`COMPLETED`、`TOOL_ERROR`、`UNSAFE_OR_DISALLOWED_ACTION` 这些 stop reason 会决定按钮、提示、证据区和下一步动作。",
+            "这就是 eval 和 UI 的连接点：一个好的 run 不只是页面显示成功，而是 trajectory、artifact、retrieval evidence、quality summary 和 approval boundary 都符合预期。",
+        ],
+        "如果第 22 章是在搭航站楼大屏，这一章就是给每块屏幕写验收标准：延误不能显示成已登机，待审批不能显示成已完成，安全拦截不能显示成普通错误。",
+        [
+            "jobagent/models.py",
+            "jobagent/evals/runner.py",
+            "jobagent/web/frontend/",
+            "jobagent/evals/run_quality.py",
+            "jobagent/web/app.py",
+            "tests/test_web_app.py",
+        ],
+        [
+            "列出 UI 至少需要的 TypeScript 类型：run summary、workflow step、artifact card、quality check、trace row、tool audit row。",
+            "把 `StopReason` 映射成 UI state matrix：允许哪些按钮、显示哪些解释、是否展示 approval form。",
+            "在 frontend rewrite 落地后，确认 web regression tests 仍覆盖 run creation、approval ownership、run detail 和 ops/public mode 边界。",
+        ],
+        [
+            "UI test 是否等于 eval？不是。UI test 证明产品闭环可操作；workflow eval 证明 agent trajectory 正确；retrieval eval 证明证据召回正确；per-run quality 证明单次 run 的 artifact 足够。",
+            "TypeScript 类型应该从哪里来？短期可以手写并贴近后端 schema；长期可考虑 OpenAPI/codegen，但只有当 API contract 稳定后才值得引入生成链路。",
+            "哪些 UI 状态最容易误导用户？pending 被显示成 done、proposal 被显示成 final、unsafe 被显示成普通 validation error、trace/evidence 被隐藏导致用户无法判断可信度。",
+        ],
+        [
+            "AI 产品的前端质量正在从“漂亮展示结果”转向“解释系统行为”。这对 agent workflow 尤其关键，因为用户需要理解状态、权限、证据和失败原因。",
+            "Eval-first frontend 的核心思想是：界面不是独立于系统质量之外的装饰层。它必须把 eval 关心的内容显性化，让用户和开发者都能看见系统是否真的达标。",
+        ],
+        [
+            Link("React conditional rendering", "https://react.dev/learn/conditional-rendering", "不同 stop reason 对应不同 UI 分支时，条件渲染是核心基础。"),
+            Link("TypeScript handbook", "https://www.typescriptlang.org/docs/handbook/intro.html", "TypeScript 类型系统是前端 contract 的基础工具。"),
+        ],
+        "Eval-to-UI 图：eval case -> expected stop_reason/artifacts -> typed API shape -> React state branch -> visible user decision。",
     ),
 ]
 

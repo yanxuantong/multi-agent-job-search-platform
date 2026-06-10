@@ -3,160 +3,38 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>JobAgent Product</title>
-  <link rel="stylesheet" href="/static/app.css">
+  <title>JobAgent Scout</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/assets/scout.css">
 </head>
 <body>
-  <header class="app-shell">
-    <nav class="topbar wrap" aria-label="Product navigation">
-      <a class="brand" href="/" aria-label="JobAgent home">
-        <span class="brand-mark">JA</span>
-        <span>JobAgent</span>
-      </a>
-      <div class="nav-meta">
-        {% if public_demo_mode %}<span class="pill info">public hosted mode</span>{% endif %}
-        <a class="button ghost" href="https://github.com/yanxuantong/multi-agent-job-search-platform">GitHub</a>
-      </div>
-    </nav>
-
-    <div class="hero wrap">
-      <section class="hero-copy">
-        <div class="eyebrow">Production product</div>
-        <h1>Multi-agent job search cockpit</h1>
-        <p class="lead">Paste a role, let bounded agents analyze the opportunity, review the resume proposal, and approve the final tracker/interview-prep continuation.</p>
-        <div class="hero-actions">
-          <a class="button" href="#start-run">Start a run</a>
-          <a class="button secondary" href="#workflow">View workflow</a>
-        </div>
-      </section>
-
-      <aside class="hero-board" aria-label="Product status summary">
-        <div class="board-head">
-          <span class="small muted">Live workspace</span>
-          <span class="status-dot"></span>
-        </div>
-        <div class="stat-grid">
-          <div class="stat">
-            <strong>{{ stats.total }}</strong>
-            <span>recent runs</span>
-          </div>
-          <div class="stat">
-            <strong>{{ stats.awaiting }}</strong>
-            <span>awaiting approval</span>
-          </div>
-          <div class="stat">
-            <strong>{{ stats.completed }}</strong>
-            <span>completed</span>
-          </div>
-          <div class="stat">
-            <strong>{{ stats.agents }}</strong>
-            <span>bounded agents</span>
-          </div>
-        </div>
-      </aside>
-    </div>
-  </header>
-
-  <main class="wrap workspace">
-    <section id="workflow" class="workflow-strip" aria-label="Agent workflow">
-      {% for step in workflow_steps %}
-        <div class="workflow-step">
-          <span class="step-index">{{ loop.index }}</span>
-          <strong>{{ step.name }}</strong>
-          <span>{{ step.label }}</span>
-        </div>
-      {% endfor %}
-    </section>
-
-    <div class="dashboard-grid">
-      <section id="start-run" class="panel command-panel">
-        <div class="section-head">
-          <div>
-            <span class="kicker">Command center</span>
-            <h2>Start a job-agent run</h2>
-          </div>
-          <span class="pill complete">deterministic baseline</span>
-        </div>
+  <div
+    id="scout-root"
+    data-page="home"
+    data-props='{{ {
+      "sampleText": sample_text,
+      "runs": runs,
+      "stats": stats,
+      "workflowSteps": workflow_steps,
+      "agentCards": agent_cards,
+      "publicDemoMode": public_demo_mode
+    } | tojson | forceescape }}'
+  ></div>
+  <noscript>
+    <main class="wrap workspace">
+      <section class="panel command-panel">
+        <h1>JobAgent Scout</h1>
+        <p class="lead">Scout needs JavaScript enabled for the React command cockpit. The workflow backend remains available through the same form contract.</p>
         <form method="post" action="/runs">
           <label for="job_url">Job URL</label>
           <input id="job_url" name="job_url" type="url" placeholder="https://company.com/careers/job-id">
-
           <label for="job_text">Job description</label>
           <textarea id="job_text" name="job_text">{{ sample_text }}</textarea>
-
-          <div class="form-footer">
-            <label class="check-row small" for="auto_approve">
-              <input id="auto_approve" name="auto_approve" type="checkbox">
-              Auto-approve this run
-            </label>
-            <button type="submit">Run workflow</button>
-          </div>
+          <button type="submit">Run workflow</button>
         </form>
       </section>
-
-      <aside class="stack">
-        <section class="panel">
-          <div class="section-head compact">
-            <div>
-              <span class="kicker">Agent roster</span>
-              <h2>Bounded specialists</h2>
-            </div>
-          </div>
-          <div class="agent-list">
-            {% for agent in agent_cards %}
-              <div class="agent-card">
-                <span class="agent-orb">{{ loop.index }}</span>
-                <div>
-                  <strong>{{ agent.name }}</strong>
-                  <p class="small muted">{{ agent.detail }}</p>
-                </div>
-              </div>
-            {% endfor %}
-          </div>
-        </section>
-
-        <section class="panel">
-          <div class="section-head compact">
-            <div>
-              <span class="kicker">Production controls</span>
-              <h2>Guardrails</h2>
-            </div>
-          </div>
-          <div class="guardrail-list">
-            <span class="pill complete">HITL approval</span>
-            <span class="pill complete">input guardrails</span>
-            <span class="pill complete">request IDs</span>
-            <span class="pill complete">ops status</span>
-          </div>
-          <p class="small muted guardrail-note">Public runs are bounded by size limits, rate limits, secret detection, prompt-injection screening, and checkpointed resume behavior.</p>
-        </section>
-
-        <section class="panel">
-          <div class="section-head compact">
-            <div>
-              <span class="kicker">Activity</span>
-              <h2>Recent runs</h2>
-            </div>
-          </div>
-          <div class="run-list">
-            {% for run in runs %}
-              <a class="run-item" href="/runs/{{ run.run_id }}">
-                <span class="run-title">{{ run.company }} - {{ run.role }}</span>
-                <span class="small muted mono">{{ run.run_id }}</span>
-                <span class="run-badges">
-                  <span class="pill {% if run.stop_reason == 'COMPLETED' %}complete{% elif run.stop_reason == 'NEED_USER_APPROVAL' %}paused{% else %}error{% endif %}">
-                    {{ run.stop_reason }}
-                  </span>
-                  {% if run.fit_score is not none %}<span class="pill info">fit {{ run.fit_score }}/25</span>{% endif %}
-                </span>
-              </a>
-            {% else %}
-              <p class="small muted">No runs yet.</p>
-            {% endfor %}
-          </div>
-        </section>
-      </aside>
-    </div>
-  </main>
+    </main>
+  </noscript>
+  <script type="module" src="/static/assets/scout.js"></script>
 </body>
 </html>

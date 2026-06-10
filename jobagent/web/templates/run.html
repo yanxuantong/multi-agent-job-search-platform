@@ -3,270 +3,52 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ summary.company }} - JobAgent Run</title>
-  <link rel="stylesheet" href="/static/app.css">
+  <title>{{ summary.company }} - JobAgent Scout Run</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/assets/scout.css">
 </head>
 <body>
-  <header class="app-shell detail-shell">
-    <nav class="topbar wrap" aria-label="Product navigation">
-      <a class="brand" href="/" aria-label="JobAgent home">
-        <span class="brand-mark">JA</span>
-        <span>JobAgent</span>
-      </a>
-      <div class="nav-meta">
-        {% if public_demo_mode %}<span class="pill info">public hosted mode</span>{% endif %}
-        <a class="button ghost" href="/">New run</a>
-      </div>
-    </nav>
-
-    <div class="hero wrap detail-hero">
-      <section class="hero-copy">
-        <div class="eyebrow">Run detail</div>
+  {% set state_data = state.to_dict() %}
+  <div
+    id="scout-root"
+    data-page="run"
+    data-props='{{ {
+      "state": {
+        "fit_analysis": state_data.fit_analysis,
+        "resume_proposal": state_data.resume_proposal,
+        "retrieval_contexts": state_data.retrieval_contexts,
+        "tracker_update": state_data.tracker_update,
+        "interview_pack": state_data.interview_pack,
+        "eval_summary": state_data.eval_summary,
+        "messages": state_data.messages
+      },
+      "summary": summary,
+      "scores": scores,
+      "runSteps": run_steps,
+      "traceRows": trace_rows,
+      "canApprove": can_approve,
+      "publicDemoMode": public_demo_mode
+    } | tojson | forceescape }}'
+  ></div>
+  <noscript>
+    <main class="wrap workspace">
+      <section class="panel">
         <h1>{{ summary.company }} - {{ summary.role }}</h1>
-        <p class="lead">Review the agent output, approve resume-facing changes, and inspect every generated artifact before the workflow continues.</p>
-        <div class="run-badges hero-badges">
-          <span class="pill {% if summary.stop_reason == 'COMPLETED' %}complete{% elif summary.stop_reason == 'NEED_USER_APPROVAL' %}paused{% else %}error{% endif %}">
-            {{ summary.stop_reason }}
-          </span>
-          {% if summary.fit_score is not none %}<span class="pill info">fit {{ summary.fit_score }}/25</span>{% endif %}
-          <span class="pill info mono">{{ summary.run_id }}</span>
-        </div>
-      </section>
-
-      <aside class="approval-card">
-        <span class="kicker">Human gate</span>
+        <p class="lead">Enable JavaScript to use the React run review surface.</p>
         {% if can_approve %}
-          <h2>Approval required</h2>
-          <p class="small muted">Resume proposal is paused before tracker and interview-prep side effects.</p>
           <form method="post" action="/runs/{{ summary.run_id }}/approve">
             <button type="submit">Approve and continue</button>
           </form>
-        {% else %}
-          <h2>Workflow clear</h2>
-          <p class="small muted">No pending approval step for this run.</p>
-          <a class="button secondary" href="/">Start another run</a>
         {% endif %}
-      </aside>
-    </div>
-  </header>
-
-  <main class="wrap workspace">
-    <section class="workflow-strip run-progress" aria-label="Run progress">
-      {% for step in run_steps %}
-        <div class="workflow-step {{ step.status }}">
-          <span class="step-index">{{ loop.index }}</span>
-          <strong>{{ step.name }}</strong>
-          <span>{{ step.status }}</span>
-        </div>
-      {% endfor %}
-    </section>
-
-    <div class="detail-grid">
-      <div class="stack">
-        {% if state.fit_analysis %}
-          <section class="panel">
-            <div class="section-head">
-              <div>
-                <span class="kicker">Decision support</span>
-                <h2>Fit analysis</h2>
-              </div>
-              <span class="pill info">{{ state.fit_analysis.decision }}</span>
-            </div>
-            <div class="metric-grid">
-              {% for label, value in scores %}
-                <div class="metric"><strong>{{ value }}</strong><span class="small muted">{{ label }}</span></div>
-              {% endfor %}
-            </div>
-            <div class="proposal">
-              <div>
-                <h3>Evidence</h3>
-                <ul>{% for item in state.fit_analysis.evidence %}<li>{{ item }}</li>{% endfor %}</ul>
-              </div>
-              <div>
-                <h3>Concerns</h3>
-                <ul>{% for item in state.fit_analysis.concerns %}<li>{{ item }}</li>{% endfor %}</ul>
-              </div>
-            </div>
-          </section>
-        {% endif %}
-
-        {% if state.resume_proposal %}
-          <section class="panel">
-            <div class="section-head">
-              <div>
-                <span class="kicker">Application surface</span>
-                <h2>Resume proposal</h2>
-              </div>
-              {% if state.resume_proposal.approval_required %}<span class="pill paused">approval required</span>{% endif %}
-            </div>
-            <div class="proposal">
-              <div>
-                <h3>Bullet rewrites</h3>
-                <ul>{% for item in state.resume_proposal.bullet_rewrites %}<li>{{ item }}</li>{% endfor %}</ul>
-              </div>
-              <div>
-                <h3>Cover letter outline</h3>
-                <ul>{% for item in state.resume_proposal.cover_letter_outline %}<li>{{ item }}</li>{% endfor %}</ul>
-                <h3>Recruiter note</h3>
-                <p>{{ state.resume_proposal.recruiter_note }}</p>
-              </div>
-            </div>
-          </section>
-        {% endif %}
-
-        {% if state.retrieval_contexts %}
-          <section class="panel">
-            <div class="section-head compact">
-              <div>
-                <span class="kicker">RAG evidence</span>
-                <h2>Retrieval context</h2>
-              </div>
-            </div>
-            <div class="retrieval-stack">
-              {% for context in state.retrieval_contexts %}
-                <article class="retrieval-context">
-                  <div class="retrieval-head">
-                    <div>
-                      <h3>{{ context.query }}</h3>
-                      <p class="small muted">{{ context.retriever }} · {{ context.returned_count }}/{{ context.candidate_count }} chunks</p>
-                    </div>
-                    {% if context.freshness_warnings %}
-                      <span class="pill paused">refresh needed</span>
-                    {% else %}
-                      <span class="pill complete">fresh</span>
-                    {% endif %}
-                  </div>
-                  <div class="retrieval-grid">
-                    {% for chunk in context.selected_chunks[:3] %}
-                      <div class="retrieval-chunk">
-                        <div class="chunk-meta">
-                          <strong>{{ chunk.title }}</strong>
-                          <span class="small muted">score {{ chunk.score }} · {{ chunk.freshness_status }}</span>
-                        </div>
-                        <p>{{ chunk.text }}</p>
-                      </div>
-                    {% endfor %}
-                  </div>
-                  {% if context.freshness_warnings %}
-                    <ul class="warning-list">{% for item in context.freshness_warnings %}<li>{{ item }}</li>{% endfor %}</ul>
-                  {% endif %}
-                </article>
-              {% endfor %}
-            </div>
-          </section>
-        {% endif %}
-
-        {% if state.tracker_update %}
-          <section class="panel">
-            <div class="section-head compact">
-              <div>
-                <span class="kicker">Application ops</span>
-                <h2>Tracker update</h2>
-              </div>
-            </div>
-            <p><strong>Status:</strong> {{ state.tracker_update.status }}</p>
-            <p><strong>Next action:</strong> {{ state.tracker_update.next_action }}</p>
-            <ul>{% for note in state.tracker_update.notes %}<li>{{ note }}</li>{% endfor %}</ul>
-          </section>
-        {% endif %}
-
-        {% if state.interview_pack %}
-          <section class="panel">
-            <div class="section-head compact">
-              <div>
-                <span class="kicker">Prep packet</span>
-                <h2>Interview prep</h2>
-              </div>
-            </div>
-            <div class="proposal">
-              <div>
-                <h3>Technical</h3>
-                <ul>{% for item in state.interview_pack.technical_questions %}<li>{{ item }}</li>{% endfor %}</ul>
-                <h3>Behavioral</h3>
-                <ul>{% for item in state.interview_pack.behavioral_questions %}<li>{{ item }}</li>{% endfor %}</ul>
-              </div>
-              <div>
-                <h3>Company</h3>
-                <ul>{% for item in state.interview_pack.company_questions %}<li>{{ item }}</li>{% endfor %}</ul>
-                <h3>Story matches</h3>
-                <ul>{% for item in state.interview_pack.story_matches %}<li>{{ item }}</li>{% endfor %}</ul>
-              </div>
-            </div>
-          </section>
-        {% endif %}
-
-        {% if state.eval_summary %}
-          <section class="panel">
-            <div class="section-head">
-              <div>
-                <span class="kicker">Quality gate</span>
-                <h2>Run evaluation</h2>
-              </div>
-              <span class="pill {% if state.eval_summary.passed %}complete{% else %}paused{% endif %}">
-                score {{ state.eval_summary.score }}
-              </span>
-            </div>
-            <div class="proposal">
-              <div>
-                <h3>Checks</h3>
-                <ul>{% for item in state.eval_summary.checks %}<li>{{ item }}</li>{% endfor %}</ul>
-              </div>
-              <div>
-                <h3>Failure categories</h3>
-                {% if state.eval_summary.failure_categories %}
-                  <ul>{% for item in state.eval_summary.failure_categories %}<li>{{ item }}</li>{% endfor %}</ul>
-                {% else %}
-                  <p class="small muted">No failed quality categories for this run.</p>
-                {% endif %}
-              </div>
-            </div>
-          </section>
-        {% endif %}
-      </div>
-
-      <aside class="panel run-log">
-        <div class="section-head compact">
-          <div>
-            <span class="kicker">Trace</span>
-            <h2>Run messages</h2>
-          </div>
-        </div>
-        <ol>
-          {% for message in state.messages %}
-            <li>{{ message }}</li>
-          {% endfor %}
-        </ol>
-      </aside>
-    </div>
-
-    {% if trace_rows %}
-      <section class="panel trace-panel">
-        <div class="section-head">
-          <div>
-            <span class="kicker">Control plane</span>
-            <h2>Orchestrator and tool audit</h2>
-          </div>
-        </div>
-        <div class="trace-table" role="table" aria-label="Orchestrator and tool audit">
-          <div class="trace-row trace-head" role="row">
-            <span>Node</span>
-            <span>Tool</span>
-            <span>Decision</span>
-            <span>Result</span>
-            <span>Latency</span>
-          </div>
-          {% for row in trace_rows %}
-            <div class="trace-row" role="row">
-              <span><strong>{{ row.node }}</strong><small>{{ row.input }}</small></span>
-              <span>{{ row.tool }}</span>
-              <span><strong>{{ row.action }}</strong><small>{{ row.rationale }}</small></span>
-              <span><strong>{{ row.status }}</strong><small>{{ row.output }}</small></span>
-              <span>{{ row.elapsed_ms }} ms</span>
-            </div>
-          {% endfor %}
-        </div>
+        <h2>Run evaluation</h2>
+        <h2>Retrieval context</h2>
+        <h2>RAG evidence</h2>
+        <h2>Orchestrator and tool audit</h2>
+        <ol>{% for message in state.messages %}<li>{{ message }}</li>{% endfor %}</ol>
+        <div>{% for row in trace_rows %}<span>{{ row.tool }}</span>{% endfor %}</div>
       </section>
-    {% endif %}
-  </main>
+    </main>
+  </noscript>
+  <script type="module" src="/static/assets/scout.js"></script>
 </body>
 </html>

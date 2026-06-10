@@ -171,6 +171,20 @@ CODE: dict[str, list[CodeRow]] = {
         CodeRow("4", "Add eval case before polishing output", "用 eval 锁住行为", "warn"),
         CodeRow("5", "Expose result in run.html", "最后才更新产品表面", "warn"),
     ],
+    "22_react_frontend_bridge": [
+        CodeRow("contract", "FastAPI owns routes, store, approval, checkpoint, trace, and eval evidence", "后端仍是系统事实源", "warn"),
+        CodeRow("mount", "Jinja template -> <div id=\"scout-root\"></div> + built asset tags", "template 收缩成 React 入口", "hot"),
+        CodeRow("source", "jobagent/web/frontend/*", "React/TypeScript 交互层的 source path", "hot"),
+        CodeRow("assets", "jobagent/web/static/assets/*", "Vite/build 输出由 FastAPI 静态服务提供", "hot"),
+        CodeRow("boundary", "React renders state; it does not decide approval ownership or run validity", "产品边界不能搬到浏览器里", "warn"),
+    ],
+    "23_typescript_eval_ui": [
+        CodeRow("types", "RunSummary / WorkflowStep / EvalSummary mirror backend contracts", "TypeScript 类型要贴着 Python artifact", "hot"),
+        CodeRow("state", "pending approval, completed, failed, and unsafe states need distinct UI branches", "stop reason 驱动界面状态", "warn"),
+        CodeRow("evidence", "RAG citations, trace rows, and tool audit stay visible in the cockpit", "用户信任来自证据链", "hot"),
+        CodeRow("eval", "good = expected trajectory + artifacts + approval gate + retrieval evidence", "好坏由 eval 和质量门定义", "warn"),
+        CodeRow("regression", "web tests should prove mount route, assets, approval, and run detail still work", "前端重写也要保护产品闭环", "warn"),
+    ],
 }
 
 
@@ -355,7 +369,7 @@ def uses_integrated_deep_dive(chapter) -> bool:
 def file_panels(chapter) -> str:
     cards = []
     for anchor in chapter.anchors:
-        cards.append(f'<div class="panel"><strong>{link_path(anchor)}</strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div>')
+        cards.append(f'<div class="panel"><strong>{link_path(anchor)}</strong><p>阅读这一章时，把这个路径当作项目里的实物锚点或 active rewrite contract。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div>')
     return '<div class="split">' + "".join(cards[:2]) + "</div>" + ("<div class=\"split\">" + "".join(cards[2:4]) + "</div>" if len(cards) > 2 else "")
 
 
@@ -470,6 +484,7 @@ def render_chapter(chapter, idx: int) -> str:
 
 
 def render_index() -> str:
+    chapter_count = len(CHAPTERS)
     chapter_items = "".join(
         f'<a class="source-link" href="{escape(link_for(ch))}"><strong>{escape(ch.title)}</strong><span>{escape(ch.subtitle)}</span></a>'
         for ch in CHAPTERS
@@ -490,7 +505,7 @@ def render_index() -> str:
       <section class="hero">
         <div class="kicker">Source of Truth / Updated {UPDATED}</div>
         <h1>JobAgent Agentic Engineering Course</h1>
-        <p class="subtitle">这是现在唯一维护的课程版本：22 章文章式教程，左侧课程地图，中间连续讲解，右侧 lab 和行业脉搏。正文里保留图解、代码高亮、项目文件链接和扩展阅读。</p>
+        <p class="subtitle">这是现在唯一维护的课程版本：{chapter_count} 章文章式教程，左侧课程地图，中间连续讲解，右侧 lab 和行业脉搏。正文里保留图解、代码高亮、项目文件链接和扩展阅读。</p>
         <div class="hero-actions">
           <a class="button primary" href="00_overview.html">开始第 0 章</a>
         </div>
@@ -511,7 +526,7 @@ def render_index() -> str:
       </article>
     </main>
     <aside class="inspector">
-      <div class="inspector-card"><h3>课程状态</h3><p>22 章已生成。后续内容更新都从这套文章式课程生成。</p></div>
+      <div class="inspector-card"><h3>课程状态</h3><p>{chapter_count} 章已生成。后续内容更新都从这套文章式课程生成。</p></div>
       <div class="inspector-card"><h3>阅读进度</h3><div class="progress"><span data-progress></span></div></div>
     </aside>
   </div>
