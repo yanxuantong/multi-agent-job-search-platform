@@ -163,6 +163,8 @@ Start with the core workflow:
 - [jobagent/web/store.py](jobagent/web/store.py): local or Postgres-backed web run store.
 - [jobagent/evals/runner.py](jobagent/evals/runner.py): offline eval harness.
 - [jobagent/evals/run_quality.py](jobagent/evals/run_quality.py): per-run quality gate used by the product UI.
+- [jobagent/retrieval/local_rag.py](jobagent/retrieval/local_rag.py): local RAG context assembly with citations and freshness metadata.
+- [jobagent/retrieval/eval_runner.py](jobagent/retrieval/eval_runner.py): retrieval-first RAG evals before final-answer scoring.
 - [mcp_server/career_research_server.py](mcp_server/career_research_server.py): dependency-free MCP-shaped teaching stub.
 
 Local runtime artifacts are written under `.jobagent/` and ignored by git:
@@ -175,7 +177,7 @@ Local runtime artifacts are written under `.jobagent/` and ignored by git:
 
 | Stack item | Code entrypoint | Install hint | Cost note |
 | --- | --- | --- | --- |
-| Local RAG | `jobagent/retrieval/local_rag.py` | Built in | Local keyword retrieval is free; hosted embeddings/rerankers may cost money. |
+| Local RAG | `jobagent/retrieval/local_rag.py`, `jobagent/retrieval/eval_runner.py` | Built in; run `python3 -m jobagent.cli retrieval-eval` | Local keyword retrieval is free; hosted embeddings/rerankers may cost money. |
 | LangGraph | `jobagent/graph/langgraph_reference.py` | `python3 -m pip install -e '.[langgraph]'` | Local library is free; production checkpointers may need Postgres. |
 | Claude/OpenAI SDKs | `jobagent/llm/anthropic_provider.py`, `jobagent/llm/openai_provider.py` | `python3 -m pip install -e '.[llm]'` | API usage is usually billed per token. |
 | Langfuse | `jobagent/observability/langfuse_exporter.py` | `python3 -m pip install -e '.[observability]'` | Self-host can be free; hosted tiers may be paid. |

@@ -541,6 +541,7 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
   orchestrator_decisions
   tool_audit
   eval_summary
+  retrieval_contexts
   stop_reason
   pending_node</code></pre>
       <table>
@@ -607,9 +608,9 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
           </tr>
           <tr>
             <td>RAG retrieval</td>
-            <td><span class="badge done">本地实现</span></td>
-            <td><code>jobagent/retrieval/local_rag.py</code></td>
-            <td>先用 deterministic chunk/rank 学 retrieval contract，再替换 embeddings/reranker。</td>
+            <td><span class="badge done">本地 context pack + eval</span></td>
+            <td><code>jobagent/retrieval/local_rag.py</code>, <code>jobagent/retrieval/eval_runner.py</code>, <code>samples/retrieval_eval_suite.json</code></td>
+            <td>先测 retrieval 命中，再把 citations、freshness、candidate/returned count 写入 state 和 UI。</td>
           </tr>
           <tr>
             <td>Postgres + pgvector</td>
@@ -663,8 +664,28 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
       </table>
     </section>
 
+    <section id="rag-evolution">
+      <h2>8. RAG evolution：从关键词检索走向 production retrieval</h2>
+      <p>这次项目已经把 RAG 从“一个排序函数”推进成可观察的 context layer。<code>story_bank</code> 会被转换成 <code>SourceDocument</code>，再切成 <code>RetrievedChunk</code>，最后组装成 <code>RetrievalContext</code> 写入 <code>JobSearchState.retrieval_contexts</code>。fit analysis、resume tailor 和 interview prep 都会留下自己使用过的 query、top chunks、citations、freshness warnings。</p>
+      <table>
+        <thead>
+          <tr><th>阶段</th><th>现在项目里的实现</th><th>下一步升级条件</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Retrieval contract</td><td><code>SourceDocument</code>、<code>RetrievedChunk</code>、<code>RetrievalContext</code> 明确 source、score、freshness、citation。</td><td>当接入公司网页、JD 历史、行业报告时，继续增加 source type 和权限字段。</td></tr>
+          <tr><td>Retrieval eval</td><td><code>python3 -m jobagent.cli retrieval-eval</code> 计算 recall@k、precision@k、MRR、prohibited hits、stale source。</td><td>当最终生成开始依赖 LLM 后，再增加 final-answer faithfulness 和 citation grounding eval。</td></tr>
+          <tr><td>Freshness policy</td><td>source 带 <code>captured_at</code>、<code>published_at</code>、<code>expires_at</code>、<code>refresh_policy</code>，过期材料会进入 warning。</td><td>行业动态、公司新闻、招聘状态应设置较短 refresh window；个人项目故事可以 manual refresh。</td></tr>
+          <tr><td>Hybrid retrieval</td><td><code>hybrid_rank_chunks</code> 已提供 keyword + semantic score 合并路径，不强制依赖外部 embedding。</td><td>当数据量、跨文档语义匹配、同义表达明显增加时，引入 pgvector 或 reranker。</td></tr>
+          <tr><td>Product visibility</td><td>run detail 页面显示 Retrieval context，用户能看到 agent 用了哪些证据。</td><td>后续可加入 per-agent retrieval trace、失败 case replay、人工标注 relevance。</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        <strong>为什么首个 eval 先测 retrieval？</strong>因为检索命中是更可控的工程问题：给定 query 和 corpus，应该命中哪些 chunk、不能命中哪些 chunk，可以用离线 suite 稳定回归。final answer eval 也重要，但它混入了 prompt、LLM、context assembly 和写作风格，适合在 retrieval 稳定后再叠加。
+      </div>
+    </section>
+
     <section id="tests">
-      <h2>8. 测试与验证：这个项目最应该强调的部分</h2>
+      <h2>9. 测试与验证：这个项目最应该强调的部分</h2>
       <p>AI 项目容易变成 demo，但这个项目的差异化应该是 eval-first。你要能回答：“我怎么知道 agent 没有退化？”</p>
       <table>
         <thead>
@@ -674,6 +695,7 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
           <tr><td>默认单测</td><td><code>python3 -m unittest discover -s tests</code></td><td>workflow、eval runner、learning integrations；optional deps 不存在时 skip。</td></tr>
           <tr><td>全依赖单测</td><td><code>JOBAGENT_DATABASE_URL=... python -m unittest discover -s tests</code></td><td>LangGraph compile、MCP SDK server、LLM provider constructors、Postgres round-trip。</td></tr>
           <tr><td>Offline eval</td><td><code>python3 -m jobagent.cli eval</code></td><td>15 条样例，检查 company、skills、stop reason、fit score。</td></tr>
+          <tr><td>Retrieval eval</td><td><code>python3 -m jobagent.cli retrieval-eval</code></td><td>检查 story bank retrieval 的 recall@k、precision@k、MRR、freshness gate。</td></tr>
           <tr><td>Demo smoke</td><td><code>python3 -m jobagent.cli demo --auto-approve</code></td><td>端到端 run、tracker write、interview pack、trace/checkpoint artifacts。</td></tr>
           <tr><td>Docker smoke</td><td><code>docker compose run --rm app python -m jobagent.cli eval</code></td><td>容器构建、compose 网络、Postgres service readiness。</td></tr>
           <tr><td>Web smoke</td><td><code>uvicorn jobagent.web.app:app --host 127.0.0.1 --port 8000</code></td><td>打开首页、提交 JD、查看 paused run、approve 后完成。</td></tr>
@@ -681,11 +703,12 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
         </tbody>
       </table>
       <div class="callout">
-        <strong>最近一次完整验证结果：</strong>默认单测 14 tests OK / 4 skipped；全依赖单测 14 tests OK；
-        eval 15/15 passed；Docker eval 15/15 passed；容器内安装 <code>.[all]</code> 后 optional tests 全通过。
+        <strong>最近一次完整验证结果：</strong>默认单测 38 tests OK / 4 skipped；
+        eval 15/15 passed；retrieval eval 3/3 passed；CLI demo smoke completed；语法编译和 whitespace check 通过。
       </div>
       <h3>接下来该补的 eval</h3>
       <ul>
+        <li>Final-answer grounding eval：在 retrieval 命中稳定后，检查最终 resume/interview 输出是否忠实使用 retrieved context。</li>
         <li>Source-grounding eval：公司研究必须引用真实来源或 fixture source。</li>
         <li>Resume quality rubric：检查 bullet 是否包含 action、scope、impact、JD keyword。</li>
         <li>Human labels：保存你对 10-20 个真实 JD 的 apply/skip 标签，用来校准 fit score。</li>
@@ -694,7 +717,7 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
     </section>
 
     <section id="reading">
-      <h2>9. 读代码路线</h2>
+      <h2>10. 读代码路线</h2>
       <div class="timeline">
         <div class="step">
           <div class="label">Step 1</div>
@@ -714,17 +737,21 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
         </div>
         <div class="step">
           <div class="label">Step 5</div>
-          <div><strong><code>jobagent/evals/runner.py</code></strong><p>理解如何把 agent 行为变成 regression suite。这里是 portfolio 最强信号之一。</p></div>
+          <div><strong><code>jobagent/retrieval/local_rag.py</code></strong><p>理解 story bank 如何变成带 citation、freshness 和 eval contract 的 retrieval context。</p></div>
         </div>
         <div class="step">
           <div class="label">Step 6</div>
+          <div><strong><code>jobagent/evals/runner.py</code></strong> 和 <strong><code>jobagent/retrieval/eval_runner.py</code></strong><p>理解如何把 agent 行为与 retrieval 命中变成 regression suite。这里是 portfolio 最强信号之一。</p></div>
+        </div>
+        <div class="step">
+          <div class="label">Step 7</div>
           <div><strong>Optional stack</strong><p>再读 LangGraph reference、LLM providers、Langfuse exporter、Postgres memory、MCP SDK server。</p></div>
         </div>
       </div>
     </section>
 
     <section id="roadmap">
-      <h2>10. 下一步升级路线</h2>
+      <h2>11. 下一步升级路线</h2>
       <p>现在项目已经不只是文档规划，而是有可运行 skeleton 和 optional stack。下一步应该从“更像 production AI infra”推进。</p>
       <table>
         <thead>
@@ -740,7 +767,7 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
           <tr>
             <td>1. Eval depth</td>
             <td>让质量证明更强</td>
-            <td>加入 source-grounding fixture、resume rubric、failure table、human labels。</td>
+            <td>加入 final-answer grounding、source-grounding fixture、resume rubric、failure table、human labels。</td>
             <td>README/HTML 能展示 baseline pass rate 和一次改进后的 pass rate。</td>
           </tr>
           <tr>
@@ -772,7 +799,7 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
     </section>
 
     <section id="cost">
-      <h2>11. 成本与安全边界</h2>
+      <h2>12. 成本与安全边界</h2>
       <table>
         <thead>
           <tr><th>能力</th><th>本地是否可免费做</th><th>什么时候会花钱</th><th>推荐策略</th></tr>
@@ -794,12 +821,12 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
     </section>
 
     <section id="interview">
-      <h2>12. 面试叙事</h2>
+      <h2>13. 面试叙事</h2>
       <p>这个项目最强的讲法不是“我做了一个帮我找工作的 agent”，而是：</p>
       <div class="callout">
         <strong>推荐表述：</strong>
         I built a staged multi-agent job-search reference system with typed graph state, HITL checkpointing,
-        offline evals, trace artifacts, optional Postgres/pgvector memory, MCP tool boundaries, and a migration path to LangGraph,
+        retrieval-first RAG evals, trace artifacts, optional Postgres/pgvector memory, MCP tool boundaries, and a migration path to LangGraph,
         Langfuse, and real LLM providers.
       </div>
       <h3>你应该准备展示的 5 个点</h3>
@@ -813,7 +840,7 @@ docker compose run --rm app sh -lc "python -m pip install --no-cache-dir -e '.[a
     </section>
 
     <section id="source-map">
-      <h2>13. 这份 mega guide 融合了哪些原文档</h2>
+      <h2>14. 这份 mega guide 融合了哪些原文档</h2>
       <p>旧文档的核心内容已经合并到本文中。以后你主要读这一个 HTML 即可。</p>
       <table>
         <thead>

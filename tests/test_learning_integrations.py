@@ -9,7 +9,8 @@ from jobagent.integrations.external_mcp_tracker import ExternalMCPTrackerAdapter
 from jobagent.integrations import list_learning_integrations
 from jobagent.models import TrackerUpdate
 from jobagent.observability.langfuse_exporter import LangfuseTraceExporter
-from jobagent.retrieval import chunk_text, rank_chunks
+from jobagent.retrieval import chunk_text, rank_chunks, retrieve_context
+from jobagent.models import SourceDocument
 from jobagent.storage.postgres_memory import MEMORY_SCHEMA_SQL
 
 
@@ -86,6 +87,21 @@ class LearningIntegrationsTest(unittest.TestCase):
         self.assertGreaterEqual(len(chunks), 2)
         self.assertEqual(ranked[0].source, "sample")
         self.assertGreater(ranked[0].score, 0)
+
+    def test_local_rag_context_includes_source_metadata(self) -> None:
+        documents = [
+            SourceDocument(
+                source_id="story:rag",
+                source_type="story_bank",
+                title="RAG project",
+                text="Built Python RAG evaluation tooling.",
+                captured_at="2026-01-01T00:00:00+00:00",
+            )
+        ]
+        context = retrieve_context(documents, ["RAG", "evaluation"], limit=1)
+
+        self.assertEqual(context.citations[0].source_id, "story:rag")
+        self.assertEqual(context.selected_chunks[0].title, "RAG project")
 
 
 class FakeLangfuseClient:

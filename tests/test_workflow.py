@@ -36,6 +36,8 @@ class WorkflowTest(unittest.TestCase):
         self.assertEqual(state.tool_audit[0].tool_name, "jd_intake_validator")
         self.assertIsNotNone(state.eval_summary)
         self.assertTrue(state.eval_summary.passed)
+        self.assertGreaterEqual(len(state.retrieval_contexts), 2)
+        self.assertEqual(state.retrieval_contexts[0].citations[0].title, "Production RAG system")
 
     def test_workflow_completes_when_approved(self) -> None:
         state = run_job_workflow(JOB_TEXT, STORY_BANK, approved=True, run_id="test-approved")
@@ -46,6 +48,8 @@ class WorkflowTest(unittest.TestCase):
         self.assertGreaterEqual(state.fit_analysis.total, 15)
         self.assertTrue(any(event.tool_name == "application_tracker_writer" for event in state.tool_audit))
         self.assertTrue(state.eval_summary.passed)
+        self.assertGreaterEqual(len(state.retrieval_contexts), 3)
+        self.assertIn("retrieved story chunks", state.messages[-1])
 
     def test_workflow_can_resume_from_human_approval_checkpoint(self) -> None:
         paused = run_job_workflow(JOB_TEXT, STORY_BANK, run_id="test-resume")

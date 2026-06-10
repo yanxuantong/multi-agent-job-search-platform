@@ -23,6 +23,63 @@ class Source:
     note: str = ""
 
 
+@dataclass(frozen=True)
+class SourceDocument:
+    source_id: str
+    source_type: str
+    title: str
+    text: str
+    url: str = ""
+    captured_at: str = ""
+    published_at: str = ""
+    expires_at: str = ""
+    trust_level: str = "user_owned"
+    refresh_policy: str = "manual"
+
+
+@dataclass(frozen=True)
+class RetrievedChunk:
+    chunk_id: str
+    text: str
+    score: int
+    source: str
+    source_id: str = ""
+    title: str = ""
+    source_type: str = ""
+    url: str = ""
+    captured_at: str = ""
+    published_at: str = ""
+    expires_at: str = ""
+    trust_level: str = "user_owned"
+    refresh_policy: str = "manual"
+    freshness_status: str = "unknown"
+
+
+@dataclass(frozen=True)
+class RetrievalCitation:
+    source_id: str
+    title: str
+    source_type: str
+    url: str = ""
+    captured_at: str = ""
+    published_at: str = ""
+    expires_at: str = ""
+    freshness_status: str = "unknown"
+
+
+@dataclass
+class RetrievalContext:
+    query: str
+    query_terms: list[str]
+    selected_chunks: list[RetrievedChunk]
+    citations: list[RetrievalCitation]
+    freshness_warnings: list[str]
+    candidate_count: int
+    returned_count: int
+    retriever: str = "local_keyword"
+    assembly_reason: str = ""
+
+
 @dataclass
 class JDExtract:
     role_title: str
@@ -158,6 +215,7 @@ class JobSearchState:
     interview_pack: InterviewPack | None = None
     sources: list[Source] = field(default_factory=list)
     story_bank: list[dict[str, Any]] = field(default_factory=list)
+    retrieval_contexts: list[RetrievalContext] = field(default_factory=list)
     messages: list[str] = field(default_factory=list)
     budget: RunBudget = field(default_factory=RunBudget)
     orchestrator_decisions: list[OrchestratorDecision] = field(default_factory=list)
@@ -196,6 +254,9 @@ class JobSearchState:
                 else:
                     nested[key] = factory(**nested[key])
         nested["sources"] = [Source(**source) for source in nested.get("sources", [])]
+        nested["retrieval_contexts"] = [
+            _retrieval_context_from_dict(context) for context in nested.get("retrieval_contexts", [])
+        ]
         nested["errors"] = [AgentError(**error) for error in nested.get("errors", [])]
         nested["orchestrator_decisions"] = [
             OrchestratorDecision(**decision) for decision in nested.get("orchestrator_decisions", [])
@@ -204,3 +265,14 @@ class JobSearchState:
         if nested.get("stop_reason"):
             nested["stop_reason"] = StopReason(nested["stop_reason"])
         return cls(**nested)
+
+
+def _retrieval_context_from_dict(data: dict[str, Any]) -> RetrievalContext:
+    context = dict(data)
+    context["selected_chunks"] = [
+        RetrievedChunk(**chunk) for chunk in context.get("selected_chunks", [])
+    ]
+    context["citations"] = [
+        RetrievalCitation(**citation) for citation in context.get("citations", [])
+    ]
+    return RetrievalContext(**context)

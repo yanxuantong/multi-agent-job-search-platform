@@ -1,0 +1,29 @@
+[
+  {
+    "id": "rag-production-story",
+    "query": "RAG LLM Python observability production reliability",
+    "query_terms": ["RAG", "LLM", "Python", "observability"],
+    "expected_chunk_ids": ["story:amazon-production-rag-slack-bot:0"],
+    "k": 2,
+    "min_recall_at_k": 1.0,
+    "require_fresh": true
+  },
+  {
+    "id": "customer-facing-fde-story",
+    "query": "distributed systems AWS observability service ownership",
+    "query_terms": ["distributed systems", "AWS", "observability"],
+    "expected_chunk_ids": ["story:service-consolidation-and-capacity-planning:0"],
+    "k": 2,
+    "min_recall_at_k": 1.0,
+    "require_fresh": true
+  },
+  {
+    "id": "calendar-agent-eval-story",
+    "query": "LLM evaluation agent Python calendar parser",
+    "query_terms": ["LLM", "evaluation", "agent", "Python"],
+    "expected_chunk_ids": ["story:calpal-ai-calendar-command-parser:0"],
+    "k": 2,
+    "min_recall_at_k": 1.0,
+    "require_fresh": true
+  }
+]

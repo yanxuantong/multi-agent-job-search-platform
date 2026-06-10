@@ -572,7 +572,7 @@ footer { color: var(--muted); padding: 28px 0 42px; font-size: 14px; }
   <div class="grid">
     <div class="card">
       <strong>概念解释</strong>
-      <ul><li>本项目的 local RAG 是教学入口：先用本地、可解释、低成本方式理解 query、match、rank、context assembly。</li><li>向量数据库解决的是一部分 retrieval 问题，不解决 chunk 质量、query rewrite、source attribution、eval、latency、成本、权限过滤。</li><li>对于求职场景，RAG 可以用于公司资料、个人项目故事、JD 历史、行业知识，但每类资料的可信度和时效不同。</li></ul>
+      <ul><li>本项目的 local RAG 已经从简单关键词排序升级为 context pack：query、candidate count、returned chunks、citations、freshness warnings 都会进入 state 和 UI。</li><li>向量数据库解决的是一部分 retrieval 问题，不解决 chunk 质量、query rewrite、source attribution、eval、latency、成本、权限过滤。</li><li>对于求职场景，RAG 可以用于公司资料、个人项目故事、JD 历史、行业知识，但每类资料的可信度和时效不同。</li></ul>
     </div>
     <div class="card">
       <strong>寓言 / 类比</strong>
@@ -587,22 +587,22 @@ footer { color: var(--muted); padding: 28px 0 42px; font-size: 14px; }
   <div class="grid two">
     <div class="card">
       <strong>项目代码落点</strong>
-      <ul><li><a href="../../jobagent/retrieval/local_rag.py">jobagent/retrieval/local_rag.py</a></li><li><a href="../../samples/job_description.txt">samples/job_description.txt</a></li><li><a href="../../samples/story_bank.json">samples/story_bank.json</a></li></ul>
+      <ul><li><a href="../../jobagent/retrieval/local_rag.py">jobagent/retrieval/local_rag.py</a></li><li><a href="../../jobagent/retrieval/eval_runner.py">jobagent/retrieval/eval_runner.py</a></li><li><a href="../../samples/job_description.txt">samples/job_description.txt</a></li><li><a href="../../samples/story_bank.json">samples/story_bank.json</a></li><li><a href="../../samples/retrieval_eval_suite.json">samples/retrieval_eval_suite.json</a></li></ul>
     </div>
     <div class="card">
       <strong>运行 / 调试练习</strong>
-      <ul><li>用 local RAG 对 story bank 做关键词检索，观察返回内容是否真的适合面试准备。</li><li>为检索结果加上 source/title 字段，思考如何在 UI 里显示出处。</li><li>列出何时 local keyword retrieval 不够，需要 embedding 或 reranker。</li></ul>
+      <ul><li>运行 `python3 -m jobagent.cli retrieval-eval`，观察 recall@k、precision@k、MRR 和 failure categories。</li><li>打开一次 web run detail，查看 Retrieval context 里每个 agent 的 query、chunk、score、freshness。</li><li>给 story bank 增加 expires_at，观察 stale source warning 如何影响 fit concerns。</li></ul>
     </div>
   </div>
 
   <div class="grid two">
     <div class="card">
       <strong>工程选择题</strong>
-      <ul><li>RAG 的首个 eval 应该测 retrieval 还是 final answer？两者都要，但先测 retrieval 命中更可控。</li><li>是否需要 pgvector？当数据量、语义匹配需求、跨文档检索需求上来后再引入。</li><li>如何避免过期信息？source timestamp、refresh policy、行业动态单独标注。</li></ul>
+      <ul><li>RAG 的首个 eval 应该测 retrieval 还是 final answer？两者都要，但先测 retrieval 命中更可控；final answer eval 等 context 稳定后叠加。</li><li>是否需要 pgvector？当数据量、语义匹配需求、跨文档检索需求上来后再引入；当前先保留 hybrid_rank_chunks 作为升级接口。</li><li>如何避免过期信息？source timestamp、refresh policy、行业动态单独标注；个人 story bank 可以 manual refresh。</li></ul>
     </div>
     <div class="card">
       <strong>Industry Pulse / 行业脉搏</strong>
-      <ul><li>RAG 工程正在从「向量库接入」走向「RAG observability + eval」。Langfuse、LangSmith、Arize 等都在围绕 retrieval trace、dataset experiment、quality score 建能力。</li><li>这和 JobAgent 的学习路径一致：先把本地检索做可见，再逐步升级。</li></ul>
+      <ul><li>RAG 工程正在从「向量库接入」走向「RAG observability + eval」。Langfuse、LangSmith、Arize 等都在围绕 retrieval trace、dataset experiment、quality score 建能力。</li><li>这和 JobAgent 的学习路径一致：先把本地检索做可见、可测、可回归，再逐步升级到 pgvector、reranker 和 final-answer grounding eval。</li></ul>
       <h3>扩展阅读</h3>
       <ul class="source-list"><li><a href="https://langfuse.com/blog/2025-10-28-rag-observability-and-evals">Langfuse RAG observability and evals</a><br><span>展示如何 trace RAG pipeline、评估 retrieval 和 final answer。</span></li><li><a href="https://langfuse.com/docs/observability/features/observation-types">Langfuse observation types</a><br><span>Langfuse 将 retriever、tool、agent、guardrail 等作为不同 observation type。</span></li></ul>
     </div>

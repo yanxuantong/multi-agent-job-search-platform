@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from jobagent.graph import NodeResult
-from jobagent.memory import match_stories
+from jobagent.memory import match_stories, retrieve_story_context
 from jobagent.models import FitAnalysis, JobSearchState, StopReason
 
 
@@ -10,6 +10,12 @@ def analyze_fit(state: JobSearchState) -> NodeResult:
     if not jd:
         raise ValueError("JD extraction must run before fit analysis")
 
+    story_context = retrieve_story_context(
+        state.story_bank,
+        jd.required_skills,
+        query=f"fit evidence for {jd.role_title} at {jd.company_name}",
+    )
+    state.retrieval_contexts.append(story_context)
     matches = match_stories(state.story_bank, jd.required_skills)
     technical = min(5, max(1, len(set(jd.required_skills)) // 2))
     narrative = min(5, max(1, len(matches) + 1))
@@ -29,12 +35,17 @@ def analyze_fit(state: JobSearchState) -> NodeResult:
         evidence=[
             f"Matched skills: {', '.join(jd.required_skills[:8]) or 'none'}",
             f"Matched story count: {len(matches)}",
+            f"Retrieval context: {story_context.returned_count}/{story_context.candidate_count} chunks via {story_context.retriever}",
+            f"Top evidence source: {story_context.citations[0].title if story_context.citations else 'none'}",
             f"Domain signals: {', '.join(jd.domain_signals) or 'none'}",
         ],
-        concerns=[] if decision == "apply" else ["Fit score is below apply threshold; review before spending time."],
+        concerns=(
+            story_context.freshness_warnings
+            if story_context.freshness_warnings
+            else ([] if decision == "apply" else ["Fit score is below apply threshold; review before spending time."])
+        ),
     )
     state.messages.append(f"Fit analysis decision: {decision} ({total}/25).")
     if total < 12:
         return NodeResult(stop_reason=StopReason.LOW_CONFIDENCE)
     return NodeResult(next_node="resume_tailor")
-

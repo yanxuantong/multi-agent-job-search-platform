@@ -53,6 +53,8 @@ class WebAppTest(unittest.TestCase):
                 self.assertIn("Orchestrator and tool audit", completed.text)
                 self.assertIn("application_tracker_writer", completed.text)
                 self.assertIn("Run evaluation", completed.text)
+                self.assertIn("Retrieval context", completed.text)
+                self.assertIn("RAG evidence", completed.text)
 
     def test_web_rejects_approval_from_non_creator_session(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

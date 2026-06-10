@@ -161,6 +161,8 @@ flowchart TD
 - [jobagent/web/store.py](jobagent/web/store.py): local 或 Postgres-backed web run store。
 - [jobagent/evals/runner.py](jobagent/evals/runner.py): offline eval harness。
 - [jobagent/evals/run_quality.py](jobagent/evals/run_quality.py): product UI 使用的 per-run quality gate。
+- [jobagent/retrieval/local_rag.py](jobagent/retrieval/local_rag.py): 带 citation 与 freshness metadata 的本地 RAG context assembly。
+- [jobagent/retrieval/eval_runner.py](jobagent/retrieval/eval_runner.py): 先测 retrieval 命中的 RAG eval，再逐步走向 final-answer eval。
 - [mcp_server/career_research_server.py](mcp_server/career_research_server.py): dependency-free MCP-shaped teaching stub。
 
 本地 runtime artifacts 会写到 `.jobagent/`，并被 git ignore：
@@ -173,7 +175,7 @@ flowchart TD
 
 | Stack item | Code entrypoint | Install hint | Cost note |
 | --- | --- | --- | --- |
-| Local RAG | `jobagent/retrieval/local_rag.py` | Built in | Local keyword retrieval 免费；hosted embeddings/rerankers 可能收费。 |
+| Local RAG | `jobagent/retrieval/local_rag.py`, `jobagent/retrieval/eval_runner.py` | Built in；运行 `python3 -m jobagent.cli retrieval-eval` | Local keyword retrieval 免费；hosted embeddings/rerankers 可能收费。 |
 | LangGraph | `jobagent/graph/langgraph_reference.py` | `python3 -m pip install -e '.[langgraph]'` | Local library 免费；production checkpointers 可能需要 Postgres。 |
 | Claude/OpenAI SDKs | `jobagent/llm/anthropic_provider.py`, `jobagent/llm/openai_provider.py` | `python3 -m pip install -e '.[llm]'` | API usage 通常按 token 计费。 |
 | Langfuse | `jobagent/observability/langfuse_exporter.py` | `python3 -m pip install -e '.[observability]'` | Self-host 可以免费；hosted tiers 可能收费。 |

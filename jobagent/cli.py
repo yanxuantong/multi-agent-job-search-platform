@@ -7,7 +7,8 @@ from pathlib import Path
 from jobagent.evals.runner import run_eval_suite
 from jobagent.graph.workflow import resume_job_workflow, run_job_workflow
 from jobagent.integrations import list_learning_integrations
-from jobagent.memory import load_story_bank
+from jobagent.memory import load_story_bank, story_documents
+from jobagent.retrieval.eval_runner import run_retrieval_eval_suite
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -29,6 +30,10 @@ def main(argv: list[str] | None = None) -> int:
     eval_cmd.add_argument("--suite", default="samples/eval_suite.json")
     eval_cmd.add_argument("--story-bank", default="samples/story_bank.json")
 
+    retrieval_eval = subcommands.add_parser("retrieval-eval", help="Run retrieval-level RAG eval cases.")
+    retrieval_eval.add_argument("--suite", default="samples/retrieval_eval_suite.json")
+    retrieval_eval.add_argument("--story-bank", default="samples/story_bank.json")
+
     subcommands.add_parser("integrations", help="Show optional Project 1 production-stack learning paths.")
 
     args = parser.parse_args(argv)
@@ -38,6 +43,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run_resume(args)
     if args.command == "eval":
         return _run_eval(args)
+    if args.command == "retrieval-eval":
+        return _run_retrieval_eval(args)
     if args.command == "integrations":
         return _run_integrations()
     return 1
@@ -59,6 +66,13 @@ def _run_demo(args: argparse.Namespace) -> int:
 def _run_eval(args: argparse.Namespace) -> int:
     stories = load_story_bank(args.story_bank)
     result = run_eval_suite(args.suite, stories)
+    print(json.dumps(result, indent=2, ensure_ascii=False))
+    return 0 if result["failed"] == 0 else 2
+
+
+def _run_retrieval_eval(args: argparse.Namespace) -> int:
+    stories = load_story_bank(args.story_bank)
+    result = run_retrieval_eval_suite(args.suite, story_documents(stories))
     print(json.dumps(result, indent=2, ensure_ascii=False))
     return 0 if result["failed"] == 0 else 2
 
@@ -92,6 +106,17 @@ def _summary(state) -> dict:
         "orchestrator_decisions": [decision.__dict__ for decision in state.orchestrator_decisions],
         "tool_audit": [event.__dict__ for event in state.tool_audit],
         "eval_summary": state.eval_summary.__dict__ if state.eval_summary else None,
+        "retrieval_contexts": [
+            {
+                "query": context.query,
+                "retriever": context.retriever,
+                "returned_count": context.returned_count,
+                "candidate_count": context.candidate_count,
+                "citations": [citation.__dict__ for citation in context.citations],
+                "freshness_warnings": context.freshness_warnings,
+            }
+            for context in state.retrieval_contexts
+        ],
         "trace_path": f".jobagent/runs/{state.run_id}/trace.jsonl",
         "checkpoint_path": f".jobagent/checkpoints/{state.run_id}.json",
         "pending_node": state.pending_node,

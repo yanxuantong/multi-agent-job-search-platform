@@ -114,6 +114,48 @@
           </section>
         {% endif %}
 
+        {% if state.retrieval_contexts %}
+          <section class="panel">
+            <div class="section-head compact">
+              <div>
+                <span class="kicker">RAG evidence</span>
+                <h2>Retrieval context</h2>
+              </div>
+            </div>
+            <div class="retrieval-stack">
+              {% for context in state.retrieval_contexts %}
+                <article class="retrieval-context">
+                  <div class="retrieval-head">
+                    <div>
+                      <h3>{{ context.query }}</h3>
+                      <p class="small muted">{{ context.retriever }} · {{ context.returned_count }}/{{ context.candidate_count }} chunks</p>
+                    </div>
+                    {% if context.freshness_warnings %}
+                      <span class="pill paused">refresh needed</span>
+                    {% else %}
+                      <span class="pill complete">fresh</span>
+                    {% endif %}
+                  </div>
+                  <div class="retrieval-grid">
+                    {% for chunk in context.selected_chunks[:3] %}
+                      <div class="retrieval-chunk">
+                        <div class="chunk-meta">
+                          <strong>{{ chunk.title }}</strong>
+                          <span class="small muted">score {{ chunk.score }} · {{ chunk.freshness_status }}</span>
+                        </div>
+                        <p>{{ chunk.text }}</p>
+                      </div>
+                    {% endfor %}
+                  </div>
+                  {% if context.freshness_warnings %}
+                    <ul class="warning-list">{% for item in context.freshness_warnings %}<li>{{ item }}</li>{% endfor %}</ul>
+                  {% endif %}
+                </article>
+              {% endfor %}
+            </div>
+          </section>
+        {% endif %}
+
         {% if state.tracker_update %}
           <section class="panel">
             <div class="section-head compact">
