@@ -41,10 +41,13 @@ code {
   padding: 1px 5px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: .92em;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 pre {
   margin: 16px 0 0;
+  max-width: 100%;
   overflow: auto;
   background: var(--code);
   color: #e9f1f3;
@@ -251,11 +254,13 @@ h1 {
   border: 1px solid var(--line);
   border-radius: 18px;
   box-shadow: var(--shadow);
+  min-width: 0;
 }
 
 .lesson-section {
   padding: clamp(22px, 4vw, 38px);
   border-bottom: 1px solid var(--line);
+  min-width: 0;
 }
 
 .lesson-section:last-child { border-bottom: 0; }
@@ -267,6 +272,8 @@ h1 {
   max-width: 820px;
   color: #2b3640;
   font-size: 17px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .article-prose p + p {
@@ -285,6 +292,8 @@ h1 {
   border-radius: 12px;
   background: #fbfcfd;
   padding: 13px 14px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .source-link strong {
@@ -310,6 +319,8 @@ h1 {
   border-radius: 14px;
   padding: 18px;
   background: #fbfcfd;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .panel strong {
@@ -350,6 +361,8 @@ h1 {
   margin-top: 18px;
   display: grid;
   gap: 22px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .deep-dive h3 {
@@ -370,6 +383,7 @@ h1 {
   display: grid;
   gap: 12px;
   margin-top: 12px;
+  min-width: 0;
 }
 
 .map-row,
@@ -380,6 +394,8 @@ h1 {
   border-radius: 12px;
   background: #fbfcfd;
   padding: 15px 16px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .map-row {
@@ -390,6 +406,10 @@ h1 {
 
 .map-row strong {
   color: var(--cyan);
+}
+
+.map-row span {
+  min-width: 0;
 }
 
 .code-map,
@@ -425,6 +445,8 @@ h1 {
   background: #fbfcfd;
   border: 1px solid var(--line);
   border-radius: 12px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .step::before {
@@ -475,6 +497,8 @@ h1 {
   border-radius: 10px;
   background: #fbfcfd;
   cursor: pointer;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .checklist input { margin-top: 6px; accent-color: var(--cyan); }
@@ -486,6 +510,8 @@ h1 {
   border-radius: 14px;
   box-shadow: var(--shadow);
   padding: 16px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .inspector-card h3 {
@@ -530,7 +556,7 @@ h1 {
   margin-top: 22px;
 }
 
-@media (max-width: 1160px) {
+@media (max-width: 1320px) {
   .shell { grid-template-columns: 230px minmax(0, 1fr); }
   .inspector { display: none; }
 }
