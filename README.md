@@ -1,131 +1,57 @@
-# Multi-Agent Job Search Platform
+# JobAgent
 
 [中文版本](README.zh.md)
 
-An agentic job-search product you can actually use.
+![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-web%20surface-009688?logo=fastapi&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
+![Agent Evals](https://img.shields.io/badge/evals-15%20workflow%20%2B%203%20retrieval-blue)
+![Cost](https://img.shields.io/badge/default%20runtime-API%20key%20free-brightgreen)
 
-This project is a learning-first reference implementation for a multi-agent job-search platform. It turns a job description into structured role signals, company research, fit analysis, resume-positioning suggestions, a human approval checkpoint, a tracker update, and interview prep.
+**A production-shaped multi-agent job-search cockpit.**
 
-The default path is intentionally deterministic and low-cost: no API keys, no hosted vector database, no fragile external calls. The point is to make the core production pattern visible before swapping in LangGraph, LLM providers, MCP tools, Langfuse, Postgres, or pgvector.
+JobAgent turns a job description into structured role signals, company research, fit analysis, resume-positioning suggestions, a human approval checkpoint, a tracker update, and interview prep. It is designed to be useful as a small product, but its real value is that it makes modern agent-system engineering visible: typed shared state, bounded agents, human-in-the-loop control, checkpoint/resume, evals, traces, guardrails, deployment, and optional production-stack integrations.
 
-**Live product:** [https://jobagent-demo.onrender.com](https://jobagent-demo.onrender.com)
+The default path is intentionally deterministic and low-cost. You can run the product, tests, and evals without API keys, hosted embeddings, managed databases, or fragile external scraping. Once the core system is understandable, the repo shows where to plug in LangGraph, LLM providers, MCP tools, Langfuse, Postgres, and pgvector.
 
-**Canonical learning guide:** [docs/project1_ai_infra_tutorial_zh.html](docs/project1_ai_infra_tutorial_zh.html)
+- **Live product:** [https://jobagent-demo.onrender.com](https://jobagent-demo.onrender.com)
+- **Article-style agent systems course:** [docs/agentic_course_prototype/index.html](docs/agentic_course_prototype/index.html)
+- **Canonical Chinese mega guide:** [docs/project1_ai_infra_tutorial_zh.html](docs/project1_ai_infra_tutorial_zh.html)
 
-**Multi-agent engineering course:** [docs/agentic_course_prototype/index.html](docs/agentic_course_prototype/index.html)<br>
-The canonical Chinese article-style course: 22 lessons with highlighted code lines, project file links, diagrams, lab checklists, and 2026 AI infra references.
+## What This Shows
 
-## Product Snapshot
+| Signal | Evidence in this repo |
+| --- | --- |
+| Multi-agent orchestration | A control-plane orchestrator routes bounded agent nodes through registered tool boundaries. |
+| Product judgment | The workflow stops at `NEED_USER_APPROVAL` before application-facing side effects. |
+| Durable execution mindset | Checkpoints each run before the human gate and resumes from the pending node after approval. |
+| Agent observability | Every run records orchestrator decisions, tool audit events, JSONL traces, and per-run quality checks. |
+| Eval-first engineering | Offline workflow evals and retrieval-level RAG evals protect behavior from silent drift. |
+| Public demo hardening | Request limits, form-only submissions, guardrails, browser security headers, request ids, rate limits, and creator-session approval. |
+| Production upgrade path | Optional adapters cover LangGraph, Claude/OpenAI providers, Langfuse, MCP, Postgres, pgvector, Docker, and Render. |
+| Teaching depth | A 22-lesson Chinese course walks through the system with diagrams, highlighted code lines, repo links, and labs. |
+
+## Product Experience
 
 ![Start a live job-agent run](docs/assets/readme/demo-home.png)
 
-The hosted product now opens as a modern job-search cockpit: status cards, an agent workflow strip, bounded specialist roster, recent activity, and the command form live on one focused operating surface. The core loop is still intentionally simple:
+The hosted UI is a compact job-search cockpit: run status, agent workflow, bounded specialist roster, recent activity, and the command form live on one operating surface.
 
 1. Paste a job description.
 2. Let bounded agent nodes analyze the role.
-3. Pause before application-facing output becomes final.
-4. Approve the resume proposal.
+3. Pause before resume or tracker output becomes final.
+4. Approve the generated proposal.
 5. Continue into tracker and interview-prep outputs.
 
 ![Human approval gate](docs/assets/readme/demo-review.png)
 
 ![Completed run after approval](docs/assets/readme/demo-complete.png)
 
-## What It Demonstrates
-
-- **Production-style orchestration:** a control-plane orchestrator records every routing decision before bounded agent nodes run.
-- **Typed shared state:** all agents read/write a single `JobSearchState` model.
-- **Human-in-the-loop control:** resume/application outputs stop at `NEED_USER_APPROVAL`.
-- **Checkpoint and resume:** paused runs can continue after approval.
-- **Offline and per-run evaluation:** deterministic eval cases protect the workflow from drift, while each run gets a quality summary.
-- **Traceability:** every run writes JSONL traces plus UI-visible orchestrator decisions and tool audit events.
-- **Production surface:** FastAPI/Jinja UI, Dockerfile, Render deployment, safety limits, and optional Postgres store.
-- **Learning bridge:** local teaching code maps cleanly to LangGraph, MCP, Langfuse, pgvector, and hosted LLM providers.
-
-## Quickstart
-
-Run the workflow until the resume proposal approval gate:
-
-```bash
-python3 -m jobagent.cli demo
-```
-
-Resume a paused run after reviewing the generated proposal:
-
-```bash
-python3 -m jobagent.cli resume <run_id> --approve
-```
-
-Run the full workflow and write a local tracker event:
-
-```bash
-python3 -m jobagent.cli demo --auto-approve
-```
-
-Run offline evals:
-
-```bash
-python3 -m jobagent.cli eval
-```
-
-Run tests:
-
-```bash
-python3 -m unittest discover -s tests
-```
-
-Run the web product locally:
-
-```bash
-uvicorn jobagent.web.app:app --reload
-```
-
-Then open <http://localhost:8000>.
-
-## Render Deployment
-
-This repo includes a Render Blueprint at [render.yaml](render.yaml). The hosted product deploys one Docker web service on Render's free web plan:
-
-- `jobagent-demo`: runs `uvicorn jobagent.web.app:app`
-- health check: `/healthz`
-- public hosted mode flag: `JOBAGENT_PUBLIC_DEMO_MODE=true`
-
-[Deploy to Render](https://render.com/deploy?repo=https://github.com/yanxuantong/multi-agent-job-search-platform)
-
-The hosted product currently avoids managed Postgres so it can launch before adding billing details. In this mode, run state uses the local checkpoint store inside the web instance and should be treated as ephemeral. For a more production-like deployment, add a Render Postgres database and set `JOBAGENT_DATABASE_URL` to its private connection string; the app will automatically switch to the Postgres run store.
-
-## Production Safety
-
-The public service is intentionally constrained:
-
-- request bodies and job descriptions have explicit size limits
-- `/runs` has a lightweight per-client rate limit
-- public submissions pass secret and prompt-injection guardrails before workflow execution
-- run ids are validated before touching the checkpoint store
-- form submissions must use `application/x-www-form-urlencoded`
-- responses include baseline browser security headers: CSP, frame protection, no-sniff, referrer policy, and permissions policy
-- every response gets an `X-Request-ID`, with `/readyz` and `/ops/status` for production smoke checks
-- `/ops/evals` runs the bundled regression suite and reports pass rate plus failure categories
-- the default workflow does not call external LLM APIs, execute user-provided code, or fetch arbitrary job URLs
-
-These controls do not make the free hosted instance a high-availability SaaS. They are meant to keep the public product safe enough for portfolio traffic while preserving a clean upgrade path to auth, durable Postgres state, queue-backed workers, and stronger edge rate limiting.
-
-## Production Hardening Notes
-
-This pass intentionally mirrors patterns from mainstream agent and workflow systems:
-
-- **Durable execution mindset:** checkpoint every run before human approval, then resume from the pending node rather than replaying the whole workflow.
-- **Control plane before agency:** `JobSearchOrchestrator` decides whether to run, stop, or ask for human approval before each node.
-- **Tool boundary audit:** each node maps to a registered tool capability and records input summary, output summary, status, latency, and cost estimate.
-- **Guardrails before agency:** reject obvious secrets, credential-shaped payloads, and instruction-override prompts before any agent node runs.
-- **Operational visibility:** expose `/healthz`, `/readyz`, `/ops/status`, `/ops/evals`, request ids, lightweight counters, and run-detail trace tables for smoke tests and incident triage.
-- **Bounded public surface:** keep the default workflow deterministic, synchronous, and cost-free until auth, queues, durable Postgres, and budget tracking are added.
-
 ## Architecture
 
 ```mermaid
 flowchart TD
-  A["JD text"] --> B["ingest"]
+  A["Job description"] --> B["ingest"]
   O["JobSearchOrchestrator"] --> B
   O --> C["jd_extract"]
   O --> D["company_research"]
@@ -137,50 +63,143 @@ flowchart TD
   E --> F
   F -->|not approved| G["NEED_USER_APPROVAL"]
   G --> K["checkpoint"]
-  K -->|resume approve| O
-  F -->|approved| H
-  O --> H["tracker"]
+  K -->|approve| O
+  F -->|approved| H["tracker"]
+  O --> H
   H --> I["interview_prep"]
   O --> I
   I --> J["COMPLETED"]
+  O --> T["decision audit"]
+  B --> T
+  C --> T
+  D --> T
+  E --> T
+  F --> T
 ```
 
-## How To Read The Code
+The important design choice is that the agents are not free-floating chat roles. Each node owns a narrow slice, reads and writes a typed `JobSearchState`, and runs only after `JobSearchOrchestrator` records whether the system should run, stop, block, or ask a human.
 
-Start with the core workflow:
+## Quickstart
 
-- [jobagent/models.py](jobagent/models.py): shared state, artifacts, and `StopReason`.
-- [jobagent/graph/engine.py](jobagent/graph/engine.py): small graph runner that mirrors the LangGraph mental model.
-- [jobagent/graph/workflow.py](jobagent/graph/workflow.py): node wiring and resume behavior.
-- [jobagent/orchestration/controller.py](jobagent/orchestration/controller.py): control-plane routing, budget checks, and HITL decisions.
-- [jobagent/tools/registry.py](jobagent/tools/registry.py): registered tool boundaries and audit event creation.
-- [jobagent/agents/](jobagent/agents): bounded agent responsibilities.
-- [jobagent/storage/checkpoint.py](jobagent/storage/checkpoint.py): local checkpoint/resume store.
-- [jobagent/web/app.py](jobagent/web/app.py): FastAPI production web surface and safety controls.
-- [jobagent/web/store.py](jobagent/web/store.py): local or Postgres-backed web run store.
-- [jobagent/evals/runner.py](jobagent/evals/runner.py): offline eval harness.
-- [jobagent/evals/run_quality.py](jobagent/evals/run_quality.py): per-run quality gate used by the product UI.
-- [jobagent/retrieval/local_rag.py](jobagent/retrieval/local_rag.py): local RAG context assembly with citations and freshness metadata.
-- [jobagent/retrieval/eval_runner.py](jobagent/retrieval/eval_runner.py): retrieval-first RAG evals before final-answer scoring.
-- [mcp_server/career_research_server.py](mcp_server/career_research_server.py): dependency-free MCP-shaped teaching stub.
+Set up a local editable install:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -e .
+```
+
+Run the workflow until the resume proposal approval gate:
+
+```bash
+python3 -m jobagent.cli demo
+```
+
+Resume a paused run after reviewing the proposal:
+
+```bash
+python3 -m jobagent.cli resume <run_id> --approve
+```
+
+Run the full workflow and write a local tracker event:
+
+```bash
+python3 -m jobagent.cli demo --auto-approve
+```
+
+Run the web product locally:
+
+```bash
+uvicorn jobagent.web.app:app --reload
+```
+
+Then open <http://localhost:8000>.
+
+## Verification
+
+| Command | What it proves |
+| --- | --- |
+| `python3 -m unittest discover -s tests` | Workflow behavior, web safety controls, eval runner, retrieval, optional integration contracts. |
+| `python3 -m jobagent.cli eval` | 15-case offline regression suite for trajectory and JD extraction behavior. |
+| `python3 -m jobagent.cli retrieval-eval` | 3-case retrieval suite with recall, precision, MRR, prohibited-hit, and freshness checks. |
+| `python3 -m jobagent.cli demo --auto-approve` | End-to-end run through tracker and interview prep, including trace and checkpoint artifacts. |
+| `curl http://localhost:8000/healthz` | Web process liveness for local and Render smoke checks. |
+| `curl http://localhost:8000/readyz` | Storage readiness and run-store health. |
 
 Local runtime artifacts are written under `.jobagent/` and ignored by git:
 
-- `.jobagent/checkpoints/<run_id>.json`
-- `.jobagent/runs/<run_id>/trace.jsonl`
-- `.jobagent/applications.jsonl`
+```text
+.jobagent/checkpoints/<run_id>.json
+.jobagent/runs/<run_id>/trace.jsonl
+.jobagent/applications.jsonl
+```
 
-## Optional Production-Stack Learning Paths
+## Code Map
+
+| Area | Start here | Why it matters |
+| --- | --- | --- |
+| Shared state | [jobagent/models.py](jobagent/models.py) | Defines `JobSearchState`, artifacts, stop reasons, retrieval contexts, eval summaries, and audit records. |
+| Graph runtime | [jobagent/graph/engine.py](jobagent/graph/engine.py), [jobagent/graph/workflow.py](jobagent/graph/workflow.py) | Runs the deterministic teaching graph and handles checkpoint/resume behavior. |
+| Control plane | [jobagent/orchestration/controller.py](jobagent/orchestration/controller.py) | Decides whether each node can run, should stop, or needs human approval. |
+| Bounded agents | [jobagent/agents/](jobagent/agents) | Implements ingestion, JD extraction, company research, fit analysis, resume tailoring, tracker update, and interview prep. |
+| Tool boundaries | [jobagent/tools/registry.py](jobagent/tools/registry.py) | Registers node capabilities and emits tool audit events. |
+| Retrieval | [jobagent/retrieval/local_rag.py](jobagent/retrieval/local_rag.py), [jobagent/retrieval/eval_runner.py](jobagent/retrieval/eval_runner.py) | Builds local RAG context with citations, freshness metadata, and retrieval-specific evals. |
+| Evals | [jobagent/evals/runner.py](jobagent/evals/runner.py), [jobagent/evals/run_quality.py](jobagent/evals/run_quality.py) | Runs offline eval suites and summarizes per-run quality for the UI. |
+| Web product | [jobagent/web/app.py](jobagent/web/app.py), [jobagent/web/store.py](jobagent/web/store.py) | FastAPI/Jinja cockpit, safety controls, local/Postgres run stores, and ops endpoints. |
+| Guardrails | [jobagent/security/input_guardrails.py](jobagent/security/input_guardrails.py) | Rejects secret-shaped and prompt-injection-shaped public submissions before workflow execution. |
+| Optional stack | [jobagent/integrations/registry.py](jobagent/integrations/registry.py) | Documents the local learning path for LangGraph, LLM providers, Langfuse, MCP, Postgres, pgvector, and Docker. |
+| MCP teaching server | [mcp_server/career_research_server.py](mcp_server/career_research_server.py), [mcp_server/career_research_sdk_server.py](mcp_server/career_research_sdk_server.py) | Shows both a dependency-free MCP-shaped boundary and an SDK-backed server path. |
+
+## Web And Deployment
+
+This repo includes a Render Blueprint at [render.yaml](render.yaml). The hosted demo deploys one Docker web service:
+
+| Service | Setting |
+| --- | --- |
+| `jobagent-demo` | Runs `uvicorn jobagent.web.app:app` from the Docker image. |
+| Health check | `/healthz` |
+| Public demo flag | `JOBAGENT_PUBLIC_DEMO_MODE=true` |
+
+[Deploy to Render](https://render.com/deploy?repo=https://github.com/yanxuantong/multi-agent-job-search-platform)
+
+The public Render demo intentionally keeps the surface bounded. It uses local checkpoint-backed run state unless `JOBAGENT_DATABASE_URL` is set, so run history should be treated as ephemeral on the free instance. In non-public mode, `/ops/evals` can run the bundled regression suite as an operational smoke check. In public demo mode, that endpoint is hidden.
+
+For a more production-like deployment, add Render Postgres or use the local [docker-compose.yml](docker-compose.yml) stack, then set `JOBAGENT_DATABASE_URL` to the private connection string. The app automatically switches from `LocalRunStore` to `PostgresRunStore`.
+
+## Safety Boundaries
+
+The public workflow is constrained by design:
+
+- It does not call external LLM APIs by default.
+- It does not execute user-provided code.
+- It does not fetch arbitrary job URLs.
+- It requires `application/x-www-form-urlencoded` submissions for run creation.
+- It enforces request and job-description size limits.
+- It rate-limits `/runs` by client.
+- It rejects obvious secrets, credentials, private keys, and instruction-override prompts.
+- It validates run ids before store lookup.
+- It binds run approval to the creator browser session.
+- It returns baseline browser security headers and request ids.
+
+These controls make the hosted product appropriate for portfolio/public-demo traffic. They do not make the free instance a high-availability SaaS. The next production steps would be authentication, durable Postgres by default, queue-backed workers, stronger edge rate limiting, abuse monitoring, source-grounded company research, and final-answer grounding evals.
+
+## Learning System
+
+JobAgent is also a guided learning artifact for agent-system engineering:
+
+- [docs/agentic_course_prototype/index.html](docs/agentic_course_prototype/index.html) is the maintained 22-lesson Chinese article course.
+- [docs/project1_ai_infra_tutorial_zh.html](docs/project1_ai_infra_tutorial_zh.html) is the canonical mega guide.
+- Course chapters connect the running code to core agent-system topics: graph orchestration, shared state, bounded agents, stop reasons, HITL, checkpoint/resume, tool use, memory, local RAG, MCP, LLM provider boundaries, LangGraph migration, observability, offline evals, guardrails, web productization, deployment, scale readiness, debugging, and upgrade decisions.
+
+## Optional Production-Stack Paths
 
 | Stack item | Code entrypoint | Install hint | Cost note |
 | --- | --- | --- | --- |
-| Local RAG | `jobagent/retrieval/local_rag.py`, `jobagent/retrieval/eval_runner.py` | Built in; run `python3 -m jobagent.cli retrieval-eval` | Local keyword retrieval is free; hosted embeddings/rerankers may cost money. |
-| LangGraph | `jobagent/graph/langgraph_reference.py` | `python3 -m pip install -e '.[langgraph]'` | Local library is free; production checkpointers may need Postgres. |
-| Claude/OpenAI SDKs | `jobagent/llm/anthropic_provider.py`, `jobagent/llm/openai_provider.py` | `python3 -m pip install -e '.[llm]'` | API usage is usually billed per token. |
-| Langfuse | `jobagent/observability/langfuse_exporter.py` | `python3 -m pip install -e '.[observability]'` | Self-host can be free; hosted tiers may be paid. |
-| Postgres/pgvector | `jobagent/storage/postgres_memory.py`, `docker-compose.yml` | `docker compose up postgres -d` | Local Docker is free; managed databases are paid. |
-| External MCP consumer | `jobagent/integrations/external_mcp_tracker.py` | Connect after choosing Notion or Sheets MCP credentials | Workspace features may cost money. |
-| MCP SDK server | `mcp_server/career_research_sdk_server.py` | `python3 -m pip install -e '.[mcp]'` | SDK is free; connected tools may have API costs. |
-| Docker | `Dockerfile`, `docker-compose.yml` | `docker compose run --rm app` | Local Docker is free; cloud deploy may require billing. |
-
-The deeper explanation lives in the mega guide: [docs/project1_ai_infra_tutorial_zh.html](docs/project1_ai_infra_tutorial_zh.html).
+| Local RAG | [jobagent/retrieval/local_rag.py](jobagent/retrieval/local_rag.py), [jobagent/retrieval/eval_runner.py](jobagent/retrieval/eval_runner.py) | Built in; run `python3 -m jobagent.cli retrieval-eval` | Local keyword retrieval is free; hosted embeddings or rerankers may cost money. |
+| LangGraph | [jobagent/graph/langgraph_reference.py](jobagent/graph/langgraph_reference.py) | `python3 -m pip install -e '.[langgraph]'` | Local library is free; production checkpointers may need Postgres. |
+| Claude/OpenAI SDKs | [jobagent/llm/anthropic_provider.py](jobagent/llm/anthropic_provider.py), [jobagent/llm/openai_provider.py](jobagent/llm/openai_provider.py) | `python3 -m pip install -e '.[llm]'` | API usage is usually billed per token. |
+| Langfuse | [jobagent/observability/langfuse_exporter.py](jobagent/observability/langfuse_exporter.py) | `python3 -m pip install -e '.[observability]'` | Self-host can be free; hosted tiers may be paid. |
+| Postgres/pgvector | [jobagent/storage/postgres_memory.py](jobagent/storage/postgres_memory.py), [docker-compose.yml](docker-compose.yml) | `docker compose up postgres -d` | Local Docker is free; managed databases are paid. |
+| External MCP consumer | [jobagent/integrations/external_mcp_tracker.py](jobagent/integrations/external_mcp_tracker.py) | Connect after choosing Notion or Sheets MCP credentials | Workspace features may cost money. |
+| MCP SDK server | [mcp_server/career_research_sdk_server.py](mcp_server/career_research_sdk_server.py) | `python3 -m pip install -e '.[mcp]'` | SDK is free; connected tools may have API costs. |
+| Docker | [Dockerfile](Dockerfile), [docker-compose.yml](docker-compose.yml) | `docker compose run --rm app` | Local Docker is free; cloud deploy may require billing. |
