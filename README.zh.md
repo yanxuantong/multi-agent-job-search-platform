@@ -2,22 +2,17 @@
 
 [English version](README.md)
 
-这是一个可以直接使用的 agentic job-search product。它面向学习和作品集展示，但不是只停留在 architecture diagram 上，而是已经部署成一个可以打开、可以提交 JD、可以看到 agent workflow 结果的线上产品。
+这是一个可以直接使用的 agentic job-search product。它面向作品集展示和真实 demo 体验，但不是只停留在 architecture diagram 上，而是已经部署成一个可以打开、可以提交 JD、可以看到 agent workflow 结果的线上产品。
 
 默认路径刻意保持 deterministic 和 low-cost：不需要 API key，不需要托管向量数据库，也不依赖脆弱的外部调用。先把 multi-agent production pattern 看清楚，再逐步替换成 LangGraph、LLM providers、MCP tools、Langfuse、Postgres 或 pgvector。
 
 **线上产品:** [https://jobagent-demo.onrender.com](https://jobagent-demo.onrender.com)
 
-**完整中文 mega guide:** [docs/project1_ai_infra_tutorial_zh.html](docs/project1_ai_infra_tutorial_zh.html)
-
-**Multi-Agent 工程系列教程:** [docs/agentic_course_prototype/index.html](docs/agentic_course_prototype/index.html)<br>
-这是现在唯一维护的中文课程版本：24 章文章式教程，包含重点代码行高亮、项目文件链接、图解、lab checklist 和 2026 AI infra 扩展阅读。
-
 ## 产品叙事
 
 JobAgent 同时服务两类读者：一类是真正想把求职准备流程跑顺的 job seeker，另一类是想看懂 agent 系统如何产品化的工程师。用户痛点不是“再来一个聊天框”，而是求职任务本身跨越很多风险边界：从 JD 抽取 role signals、判断简历叙事是否可信、保留证据，到任何 application-facing 输出生效前都必须让人审批。
 
-所以这个产品故意做成 workflow cockpit，而不是开放式聊天 UI。后端继续拥有 state、approval、checkpoint、trace 和 eval 的权威；web layer 负责把这些系统决策展示成用户能理解、能操作的界面。当前 React/TypeScript frontend rewrite 也延续这个边界：交互 cockpit 放在 `jobagent/web/frontend/*`，build 后的 assets 从 `jobagent/web/static/assets/*` 提供，Jinja templates 收缩成 React mount points。
+所以这个产品故意做成 workflow cockpit，而不是开放式聊天 UI。后端继续拥有 state、approval、checkpoint、trace 和 eval 的权威；web layer 负责把这些系统决策展示成用户能理解、能操作的界面。当前 React/TypeScript frontend 也延续这个边界：交互 cockpit 放在 `jobagent/web/frontend/*`，build 后的 assets 从 `jobagent/web/static/assets/*` 提供，Jinja templates 收缩成 React mount points。
 
 什么叫“好”，由 eval 定义，而不是由某一次生成文本看起来顺不顺来定义。一个 run 应该到达预期 trajectory 和 `StopReason`，抽取正确 JD signals，保留 human approval gate，让 retrieval evidence 可检查，并生成 UI 所需的关键 artifacts。workflow eval、retrieval eval 和 per-run quality summary 共同回答这个系统有没有退化。
 
@@ -25,7 +20,7 @@ JobAgent 同时服务两类读者：一类是真正想把求职准备流程跑�
 
 ![Start a live job-agent run](docs/assets/readme/demo-home.png)
 
-这个 hosted product 现在更像一个现代 job-search cockpit：状态卡、agent workflow strip、bounded specialist roster、recent activity 和 command form 都放在一个聚焦的操作面里。核心闭环仍然保持简单：
+这个 hosted product 现在更像一个现代 typed job-search cockpit：状态卡、agent workflow strip、bounded specialist roster、recent activity、approval state、eval summary 和 command form 都放在一个聚焦的操作面里。核心闭环仍然保持简单：
 
 1. 粘贴职位描述。
 2. 让 bounded agent nodes 分析职位。
@@ -45,8 +40,9 @@ JobAgent 同时服务两类读者：一类是真正想把求职准备流程跑�
 - **Checkpoint and resume:** 暂停后的 run 可以在人工确认后继续。
 - **Offline and per-run evaluation:** deterministic eval cases 保护 workflow，每次 run 也会生成 quality summary。
 - **Traceability:** 每次 run 都写出 JSONL traces，并在 UI 里展示 orchestrator decisions 和 tool audit events。
-- **Production surface:** FastAPI/Jinja UI、Dockerfile、Render deployment、安全限制，以及 optional Postgres store。
-- **Learning bridge:** 本地教学代码可以映射到 LangGraph、MCP、Langfuse、pgvector 和 hosted LLM providers。
+- **Typed product frontend:** React/TypeScript cockpit 负责前端交互状态、timeline、approval controls、eval summary 和 responsive UI。
+- **Production surface:** FastAPI web app、React assets、Dockerfile、Render deployment、安全限制，以及 optional Postgres store。
+- **Extensible stack:** 本地 deterministic runtime 可以逐步替换或扩展到 LangGraph、MCP、Langfuse、pgvector 和 hosted LLM providers。
 
 ## 本地运行
 
@@ -164,6 +160,8 @@ flowchart TD
 - [jobagent/storage/checkpoint.py](jobagent/storage/checkpoint.py): local checkpoint/resume store。
 - [jobagent/web/app.py](jobagent/web/app.py): FastAPI production web surface 和安全控制。
 - [jobagent/web/store.py](jobagent/web/store.py): local 或 Postgres-backed web run store。
+- [jobagent/web/frontend/main.tsx](jobagent/web/frontend/main.tsx): React/TypeScript cockpit，负责首页、run detail、approval gate、eval summary 和 timeline。
+- [jobagent/web/frontend/styles.css](jobagent/web/frontend/styles.css): responsive product UI styling。
 - [jobagent/evals/runner.py](jobagent/evals/runner.py): offline eval harness。
 - [jobagent/evals/run_quality.py](jobagent/evals/run_quality.py): product UI 使用的 per-run quality gate。
 - [jobagent/retrieval/local_rag.py](jobagent/retrieval/local_rag.py): 带 citation 与 freshness metadata 的本地 RAG context assembly。
@@ -176,7 +174,7 @@ flowchart TD
 - `.jobagent/runs/<run_id>/trace.jsonl`
 - `.jobagent/applications.jsonl`
 
-## Optional Production-Stack Learning Paths
+## Optional Production-Stack Paths
 
 | Stack item | Code entrypoint | Install hint | Cost note |
 | --- | --- | --- | --- |
@@ -188,5 +186,3 @@ flowchart TD
 | External MCP consumer | `jobagent/integrations/external_mcp_tracker.py` | 选择 Notion 或 Sheets MCP credentials 后连接 | Workspace features 可能收费。 |
 | MCP SDK server | `mcp_server/career_research_sdk_server.py` | `python3 -m pip install -e '.[mcp]'` | SDK 免费；connected tools 可能有 API costs。 |
 | Docker | `Dockerfile`, `docker-compose.yml` | `docker compose run --rm app` | Local Docker 免费；cloud deploy 可能需要 billing。 |
-
-更完整的技术解释在中文 mega guide：[docs/project1_ai_infra_tutorial_zh.html](docs/project1_ai_infra_tutorial_zh.html)。
