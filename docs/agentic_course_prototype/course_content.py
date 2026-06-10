@@ -995,5 +995,365 @@ PY
     </div>
   </div>
 """,
-}
+    "12_langgraph": """
+  <div class="deep-dive">
+    <h3>这章真正解决的问题</h3>
+    <p>第 12 章不是要你立刻把教学版 <code>GraphEngine</code> 替换掉，而是要建立迁移判断力：当 workflow 开始需要 durable execution、interrupt、resume、streaming、distributed worker 和可视化调试时，哪些本地概念应该一一映射到 LangGraph。</p>
+    <div class="system-map">
+      <div class="map-row"><strong>Teaching Engine</strong><span><code>jobagent/graph/engine.py</code> 用最少代码表达 node、edge、budget、stop_reason、pending_node、trace span。它是理解概念的底座。</span></div>
+      <div class="map-row"><strong>Workflow Contract</strong><span><code>jobagent/graph/workflow.py</code> 是 canonical graph wiring。迁移到 LangGraph 时，最应该保持的是节点职责和状态 contract，而不是一行行照搬 engine。</span></div>
+      <div class="map-row"><strong>Reference Adapter</strong><span><code>jobagent/graph/langgraph_reference.py</code> 展示如何把 <code>JobSearchState</code> 包进 <code>StateGraph</code>，并把 resume gate 映射成 conditional routing。</span></div>
+      <div class="map-row"><strong>Interrupt Boundary</strong><span>当前系统用 <code>StopReason.NEED_USER_APPROVAL</code> 和 <code>pending_node</code> 表达 HITL 暂停；LangGraph 里可以升级为 interrupt/checkpointer 模式。</span></div>
+      <div class="map-row"><strong>Durability</strong><span><code>JsonCheckpointStore</code> 是学习版 checkpoint；生产路径会迁移到 LangGraph checkpointer 或数据库-backed state。</span></div>
+    </div>
 
+    <h3>代码解读：每个文件负责什么</h3>
+    <div class="code-map">
+      <div class="code-item"><h4><code>jobagent/graph/engine.py</code></h4><p>本地 orchestrator。它负责按节点名调度、检查预算、记录 trace、处理 stop_reason，并在暂停时写下 <code>pending_node</code>。读这个文件时重点看控制流，而不是把它当成生产框架。</p></div>
+      <div class="code-item"><h4><code>jobagent/graph/workflow.py</code></h4><p>业务 workflow 的唯一装配点。哪些 agent 节点存在、它们如何连接、resume 后从哪里继续，都应该先在这里理解清楚。</p></div>
+      <div class="code-item"><h4><code>jobagent/graph/langgraph_reference.py</code></h4><p>LangGraph 迁移参考，不是默认 runtime。它把教学 engine 的概念翻译成 <code>StateGraph</code>、conditional edges 和 checkpointer，并用 optional dependency 保持主路径轻量。</p></div>
+      <div class="code-item"><h4><code>jobagent/models.py</code></h4><p><code>JobSearchState</code> 是迁移时最重要的资产。框架可以换，但 state schema、artifact 字段、stop_reason 和审批语义必须稳定。</p></div>
+      <div class="code-item"><h4><code>tests/test_optional_integrations.py</code></h4><p>验证 optional integration 的边界：没装 LangGraph 时不让主测试坏掉；装了以后能检查 reference app 构建路径。</p></div>
+    </div>
+
+    <h3>动手实验：按顺序执行</h3>
+    <div class="lab-steps">
+      <div class="lab-step"><h4>实验 1：对照两个 graph 文件</h4><p>目标：找出本地 engine 与 LangGraph reference 的概念映射。</p><pre><code>sed -n '1,140p' jobagent/graph/engine.py
+sed -n '1,220p' jobagent/graph/langgraph_reference.py</code></pre><p>记录：node wrapper 在哪里、conditional route 在哪里、checkpoint 在哪里、HITL 暂停如何表达。</p></div>
+      <div class="lab-step"><h4>实验 2：跑 optional integration 测试</h4><p>目标：确认 LangGraph 是可选增强，不影响默认学习路径。</p><pre><code>.venv/bin/python -m unittest tests.test_optional_integrations</code></pre><p>如果环境没装 LangGraph，测试应该 skip 或验证 graceful boundary；这就是 optional dependency 的正确行为。</p></div>
+      <div class="lab-step"><h4>实验 3：写一张迁移表</h4><p>目标：把“换框架”变成可执行迁移计划。</p><pre><code>rg -n "GraphEngine|pending_node|StopReason|JsonCheckpointStore|build_langgraph" jobagent tests</code></pre><p>把每个结果分到四列：current concept、LangGraph concept、must preserve、migration risk。这个表比直接改代码更有价值。</p></div>
+    </div>
+
+    <h3>工程选择 Q&amp;A</h3>
+    <div class="qa-grid">
+      <div class="qa-card"><h4>Q: 现在应该直接迁移 LangGraph 吗？</h4><p><strong>A:</strong> 不急。当前目标是学习和 portfolio，教学 engine 更透明。等你要做长任务、复杂分支、跨进程 resume、生产级 checkpoint 和可视化 debug，再迁移更自然。</p></div>
+      <div class="qa-card"><h4>Q: 迁移时最怕丢什么？</h4><p><strong>A:</strong> 最怕丢 state contract、eval suite 和 HITL 语义。框架 API 可以重写，但用户审批边界、trace 证据、checkpoint 恢复必须保持。</p></div>
+      <div class="qa-card"><h4>Q: LangGraph 会不会让系统自动变 production-ready？</h4><p><strong>A:</strong> 不会。它提供 durable workflow primitives，但 auth、rate limit、data retention、eval、observability、deployment 和 cost control 仍然要你设计。</p></div>
+      <div class="qa-card"><h4>Q: 面试时怎么讲这一章？</h4><p><strong>A:</strong> 讲“我先用小 engine 学清楚 orchestrator 的 invariants，再保留 LangGraph 迁移适配层”。这比只说“我用了 LangGraph”更像 AI infra 工程师。</p></div>
+    </div>
+  </div>
+""",
+    "13_observability": """
+  <div class="deep-dive">
+    <h3>这章真正解决的问题</h3>
+    <p>第 13 章把 agent 从“看最终输出”推进到“看执行证据”。一个 multi-agent workflow 出错时，最终结果只告诉你它错了，trace 才告诉你它在哪里、为什么、用什么状态错了。</p>
+    <div class="system-map">
+      <div class="map-row"><strong>Run</strong><span>每次 workflow 都有 run_id，trace、checkpoint、web detail 都围绕同一个 run_id 聚合。</span></div>
+      <div class="map-row"><strong>Span</strong><span><code>JsonlTracer.span(node)</code> 让每个 agent node 都产生 started_at、completed_at、status、metadata。</span></div>
+      <div class="map-row"><strong>Metadata</strong><span>engine 会把 next_node、stop_reason、steps_used 等信息写进 span，形成可复盘的执行轨迹。</span></div>
+      <div class="map-row"><strong>Export</strong><span><code>langfuse_exporter.py</code> 说明本地 JSONL trace 如何映射到外部观测平台。</span></div>
+      <div class="map-row"><strong>Product</strong><span>web run detail 和 ops endpoints 使用这些证据，让用户和开发者都能知道系统当前状态。</span></div>
+    </div>
+
+    <h3>代码解读：每个文件负责什么</h3>
+    <div class="code-map">
+      <div class="code-item"><h4><code>jobagent/observability/tracer.py</code></h4><p>本地 trace 核心。<code>JsonlTracer</code> 创建 span，<code>TraceEvent</code> 规定事件结构，<code>_TraceSpan</code> 在进入和退出节点时写 JSONL。</p></div>
+      <div class="code-item"><h4><code>jobagent/graph/engine.py</code></h4><p>调用 tracer 的地方。engine 不只调节点，还把节点结果转成 trace metadata，因此调度和观测是连在一起的。</p></div>
+      <div class="code-item"><h4><code>jobagent/observability/langfuse_exporter.py</code></h4><p>外部观测平台适配器。它把本地 trace event 转成 Langfuse observation，展示“本地先打证据，再接平台”的升级方式。</p></div>
+      <div class="code-item"><h4><code>tests/test_learning_integrations.py</code></h4><p>用 fake Langfuse client 测 exporter，不需要真实凭证。这个测试模式很适合学习外部 SDK integration。</p></div>
+      <div class="code-item"><h4><code>.jobagent/runs/&lt;run_id&gt;/trace.jsonl</code></h4><p>真实运行后的证据文件。调试时先看这里，而不是先猜 prompt 或 UI。</p></div>
+    </div>
+
+    <h3>动手实验：按顺序执行</h3>
+    <div class="lab-steps">
+      <div class="lab-step"><h4>实验 1：生成一条本地 trace</h4><pre><code>.venv/bin/python -m jobagent.cli demo --auto-approve
+latest=$(find .jobagent/runs -name trace.jsonl -print | sort | tail -1)
+sed -n '1,80p' "$latest"</code></pre><p>目标：看到每个 node 的 started/completed 事件，以及 metadata 里的 next_node 和 stop_reason。</p></div>
+      <div class="lab-step"><h4>实验 2：阅读 tracer 写入逻辑</h4><pre><code>sed -n '1,140p' jobagent/observability/tracer.py
+sed -n '35,75p' jobagent/graph/engine.py</code></pre><p>目标：确认 trace 是由 workflow 执行自然产生的，不是事后拼出来的日志。</p></div>
+      <div class="lab-step"><h4>实验 3：验证 Langfuse exporter 的 fake-client 测试</h4><pre><code>.venv/bin/python -m unittest tests.test_learning_integrations</code></pre><p>目标：学习怎样在没有真实外部账号时测试 integration contract。</p></div>
+    </div>
+
+    <h3>工程选择 Q&amp;A</h3>
+    <div class="qa-grid">
+      <div class="qa-card"><h4>Q: log、metric、trace 谁最先做？</h4><p><strong>A:</strong> agent workflow 先做 trace。因为 agent 质量问题通常是路径问题：哪个节点看到了什么、调用了什么、为什么停下。</p></div>
+      <div class="qa-card"><h4>Q: 是否记录完整 prompt 和输出？</h4><p><strong>A:</strong> 开发期很有用，生产期要经过 redaction、retention 和 access control。求职产品里可能有简历、公司、个人经历，不能随便外发。</p></div>
+      <div class="qa-card"><h4>Q: 什么时候接 Langfuse 或 OpenTelemetry？</h4><p><strong>A:</strong> 当 trace 不只是给你本地 debug，而要支持 dashboard、团队排查、eval linkage、成本/延迟分析时，就值得接。</p></div>
+      <div class="qa-card"><h4>Q: Trace 和 eval 怎么配合？</h4><p><strong>A:</strong> eval 告诉你失败了，trace 告诉你失败路径。最好的 agent regression 报告应该能从 failed case 直接跳到 trace。</p></div>
+    </div>
+  </div>
+""",
+    "15_guardrails": """
+  <div class="deep-dive">
+    <h3>这章真正解决的问题</h3>
+    <p>第 15 章把系统边界放在模型能力之前：公开产品不能把任意文本直接交给 agent。攻击、误输入、secret 泄露、run id 猜测、超大请求和未授权审批都应该在 workflow 外层先被限制。</p>
+    <div class="system-map">
+      <div class="map-row"><strong>Request Boundary</strong><span>FastAPI middleware 限制请求体大小、设置 security headers，并把异常变成可控响应。</span></div>
+      <div class="map-row"><strong>Input Inspection</strong><span><code>inspect_public_submission()</code> 在创建 run 前扫描 secret 和 prompt injection pattern。</span></div>
+      <div class="map-row"><strong>Run Identity</strong><span><code>_validate_run_id_or_404()</code> 避免路径遍历和奇怪 run id 进入 checkpoint/store 层。</span></div>
+      <div class="map-row"><strong>Approval Ownership</strong><span>公开模式下审批绑定 creator session，防止别人拿到 run_id 后替你批准。</span></div>
+      <div class="map-row"><strong>Ops Exposure</strong><span><code>JOBAGENT_PUBLIC_DEMO_MODE</code> 会隐藏敏感 ops surface，避免公开 demo 泄露过多运行细节。</span></div>
+    </div>
+
+    <h3>代码解读：每个文件负责什么</h3>
+    <div class="code-map">
+      <div class="code-item"><h4><code>jobagent/security/input_guardrails.py</code></h4><p>输入安全扫描器。它返回结构化 <code>GuardrailFinding</code>，让 UI/API 能解释为什么拒绝，而不是只给一个模糊错误。</p></div>
+      <div class="code-item"><h4><code>jobagent/web/app.py</code></h4><p>安全边界最多的文件：body limit、headers、rate limit、run id validation、submission validation、public demo mode、approval owner session 都在这里。</p></div>
+      <div class="code-item"><h4><code>tests/test_input_guardrails.py</code></h4><p>验证 secret/prompt-injection pattern。这里适合加入未来真实攻击样例，作为安全 regression suite。</p></div>
+      <div class="code-item"><h4><code>tests/test_web_app.py</code></h4><p>覆盖 web public surface：创建 run、审批、ops route、run id validation、公开模式行为。安全补丁应该优先在这里加测试。</p></div>
+    </div>
+
+    <h3>动手实验：按顺序执行</h3>
+    <div class="lab-steps">
+      <div class="lab-step"><h4>实验 1：跑 guardrail 和 web 安全测试</h4><pre><code>.venv/bin/python -m unittest tests.test_input_guardrails tests.test_web_app</code></pre><p>目标：确认入口安全边界有回归保护。</p></div>
+      <div class="lab-step"><h4>实验 2：阅读 public submission 检查</h4><pre><code>sed -n '1,140p' jobagent/security/input_guardrails.py
+rg -n "guardrail|PUBLIC_DEMO|approve|rate|run_id" jobagent/web/app.py</code></pre><p>目标：把安全控制分成输入、身份、速率、运维暴露、审批五类。</p></div>
+      <div class="lab-step"><h4>实验 3：设计一个攻击样例</h4><pre><code>sed -n '1,220p' tests/test_input_guardrails.py</code></pre><p>目标：新增测试前先写出攻击意图：它是 secret 泄露、prompt injection、越权审批，还是 DoS？安全测试应该对应威胁模型。</p></div>
+    </div>
+
+    <h3>工程选择 Q&amp;A</h3>
+    <div class="qa-grid">
+      <div class="qa-card"><h4>Q: Guardrail 应该 blocking 还是 warning？</h4><p><strong>A:</strong> secret、credential、越权外部写入、审批绕过应该 blocking；低质量输入、缺少 URL、信息不完整可以 warning 或引导用户补充。</p></div>
+      <div class="qa-card"><h4>Q: 模型级 guardrail 够吗？</h4><p><strong>A:</strong> 不够。模型 guardrail 是一层，但 web request、tool permission、MCP server、external side effect、HITL 都需要系统级边界。</p></div>
+      <div class="qa-card"><h4>Q: 误杀怎么办？</h4><p><strong>A:</strong> Finding 要可解释，UI 要给用户改写输入的机会。真正需要 override 的场景必须有审计记录和权限控制。</p></div>
+      <div class="qa-card"><h4>Q: 对 portfolio 来说安全做到什么程度？</h4><p><strong>A:</strong> 至少能讲清 threat model，并用测试证明 public route、approval、run id、request size、secret scanning 有基本保护。</p></div>
+    </div>
+  </div>
+""",
+    "16_web_product": """
+  <div class="deep-dive">
+    <h3>这章真正解决的问题</h3>
+    <p>第 16 章把 agent workflow 从脚本变成产品。对求职平台来说，UI 的价值不是好看而已，而是让用户理解系统现在做到哪里、需要他们批准什么、哪些输出已经可以信任。</p>
+    <div class="system-map">
+      <div class="map-row"><strong>Home</strong><span><code>index.html</code> 是 command center：提交 JD、查看 workflow strip、理解 bounded agents。</span></div>
+      <div class="map-row"><strong>Create Run</strong><span><code>POST /runs</code> 校验输入、通过 guardrail、创建 workflow run，并写入 store/checkpoint。</span></div>
+      <div class="map-row"><strong>Review Gate</strong><span>resume proposal 生成后进入 approval 状态，UI 展示 proposal 和风险，让人类决定是否继续。</span></div>
+      <div class="map-row"><strong>Run Detail</strong><span><code>run.html</code> 展示 artifacts、trace rows、retrieval evidence、tool audit 和最终结果。</span></div>
+      <div class="map-row"><strong>Ops</strong><span><code>/healthz</code>、<code>/readyz</code>、<code>/ops/status</code> 让部署环境能判断服务状态。</span></div>
+    </div>
+
+    <h3>代码解读：每个文件负责什么</h3>
+    <div class="code-map">
+      <div class="code-item"><h4><code>jobagent/web/app.py</code></h4><p>FastAPI product shell。它连接表单、store、workflow、approval、ops endpoint 和模板渲染，是产品化的中枢。</p></div>
+      <div class="code-item"><h4><code>jobagent/web/store.py</code></h4><p>run store 抽象。LocalRunStore 适合本地/公开 demo；PostgresRunStore 是 durable state 的升级边界。</p></div>
+      <div class="code-item"><h4><code>jobagent/web/templates/index.html</code></h4><p>首页产品体验。它应该让用户不用懂内部代码也能开始一次 job-agent run。</p></div>
+      <div class="code-item"><h4><code>jobagent/web/templates/run.html</code></h4><p>run detail 页面。这里最能体现 agent product 与普通表单的差异：状态、审批、证据、trace、RAG context 都在同一页。</p></div>
+      <div class="code-item"><h4><code>jobagent/web/static/app.css</code></h4><p>产品 UI 的视觉系统。它不仅管颜色，还影响信息密度、卡片层级、移动端可读性和审批区域的清晰度。</p></div>
+    </div>
+
+    <h3>动手实验：按顺序执行</h3>
+    <div class="lab-steps">
+      <div class="lab-step"><h4>实验 1：本地启动产品面</h4><pre><code>.venv/bin/uvicorn jobagent.web.app:app --host 127.0.0.1 --port 8000</code></pre><p>打开 <code>http://127.0.0.1:8000</code>，提交 sample JD，观察从 pending approval 到 completed 的页面变化。</p></div>
+      <div class="lab-step"><h4>实验 2：阅读 route 到模板的数据流</h4><pre><code>rg -n "TemplateResponse|create_run|approve_run|_run_summary|_trace_rows|_workflow_steps" jobagent/web/app.py
+sed -n '1,220p' jobagent/web/templates/run.html</code></pre><p>目标：弄清楚每个 UI 区块的数据来自 state、store、trace 还是 helper。</p></div>
+      <div class="lab-step"><h4>实验 3：跑 web regression 测试</h4><pre><code>.venv/bin/python -m unittest tests.test_web_app</code></pre><p>目标：确认 UI/API 关键流程没有被文案或路由调整破坏。</p></div>
+    </div>
+
+    <h3>工程选择 Q&amp;A</h3>
+    <div class="qa-grid">
+      <div class="qa-card"><h4>Q: Agent UI 应该是聊天框还是 cockpit？</h4><p><strong>A:</strong> JobAgent 更适合 cockpit。它是有阶段、有审批、有证据链的 workflow，用户关心状态和决策点，不只是自由聊天。</p></div>
+      <div class="qa-card"><h4>Q: 中间结果要不要展示？</h4><p><strong>A:</strong> 要展示能帮助用户判断的中间结果：fit concerns、resume proposal、RAG evidence、trace summary。不要把所有内部字段都塞进页面。</p></div>
+      <div class="qa-card"><h4>Q: 错误提示怎么分层？</h4><p><strong>A:</strong> UI 给用户可行动的错误，trace/log 给开发者技术细节。两者应该由同一 run_id 连接起来。</p></div>
+      <div class="qa-card"><h4>Q: 为什么 portfolio 需要 UI？</h4><p><strong>A:</strong> 因为 FDE/AI engineer 不只是写 workflow，还要把复杂系统交到用户手里。UI 是你理解产品边界的证据。</p></div>
+    </div>
+  </div>
+""",
+    "17_deployment": """
+  <div class="deep-dive">
+    <h3>这章真正解决的问题</h3>
+    <p>第 17 章回答“它能不能被别人打开使用”。部署 agent product 不是只把 Python 服务跑起来，还要说明健康检查、配置、状态持久性、成本、安全边界和后续升级路径。</p>
+    <div class="system-map">
+      <div class="map-row"><strong>Container</strong><span><code>Dockerfile</code> 定义可重复运行环境，生产命令启动 <code>uvicorn jobagent.web.app:app</code>。</span></div>
+      <div class="map-row"><strong>Local Stack</strong><span><code>docker-compose.yml</code> 让 web、Postgres、Langfuse 等组件可以在本地组合验证。</span></div>
+      <div class="map-row"><strong>Render Blueprint</strong><span><code>render.yaml</code> 描述托管服务、健康检查、环境变量和 public demo mode。</span></div>
+      <div class="map-row"><strong>Runtime Health</strong><span><code>/healthz</code> 证明进程活着；<code>/readyz</code> 应该证明依赖和 store 能工作。</span></div>
+      <div class="map-row"><strong>Boundary</strong><span>公开 demo 可以使用轻量 state，但 production SaaS 需要 durable store、auth、queue、observability backend 和 budget controls。</span></div>
+    </div>
+
+    <h3>代码解读：每个文件负责什么</h3>
+    <div class="code-map">
+      <div class="code-item"><h4><code>Dockerfile</code></h4><p>部署镜像入口。它说明服务运行需要哪些系统层、Python 包和启动命令。</p></div>
+      <div class="code-item"><h4><code>render.yaml</code></h4><p>Render 部署蓝图。重点看 <code>healthCheckPath</code>、环境变量和是否启用 public demo mode。</p></div>
+      <div class="code-item"><h4><code>docker-compose.yml</code></h4><p>本地 production-like 环境。它适合练习服务依赖、Postgres、observability backend 的组合。</p></div>
+      <div class="code-item"><h4><code>jobagent/web/app.py</code></h4><p>暴露 health/readiness/ops endpoints。部署平台依赖这些 endpoint 判断服务是否可以接流量。</p></div>
+      <div class="code-item"><h4><code>deploy/langfuse/README.md</code></h4><p>观测平台部署说明。它把第 13 章 trace 能力推进到外部系统。</p></div>
+    </div>
+
+    <h3>动手实验：按顺序执行</h3>
+    <div class="lab-steps">
+      <div class="lab-step"><h4>实验 1：读部署蓝图</h4><pre><code>sed -n '1,180p' render.yaml
+sed -n '1,160p' Dockerfile</code></pre><p>目标：找出启动命令、健康检查、环境变量和 public demo 边界。</p></div>
+      <div class="lab-step"><h4>实验 2：本地检查 health/readiness</h4><pre><code>.venv/bin/uvicorn jobagent.web.app:app --host 127.0.0.1 --port 8000
+# 另开终端:
+curl -s http://127.0.0.1:8000/healthz
+curl -s http://127.0.0.1:8000/readyz
+curl -s http://127.0.0.1:8000/ops/status</code></pre><p>目标：理解部署平台看到的不是 UI，而是这些运行状态信号。</p></div>
+      <div class="lab-step"><h4>实验 3：检查当前 store 边界</h4><pre><code>sed -n '1,220p' jobagent/web/store.py
+rg -n "JOBAGENT_DATABASE_URL|PUBLIC_DEMO|readyz|ops/status" jobagent/web/app.py render.yaml README.md</code></pre><p>目标：写出 demo state 与 durable production state 的差异。</p></div>
+    </div>
+
+    <h3>工程选择 Q&amp;A</h3>
+    <div class="qa-grid">
+      <div class="qa-card"><h4>Q: Render 部署就等于 production-ready 吗？</h4><p><strong>A:</strong> 不等于。它证明可公开访问和可运行，但 production-ready 还需要持久状态、认证、队列、审计、监控、预算和恢复证据。</p></div>
+      <div class="qa-card"><h4>Q: 什么时候必须上 Postgres？</h4><p><strong>A:</strong> 当用户期望历史 run 不丢、审批可恢复、多实例共享状态，或者你要分析运行数据时。</p></div>
+      <div class="qa-card"><h4>Q: 什么时候必须上 queue？</h4><p><strong>A:</strong> 当 workflow 超过 request timeout、外部 API 慢、需要 retry/backoff，或并发 run 会阻塞 web worker 时。</p></div>
+      <div class="qa-card"><h4>Q: 免费托管会不会有成本风险？</h4><p><strong>A:</strong> 如果不接真实 LLM，成本主要是 hosting。接真实模型后必须做 rate limit、budget cap、key isolation 和 abuse monitoring。</p></div>
+    </div>
+  </div>
+""",
+    "18_10x_scale_readiness": """
+  <div class="deep-dive">
+    <h3>这章真正解决的问题</h3>
+    <p>第 18 章训练的是 production judgment。JobAgent 已经是 production-shaped：有 web surface、typed state、checkpoint、trace、eval、guardrails 和部署。但它还不是 full SaaS，因为 10x traffic 会首先打到执行、状态、恢复和运维层。</p>
+    <div class="system-map">
+      <div class="map-row"><strong>Execution</strong><span>当前 <code>POST /runs</code> 同步执行 workflow。10x 后应拆成 web request + background job + status polling。</span></div>
+      <div class="map-row"><strong>State</strong><span>LocalRunStore/JSON checkpoint 适合学习和 demo；durable beta 需要 Postgres、migration、connection pooling 和 backup。</span></div>
+      <div class="map-row"><strong>Concurrency</strong><span>内存 rate limit 和单进程状态不适合多实例。生产要用共享 rate limit 和 idempotency key。</span></div>
+      <div class="map-row"><strong>Recovery</strong><span>approval、resume、tool side effect 都需要幂等设计，避免重复提交或丢失用户决策。</span></div>
+      <div class="map-row"><strong>Evidence</strong><span>readiness 需要测试、eval、restart smoke、ops endpoint、trace 和安全验证共同证明。</span></div>
+    </div>
+
+    <h3>代码解读：每个文件负责什么</h3>
+    <div class="code-map">
+      <div class="code-item"><h4><code>jobagent/web/app.py</code></h4><p>当前 request lifecycle 所在地。重点读 <code>create_run</code> 和 <code>approve_run</code>：它们告诉你同步执行、审批 resume 和错误处理在哪里发生。</p></div>
+      <div class="code-item"><h4><code>jobagent/web/store.py</code></h4><p>LocalRunStore 与 PostgresRunStore 的边界。这里决定 run summary、creator session、approval 状态和持久化能力。</p></div>
+      <div class="code-item"><h4><code>jobagent/storage/checkpoint.py</code></h4><p>workflow state checkpoint。10x 升级时，它会变成数据库表、object store 或 LangGraph checkpointer 的候选迁移点。</p></div>
+      <div class="code-item"><h4><code>samples/eval_suite.json</code></h4><p>readiness 的质量证据。每次 production-ish 改动都应该证明核心 trajectory 没退化。</p></div>
+      <div class="code-item"><h4><code>render.yaml</code></h4><p>部署层证据。它说明当前公开服务如何启动，也暴露了哪些还只是 demo 边界。</p></div>
+    </div>
+
+    <h3>动手实验：按顺序执行</h3>
+    <div class="lab-steps">
+      <div class="lab-step"><h4>实验 1：定位同步执行风险</h4><pre><code>rg -n "def create_run|run_job_workflow|approve_run|resume_job_workflow" jobagent/web/app.py</code></pre><p>目标：标出哪些代码如果 workflow 变慢，会直接拖住 HTTP request。</p></div>
+      <div class="lab-step"><h4>实验 2：比较两个 store 的生产含义</h4><pre><code>sed -n '1,260p' jobagent/web/store.py</code></pre><p>目标：列出 LocalRunStore 能做什么、PostgresRunStore 补了什么、还缺 migration/pooling/retention 哪些部分。</p></div>
+      <div class="lab-step"><h4>实验 3：跑一次 readiness mini-gate</h4><pre><code>.venv/bin/python -m unittest discover -s tests
+.venv/bin/python -m jobagent.cli eval
+.venv/bin/python -m jobagent.cli retrieval-eval</code></pre><p>目标：把测试和 eval 视为 readiness evidence，而不是开发结束后的仪式。</p></div>
+    </div>
+
+    <h3>工程选择 Q&amp;A</h3>
+    <div class="qa-grid">
+      <div class="qa-card"><h4>Q: 10x 首先扩哪里？</h4><p><strong>A:</strong> 先扩执行层和状态层：background worker、durable store、idempotency、shared rate limit。不要先优化 prompt。</p></div>
+      <div class="qa-card"><h4>Q: 什么叫 production-shaped？</h4><p><strong>A:</strong> 架构形状接近生产：有边界、状态、测试、观测、安全和部署。但容量、恢复、权限、运维证据还没达到真实 SaaS。</p></div>
+      <div class="qa-card"><h4>Q: readiness checklist 应该包含什么？</h4><p><strong>A:</strong> load、restart-resume、approval race、storage failure、guardrail bypass、eval regression、trace smoke、ops endpoint 和 cost cap。</p></div>
+      <div class="qa-card"><h4>Q: 面试时怎么讲边界不显弱？</h4><p><strong>A:</strong> 说清楚当前是 public product/portfolio surface，并列出升级顺序和验证证据。诚实边界本身就是 production thinking。</p></div>
+    </div>
+  </div>
+""",
+    "19_debugging": """
+  <div class="deep-dive">
+    <h3>这章真正解决的问题</h3>
+    <p>第 19 章给你一套 debug playbook：agent 系统出错时，不要第一反应改 prompt，而是沿着 input、state、checkpoint、trace、node、eval、UI 的证据链逐步缩小范围。</p>
+    <div class="system-map">
+      <div class="map-row"><strong>Reproduce</strong><span>先用 CLI 或 web run 复现问题，固定输入和 run_id。</span></div>
+      <div class="map-row"><strong>Checkpoint</strong><span>检查 <code>.jobagent/checkpoints</code>，确认 typed state 是否已经错误。</span></div>
+      <div class="map-row"><strong>Trace</strong><span>检查 <code>.jobagent/runs</code> 的 JSONL，确认哪个 node 停下、下一步是什么、有没有异常。</span></div>
+      <div class="map-row"><strong>Node Contract</strong><span>如果 state 错，回到对应 agent 文件；如果 state 对但 UI 错，再看 template/helper。</span></div>
+      <div class="map-row"><strong>Regression</strong><span>补 eval 或 unit test，再修实现。不要只靠手动刷新页面确认。</span></div>
+    </div>
+
+    <h3>代码解读：每个文件负责什么</h3>
+    <div class="code-map">
+      <div class="code-item"><h4><code>jobagent/graph/engine.py</code></h4><p>调度证据源。预算、未知节点、stop_reason、pending_node、trace metadata 都在这里形成。</p></div>
+      <div class="code-item"><h4><code>jobagent/storage/checkpoint.py</code></h4><p>状态快照入口。它让你能判断 bug 是否已经写进 state，还是只是展示层问题。</p></div>
+      <div class="code-item"><h4><code>jobagent/observability/tracer.py</code></h4><p>时间线证据。trace 适合判断执行顺序、节点耗时、异常和暂停原因。</p></div>
+      <div class="code-item"><h4><code>jobagent/evals/runner.py</code></h4><p>回归保护。发现 bug 后，如果能写成 eval case，就应该先把失败固定下来。</p></div>
+      <div class="code-item"><h4><code>tests/</code></h4><p>更小粒度的保护网。UI bug、guardrail bug、store bug、retrieval bug 不一定都放进大 eval，很多更适合 unit test。</p></div>
+    </div>
+
+    <h3>动手实验：按顺序执行</h3>
+    <div class="lab-steps">
+      <div class="lab-step"><h4>实验 1：从 run_id 找证据</h4><pre><code>.venv/bin/python -m jobagent.cli demo --auto-approve
+ls -t .jobagent/checkpoints | head
+find .jobagent/runs -name trace.jsonl -print | sort | tail -1</code></pre><p>目标：把一次运行对应的 checkpoint 和 trace 找出来。</p></div>
+      <div class="lab-step"><h4>实验 2：读 checkpoint 和 trace</h4><pre><code>latest_checkpoint=$(ls -t .jobagent/checkpoints/*.json | head -1)
+python3 -m json.tool "$latest_checkpoint" | sed -n '1,120p'
+latest_trace=$(find .jobagent/runs -name trace.jsonl -print | sort | tail -1)
+sed -n '1,80p' "$latest_trace"</code></pre><p>目标：练习判断问题是在 state artifact、node route，还是展示层。</p></div>
+      <div class="lab-step"><h4>实验 3：用 eval 锁住失败</h4><pre><code>sed -n '1,180p' samples/eval_suite.json
+sed -n '1,220p' jobagent/evals/runner.py</code></pre><p>目标：学会在修 bug 前设计一个最小失败 case。</p></div>
+    </div>
+
+    <h3>工程选择 Q&amp;A</h3>
+    <div class="qa-grid">
+      <div class="qa-card"><h4>Q: 什么时候才改 prompt？</h4><p><strong>A:</strong> 当 input、retrieval、state、tool、guardrail、UI 都证明没问题，而语义质量仍然不足时。prompt 是候选原因，不是默认原因。</p></div>
+      <div class="qa-card"><h4>Q: trace 太多怎么办？</h4><p><strong>A:</strong> 本地学习可以保留较多；生产要按 run_id、user、时间窗口检索，并设置 retention、redaction 和采样策略。</p></div>
+      <div class="qa-card"><h4>Q: checkpoint 和 trace 哪个先看？</h4><p><strong>A:</strong> 输出内容错，先看 checkpoint；执行路径错，先看 trace。两者最终要结合。</p></div>
+      <div class="qa-card"><h4>Q: 自动 retry 是不是好事？</h4><p><strong>A:</strong> 只有幂等、低风险、可观察的失败才适合 retry。外部写入和审批动作不能随便自动重放。</p></div>
+    </div>
+  </div>
+""",
+    "20_upgrade_choices": """
+  <div class="deep-dive">
+    <h3>这章真正解决的问题</h3>
+    <p>第 20 章把“我知道很多技术名词”变成“我知道什么时候引入它们”。对 AI infra 来说，成熟度不是堆栈越满越好，而是每个升级都有触发条件、复杂度预算和验证方式。</p>
+    <div class="system-map">
+      <div class="map-row"><strong>Inventory</strong><span><code>integrations/registry.py</code> 列出本项目的学习型 integration：LangGraph、LLM providers、Langfuse、Postgres/pgvector、MCP、Docker/Render。</span></div>
+      <div class="map-row"><strong>Trigger</strong><span>每个升级项都应该由痛点触发：durability、semantic retrieval、tool reuse、observability、model quality、deployment scale。</span></div>
+      <div class="map-row"><strong>Complexity</strong><span>升级会带来依赖、凭证、迁移、成本、故障模式和测试矩阵。</span></div>
+      <div class="map-row"><strong>Boundary</strong><span>用 provider、store、retriever、exporter、MCP server 等边界把升级限制在可替换位置。</span></div>
+      <div class="map-row"><strong>Verification</strong><span>每次升级都必须有保持不变的 eval/test：trajectory、retrieval hit、web route 或 exporter contract。</span></div>
+    </div>
+
+    <h3>代码解读：每个文件负责什么</h3>
+    <div class="code-map">
+      <div class="code-item"><h4><code>jobagent/integrations/registry.py</code></h4><p>技术栈目录。它适合用来复盘每个 integration 的状态、学习目的和 adoption trigger。</p></div>
+      <div class="code-item"><h4><code>pyproject.toml</code></h4><p>依赖边界。看 optional dependency 和测试配置，能判断哪些能力是默认路径，哪些是可选增强。</p></div>
+      <div class="code-item"><h4><code>jobagent/storage/postgres_memory.py</code></h4><p>Postgres/pgvector 方向的雏形。它代表 memory/retrieval 从本地 JSON 走向 durable query layer。</p></div>
+      <div class="code-item"><h4><code>mcp_server/</code></h4><p>MCP-shaped 工具边界。它适合当工具需要跨客户端复用，而不是只在本项目内部调用时升级。</p></div>
+      <div class="code-item"><h4><code>tests/test_learning_integrations.py</code></h4><p>integration contract 测试。它展示如何在不依赖真实云服务的情况下验证 adapter 行为。</p></div>
+    </div>
+
+    <h3>动手实验：按顺序执行</h3>
+    <div class="lab-steps">
+      <div class="lab-step"><h4>实验 1：打印 integration inventory</h4><pre><code>.venv/bin/python - &lt;&lt;'PY'
+from jobagent.integrations.registry import list_learning_integrations
+for item in list_learning_integrations():
+    print(item.name, "-", item.status)
+    print("  trigger:", item.adoption_trigger)
+PY</code></pre><p>目标：把技术栈看成 adoption decision，而不是 checklist。</p></div>
+      <div class="lab-step"><h4>实验 2：选择一个升级写最小 PR 范围</h4><pre><code>rg -n "LangGraph|Langfuse|Postgres|pgvector|MCP|OpenAI|Anthropic" jobagent tests pyproject.toml docker-compose.yml</code></pre><p>目标：列出会触碰的文件、必须保持通过的测试、以及新增失败模式。</p></div>
+      <div class="lab-step"><h4>实验 3：跑 integration 相关测试</h4><pre><code>.venv/bin/python -m unittest tests.test_learning_integrations tests.test_optional_integrations</code></pre><p>目标：确认 optional integration 不破坏默认路径。</p></div>
+    </div>
+
+    <h3>工程选择 Q&amp;A</h3>
+    <div class="qa-grid">
+      <div class="qa-card"><h4>Q: 什么时候引入 LangGraph？</h4><p><strong>A:</strong> 当本地 engine 开始复制 durable execution、interrupt、复杂 routing、streaming、checkpoint 可视化时。</p></div>
+      <div class="qa-card"><h4>Q: 什么时候引入 pgvector？</h4><p><strong>A:</strong> 当 corpus 变大、同义词/语义匹配明显影响 recall、需要跨文档检索，且你已有 retrieval eval 能证明升级收益时。</p></div>
+      <div class="qa-card"><h4>Q: 什么时候接真实 LLM provider？</h4><p><strong>A:</strong> 当 deterministic baseline 已经稳定，而写作质量、语义判断或开放推理成为瓶颈时。接入前先有成本、超时、重试、structured output 失败策略。</p></div>
+      <div class="qa-card"><h4>Q: 什么时候做 MCP？</h4><p><strong>A:</strong> 当工具要被多个客户端或 agent runtime 复用，或者你希望把 capability 明确暴露成协议资源时。</p></div>
+    </div>
+  </div>
+""",
+    "21_capstone": """
+  <div class="deep-dive">
+    <h3>这章真正解决的问题</h3>
+    <p>第 21 章把前面所有能力串成一次真实工程交付：新增一个 bounded agent，并把它接入 typed state、workflow、checkpoint、eval、trace、web UI 和 portfolio narrative。它考的是闭环，不是单点功能。</p>
+    <div class="system-map">
+      <div class="map-row"><strong>Artifact</strong><span>先在 <code>models.py</code> 定义 typed output，例如 <code>SalaryAnalysis</code> 或 <code>NetworkingStrategy</code>。</span></div>
+      <div class="map-row"><strong>Agent</strong><span>在 <code>jobagent/agents/</code> 新增 bounded node，只读它需要的 state，只写它负责的 artifact。</span></div>
+      <div class="map-row"><strong>Graph</strong><span>在 <code>workflow.py</code> 接入 node 和 edge，决定它在 JD、company、fit、resume、approval 之间的位置。</span></div>
+      <div class="map-row"><strong>Eval</strong><span>在 <code>samples/eval_suite.json</code> 和 runner/tests 里覆盖 trajectory 与关键输出。</span></div>
+      <div class="map-row"><strong>Product</strong><span>在 <code>run.html</code> 展示新 artifact，让用户看到它为什么有用。</span></div>
+      <div class="map-row"><strong>Story</strong><span>最后写 README/portfolio 叙事：你如何设计 bounded multi-agent workflow，并如何验证它。</span></div>
+    </div>
+
+    <h3>代码解读：每个文件负责什么</h3>
+    <div class="code-map">
+      <div class="code-item"><h4><code>jobagent/models.py</code></h4><p>新增能力的 contract 起点。不要先写自由 dict，先定义 dataclass/schema，后续 checkpoint、UI、eval 都会受益。</p></div>
+      <div class="code-item"><h4><code>jobagent/agents/</code></h4><p>bounded agent 的实现目录。一个新 agent 应该职责窄、输入明确、输出结构化、失败模式可解释。</p></div>
+      <div class="code-item"><h4><code>jobagent/graph/workflow.py</code></h4><p>调度接入点。新增 node 后必须决定边的位置、HITL 前后关系、resume 行为和 stop_reason。</p></div>
+      <div class="code-item"><h4><code>jobagent/evals/runner.py</code></h4><p>如果新 artifact 是核心能力，eval runner 需要能检查它。否则功能只是 UI 上看起来存在，缺少回归证据。</p></div>
+      <div class="code-item"><h4><code>jobagent/web/templates/run.html</code></h4><p>产品展示层。用户应该能看懂新 agent 产物、证据和下一步动作，而不是只看到 JSON。</p></div>
+      <div class="code-item"><h4><code>tests/</code></h4><p>小粒度行为保护。新增 agent 通常需要 agent unit test、workflow trajectory test、web render/API test。</p></div>
+    </div>
+
+    <h3>动手实验：按顺序执行</h3>
+    <div class="lab-steps">
+      <div class="lab-step"><h4>实验 1：选择一个新 agent 并定位插入点</h4><pre><code>rg -n "graph.add_node|graph.add_edge|resume_tailor|fit_analysis|interview_prep" jobagent/graph jobagent/agents</code></pre><p>目标：判断新 agent 应该依赖哪些上游 artifact，以及它是否应该在 HITL 前出现。</p></div>
+      <div class="lab-step"><h4>实验 2：列出需要触碰的 contract</h4><pre><code>rg -n "class .*Analysis|JobSearchState|to_dict|from_dict|eval_type|workflow_steps" jobagent samples tests</code></pre><p>目标：把新增功能拆成 state、serialization、workflow、eval、UI、tests 六块，不要只改 agent 函数。</p></div>
+      <div class="lab-step"><h4>实验 3：定义完成标准</h4><pre><code>.venv/bin/python -m unittest discover -s tests
+.venv/bin/python -m jobagent.cli eval
+.venv/bin/python -m jobagent.cli retrieval-eval</code></pre><p>目标：把 capstone 的完成标准写成能跑的命令。真正的项目经历要能被验证。</p></div>
+    </div>
+
+    <h3>工程选择 Q&amp;A</h3>
+    <div class="qa-grid">
+      <div class="qa-card"><h4>Q: 第一个 capstone agent 选什么最好？</h4><p><strong>A:</strong> 选能服务 AI engineer/FDE 求职叙事的能力：company risk analysis、networking strategy、salary/leveling analysis、interview loop planner。它要能展示产品价值和 infra 边界。</p></div>
+      <div class="qa-card"><h4>Q: 新 agent 需要 HITL 吗？</h4><p><strong>A:</strong> 如果它影响真实申请、外部写入、联系人触达或简历最终内容，就需要 HITL 或至少 review gate。如果只是内部分析，可先不需要。</p></div>
+      <div class="qa-card"><h4>Q: 需要真实 LLM 才算完整吗？</h4><p><strong>A:</strong> 不需要。先 deterministic baseline + provider boundary + eval。真实 LLM 是质量升级，不是系统设计的前提。</p></div>
+      <div class="qa-card"><h4>Q: Portfolio 叙事怎么写？</h4><p><strong>A:</strong> 写你如何划分 bounded agent、如何管理 shared state、如何做 HITL、RAG、trace、eval、deployment 和安全边界。重点是工程判断，不是炫功能数量。</p></div>
+    </div>
+  </div>
+""",
+}

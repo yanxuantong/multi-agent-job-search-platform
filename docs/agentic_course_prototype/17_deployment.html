@@ -83,6 +83,53 @@
   </section>
 
 
+  <section class="lesson-section deep-dive-section">
+    <h2>扩展工程手册：把这一章做成可执行练习</h2>
+
+  <div class="deep-dive">
+    <h3>这章真正解决的问题</h3>
+    <p>第 17 章回答“它能不能被别人打开使用”。部署 agent product 不是只把 Python 服务跑起来，还要说明健康检查、配置、状态持久性、成本、安全边界和后续升级路径。</p>
+    <div class="system-map">
+      <div class="map-row"><strong>Container</strong><span><code>Dockerfile</code> 定义可重复运行环境，生产命令启动 <code>uvicorn jobagent.web.app:app</code>。</span></div>
+      <div class="map-row"><strong>Local Stack</strong><span><code>docker-compose.yml</code> 让 web、Postgres、Langfuse 等组件可以在本地组合验证。</span></div>
+      <div class="map-row"><strong>Render Blueprint</strong><span><code>render.yaml</code> 描述托管服务、健康检查、环境变量和 public demo mode。</span></div>
+      <div class="map-row"><strong>Runtime Health</strong><span><code>/healthz</code> 证明进程活着；<code>/readyz</code> 应该证明依赖和 store 能工作。</span></div>
+      <div class="map-row"><strong>Boundary</strong><span>公开 demo 可以使用轻量 state，但 production SaaS 需要 durable store、auth、queue、observability backend 和 budget controls。</span></div>
+    </div>
+
+    <h3>代码解读：每个文件负责什么</h3>
+    <div class="code-map">
+      <div class="code-item"><h4><code>Dockerfile</code></h4><p>部署镜像入口。它说明服务运行需要哪些系统层、Python 包和启动命令。</p></div>
+      <div class="code-item"><h4><code>render.yaml</code></h4><p>Render 部署蓝图。重点看 <code>healthCheckPath</code>、环境变量和是否启用 public demo mode。</p></div>
+      <div class="code-item"><h4><code>docker-compose.yml</code></h4><p>本地 production-like 环境。它适合练习服务依赖、Postgres、observability backend 的组合。</p></div>
+      <div class="code-item"><h4><code>jobagent/web/app.py</code></h4><p>暴露 health/readiness/ops endpoints。部署平台依赖这些 endpoint 判断服务是否可以接流量。</p></div>
+      <div class="code-item"><h4><code>deploy/langfuse/README.md</code></h4><p>观测平台部署说明。它把第 13 章 trace 能力推进到外部系统。</p></div>
+    </div>
+
+    <h3>动手实验：按顺序执行</h3>
+    <div class="lab-steps">
+      <div class="lab-step"><h4>实验 1：读部署蓝图</h4><pre><code>sed -n '1,180p' render.yaml
+sed -n '1,160p' Dockerfile</code></pre><p>目标：找出启动命令、健康检查、环境变量和 public demo 边界。</p></div>
+      <div class="lab-step"><h4>实验 2：本地检查 health/readiness</h4><pre><code>.venv/bin/uvicorn jobagent.web.app:app --host 127.0.0.1 --port 8000
+# 另开终端:
+curl -s http://127.0.0.1:8000/healthz
+curl -s http://127.0.0.1:8000/readyz
+curl -s http://127.0.0.1:8000/ops/status</code></pre><p>目标：理解部署平台看到的不是 UI，而是这些运行状态信号。</p></div>
+      <div class="lab-step"><h4>实验 3：检查当前 store 边界</h4><pre><code>sed -n '1,220p' jobagent/web/store.py
+rg -n "JOBAGENT_DATABASE_URL|PUBLIC_DEMO|readyz|ops/status" jobagent/web/app.py render.yaml README.md</code></pre><p>目标：写出 demo state 与 durable production state 的差异。</p></div>
+    </div>
+
+    <h3>工程选择 Q&amp;A</h3>
+    <div class="qa-grid">
+      <div class="qa-card"><h4>Q: Render 部署就等于 production-ready 吗？</h4><p><strong>A:</strong> 不等于。它证明可公开访问和可运行，但 production-ready 还需要持久状态、认证、队列、审计、监控、预算和恢复证据。</p></div>
+      <div class="qa-card"><h4>Q: 什么时候必须上 Postgres？</h4><p><strong>A:</strong> 当用户期望历史 run 不丢、审批可恢复、多实例共享状态，或者你要分析运行数据时。</p></div>
+      <div class="qa-card"><h4>Q: 什么时候必须上 queue？</h4><p><strong>A:</strong> 当 workflow 超过 request timeout、外部 API 慢、需要 retry/backoff，或并发 run 会阻塞 web worker 时。</p></div>
+      <div class="qa-card"><h4>Q: 免费托管会不会有成本风险？</h4><p><strong>A:</strong> 如果不接真实 LLM，成本主要是 hosting。接真实模型后必须做 rate limit、budget cap、key isolation 和 abuse monitoring。</p></div>
+    </div>
+  </div>
+
+  </section>
+
 
   <section class="lesson-section">
     <h2>工程选择题：什么时候这样做，什么时候不要这样做</h2>

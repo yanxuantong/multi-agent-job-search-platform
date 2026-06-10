@@ -146,19 +146,25 @@ CODE: dict[str, list[CodeRow]] = {
         CodeRow("3", "JOBAGENT_PUBLIC_DEMO_MODE=true", "public mode 要明确边界", "warn"),
         CodeRow("4", "JOBAGENT_DATABASE_URL -> Postgres run store", "durable state 是生产升级点", "warn"),
     ],
-    "18_debugging": [
+    "18_10x_scale_readiness": [
+        CodeRow("1", "POST /runs currently executes the workflow inside the web request", "10x scale 先会碰到 request 生命周期边界", "warn"),
+        CodeRow("2", "LocalRunStore / PostgresRunStore", "状态存储决定 restart 和多实例能力", "hot"),
+        CodeRow("3", "JsonCheckpointStore -> durable database checkpointer", "checkpoint 从学习版升级到生产版", "warn"),
+        CodeRow("4", "readiness = health + storage + eval + security + observability", "ready 不是单个 endpoint，而是一组证据", "hot"),
+    ],
+    "19_debugging": [
         CodeRow("1", "Symptom -> CLI reproduce -> checkpoint -> trace -> state -> node -> eval", "先收证据，再改实现", "hot"),
         CodeRow("2", "If state is wrong: inspect upstream node contract", "不要直接改 UI 或 prompt", "warn"),
         CodeRow("3", "If trace is missing: inspect tracer span boundary", "没有轨迹就很难 debug", "warn"),
         CodeRow("4", "If eval is missing: add failing case before fixing", "先锁住回归，再修 bug", "hot"),
     ],
-    "19_upgrade_choices": [
+    "20_upgrade_choices": [
         CodeRow("1", "Pain: local engine repeats durable execution logic -> consider LangGraph", "升级要由痛点触发", "hot"),
         CodeRow("2", "Pain: JSON state is ephemeral -> add Postgres", "状态不可丢时才上 durable store", "warn"),
         CodeRow("3", "Pain: traces need dashboards/evals -> add Langfuse/OpenTelemetry", "观察需求上来后再接平台", "hot"),
         CodeRow("4", "Pain: tools need cross-client reuse -> expose MCP server", "协议化是复用需求，不是装饰", "warn"),
     ],
-    "20_capstone": [
+    "21_capstone": [
         CodeRow("1", "Add SalaryAnalysis dataclass to models.py", "先扩展 state contract", "hot"),
         CodeRow("2", "Add salary_analysis node under jobagent/agents/", "再新增 bounded agent", "hot"),
         CodeRow("3", "Wire graph.add_node(\"salary_analysis\", analyze_salary)", "接入调度图", "hot"),

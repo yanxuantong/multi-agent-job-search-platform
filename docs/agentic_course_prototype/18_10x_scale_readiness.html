@@ -70,7 +70,7 @@
       <p>下面的代码摘录不是为了让你背实现细节，而是训练阅读顺序。青色行表示主路径，琥珀色行表示控制、停止、安全或恢复边界。读 agent 系统时，先找这些边界，通常比先看 prompt 更有效。</p>
       <p>对应的项目文件在这里：<a href="../../jobagent/web/app.py"><code>jobagent/web/app.py</code></a>, <a href="../../jobagent/web/store.py"><code>jobagent/web/store.py</code></a>, <a href="../../jobagent/graph/workflow.py"><code>jobagent/graph/workflow.py</code></a>, <a href="../../jobagent/storage/checkpoint.py"><code>jobagent/storage/checkpoint.py</code></a>。</p>
     </div>
-    <div class="annotated-code" role="region" aria-label="Annotated code excerpt"><div class="code-row hot"><span class="line">32</span><span class="src">def run_job_workflow(raw_job_text: str, story_bank: list[dict], *, approved: bool = False, ...):</span><span class="comment">产品入口先创建一次 run</span></div><div class="code-row hot"><span class="line">42</span><span class="src">state = JobSearchState(run_id=run_id, user_goal=user_goal, raw_job_text=raw_job_text, ...)</span><span class="comment">把用户输入装进 typed state</span></div><div class="code-row hot"><span class="line">50</span><span class="src">graph = build_graph(JsonlTracer(state.run_id))</span><span class="comment">每次 run 都带 trace</span></div><div class="code-row hot"><span class="line">51</span><span class="src">state = graph.run(state, &quot;ingest&quot;)</span><span class="comment">从 ingest 节点进入 agent workflow</span></div><div class="code-row warn"><span class="line">52</span><span class="src">JsonCheckpointStore().save(state)</span><span class="comment">结束或暂停后都保存 checkpoint</span></div></div>
+    <div class="annotated-code" role="region" aria-label="Annotated code excerpt"><div class="code-row warn"><span class="line">1</span><span class="src">POST /runs currently executes the workflow inside the web request</span><span class="comment">10x scale 先会碰到 request 生命周期边界</span></div><div class="code-row hot"><span class="line">2</span><span class="src">LocalRunStore / PostgresRunStore</span><span class="comment">状态存储决定 restart 和多实例能力</span></div><div class="code-row warn"><span class="line">3</span><span class="src">JsonCheckpointStore -&gt; durable database checkpointer</span><span class="comment">checkpoint 从学习版升级到生产版</span></div><div class="code-row hot"><span class="line">4</span><span class="src">readiness = health + storage + eval + security + observability</span><span class="comment">ready 不是单个 endpoint，而是一组证据</span></div></div>
     <div class="split"><div class="panel"><strong><a href="../../jobagent/web/app.py"><code>jobagent/web/app.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div><div class="panel"><strong><a href="../../jobagent/web/store.py"><code>jobagent/web/store.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div><div class="split"><div class="panel"><strong><a href="../../jobagent/graph/workflow.py"><code>jobagent/graph/workflow.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div><div class="panel"><strong><a href="../../jobagent/storage/checkpoint.py"><code>jobagent/storage/checkpoint.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div>
   </section>
 
@@ -82,6 +82,49 @@
     <div class="steps"><div class="step">阅读 <code>create_run()</code>，说明为什么同步 workflow 在 10x traffic 下会成为 request latency 与 timeout 风险。</div><div class="step">对比 <code>LocalRunStore</code> 与 <code>PostgresRunStore</code>，写出哪些 state 可以丢、哪些 state 一旦丢就破坏用户信任。</div><div class="step">把 <code>/ops/status</code>、<code>/ops/evals</code>、<code>python3 -m jobagent.cli eval</code>、<code>python3 -m unittest discover -s tests</code> 组合成一个 release/readiness checklist。</div><div class="step">写一个不实现代码的 migration note：从 public demo 到 production SaaS，需要先引入 queue、durable Postgres、auth、distributed rate limit 和 observability backend。</div></div>
   </section>
 
+
+  <section class="lesson-section deep-dive-section">
+    <h2>扩展工程手册：把这一章做成可执行练习</h2>
+
+  <div class="deep-dive">
+    <h3>这章真正解决的问题</h3>
+    <p>第 18 章训练的是 production judgment。JobAgent 已经是 production-shaped：有 web surface、typed state、checkpoint、trace、eval、guardrails 和部署。但它还不是 full SaaS，因为 10x traffic 会首先打到执行、状态、恢复和运维层。</p>
+    <div class="system-map">
+      <div class="map-row"><strong>Execution</strong><span>当前 <code>POST /runs</code> 同步执行 workflow。10x 后应拆成 web request + background job + status polling。</span></div>
+      <div class="map-row"><strong>State</strong><span>LocalRunStore/JSON checkpoint 适合学习和 demo；durable beta 需要 Postgres、migration、connection pooling 和 backup。</span></div>
+      <div class="map-row"><strong>Concurrency</strong><span>内存 rate limit 和单进程状态不适合多实例。生产要用共享 rate limit 和 idempotency key。</span></div>
+      <div class="map-row"><strong>Recovery</strong><span>approval、resume、tool side effect 都需要幂等设计，避免重复提交或丢失用户决策。</span></div>
+      <div class="map-row"><strong>Evidence</strong><span>readiness 需要测试、eval、restart smoke、ops endpoint、trace 和安全验证共同证明。</span></div>
+    </div>
+
+    <h3>代码解读：每个文件负责什么</h3>
+    <div class="code-map">
+      <div class="code-item"><h4><code>jobagent/web/app.py</code></h4><p>当前 request lifecycle 所在地。重点读 <code>create_run</code> 和 <code>approve_run</code>：它们告诉你同步执行、审批 resume 和错误处理在哪里发生。</p></div>
+      <div class="code-item"><h4><code>jobagent/web/store.py</code></h4><p>LocalRunStore 与 PostgresRunStore 的边界。这里决定 run summary、creator session、approval 状态和持久化能力。</p></div>
+      <div class="code-item"><h4><code>jobagent/storage/checkpoint.py</code></h4><p>workflow state checkpoint。10x 升级时，它会变成数据库表、object store 或 LangGraph checkpointer 的候选迁移点。</p></div>
+      <div class="code-item"><h4><code>samples/eval_suite.json</code></h4><p>readiness 的质量证据。每次 production-ish 改动都应该证明核心 trajectory 没退化。</p></div>
+      <div class="code-item"><h4><code>render.yaml</code></h4><p>部署层证据。它说明当前公开服务如何启动，也暴露了哪些还只是 demo 边界。</p></div>
+    </div>
+
+    <h3>动手实验：按顺序执行</h3>
+    <div class="lab-steps">
+      <div class="lab-step"><h4>实验 1：定位同步执行风险</h4><pre><code>rg -n "def create_run|run_job_workflow|approve_run|resume_job_workflow" jobagent/web/app.py</code></pre><p>目标：标出哪些代码如果 workflow 变慢，会直接拖住 HTTP request。</p></div>
+      <div class="lab-step"><h4>实验 2：比较两个 store 的生产含义</h4><pre><code>sed -n '1,260p' jobagent/web/store.py</code></pre><p>目标：列出 LocalRunStore 能做什么、PostgresRunStore 补了什么、还缺 migration/pooling/retention 哪些部分。</p></div>
+      <div class="lab-step"><h4>实验 3：跑一次 readiness mini-gate</h4><pre><code>.venv/bin/python -m unittest discover -s tests
+.venv/bin/python -m jobagent.cli eval
+.venv/bin/python -m jobagent.cli retrieval-eval</code></pre><p>目标：把测试和 eval 视为 readiness evidence，而不是开发结束后的仪式。</p></div>
+    </div>
+
+    <h3>工程选择 Q&amp;A</h3>
+    <div class="qa-grid">
+      <div class="qa-card"><h4>Q: 10x 首先扩哪里？</h4><p><strong>A:</strong> 先扩执行层和状态层：background worker、durable store、idempotency、shared rate limit。不要先优化 prompt。</p></div>
+      <div class="qa-card"><h4>Q: 什么叫 production-shaped？</h4><p><strong>A:</strong> 架构形状接近生产：有边界、状态、测试、观测、安全和部署。但容量、恢复、权限、运维证据还没达到真实 SaaS。</p></div>
+      <div class="qa-card"><h4>Q: readiness checklist 应该包含什么？</h4><p><strong>A:</strong> load、restart-resume、approval race、storage failure、guardrail bypass、eval regression、trace smoke、ops endpoint 和 cost cap。</p></div>
+      <div class="qa-card"><h4>Q: 面试时怎么讲边界不显弱？</h4><p><strong>A:</strong> 说清楚当前是 public product/portfolio surface，并列出升级顺序和验证证据。诚实边界本身就是 production thinking。</p></div>
+    </div>
+  </div>
+
+  </section>
 
 
   <section class="lesson-section">

@@ -83,6 +83,50 @@
   </section>
 
 
+  <section class="lesson-section deep-dive-section">
+    <h2>扩展工程手册：把这一章做成可执行练习</h2>
+
+  <div class="deep-dive">
+    <h3>这章真正解决的问题</h3>
+    <p>第 13 章把 agent 从“看最终输出”推进到“看执行证据”。一个 multi-agent workflow 出错时，最终结果只告诉你它错了，trace 才告诉你它在哪里、为什么、用什么状态错了。</p>
+    <div class="system-map">
+      <div class="map-row"><strong>Run</strong><span>每次 workflow 都有 run_id，trace、checkpoint、web detail 都围绕同一个 run_id 聚合。</span></div>
+      <div class="map-row"><strong>Span</strong><span><code>JsonlTracer.span(node)</code> 让每个 agent node 都产生 started_at、completed_at、status、metadata。</span></div>
+      <div class="map-row"><strong>Metadata</strong><span>engine 会把 next_node、stop_reason、steps_used 等信息写进 span，形成可复盘的执行轨迹。</span></div>
+      <div class="map-row"><strong>Export</strong><span><code>langfuse_exporter.py</code> 说明本地 JSONL trace 如何映射到外部观测平台。</span></div>
+      <div class="map-row"><strong>Product</strong><span>web run detail 和 ops endpoints 使用这些证据，让用户和开发者都能知道系统当前状态。</span></div>
+    </div>
+
+    <h3>代码解读：每个文件负责什么</h3>
+    <div class="code-map">
+      <div class="code-item"><h4><code>jobagent/observability/tracer.py</code></h4><p>本地 trace 核心。<code>JsonlTracer</code> 创建 span，<code>TraceEvent</code> 规定事件结构，<code>_TraceSpan</code> 在进入和退出节点时写 JSONL。</p></div>
+      <div class="code-item"><h4><code>jobagent/graph/engine.py</code></h4><p>调用 tracer 的地方。engine 不只调节点，还把节点结果转成 trace metadata，因此调度和观测是连在一起的。</p></div>
+      <div class="code-item"><h4><code>jobagent/observability/langfuse_exporter.py</code></h4><p>外部观测平台适配器。它把本地 trace event 转成 Langfuse observation，展示“本地先打证据，再接平台”的升级方式。</p></div>
+      <div class="code-item"><h4><code>tests/test_learning_integrations.py</code></h4><p>用 fake Langfuse client 测 exporter，不需要真实凭证。这个测试模式很适合学习外部 SDK integration。</p></div>
+      <div class="code-item"><h4><code>.jobagent/runs/&lt;run_id&gt;/trace.jsonl</code></h4><p>真实运行后的证据文件。调试时先看这里，而不是先猜 prompt 或 UI。</p></div>
+    </div>
+
+    <h3>动手实验：按顺序执行</h3>
+    <div class="lab-steps">
+      <div class="lab-step"><h4>实验 1：生成一条本地 trace</h4><pre><code>.venv/bin/python -m jobagent.cli demo --auto-approve
+latest=$(find .jobagent/runs -name trace.jsonl -print | sort | tail -1)
+sed -n '1,80p' "$latest"</code></pre><p>目标：看到每个 node 的 started/completed 事件，以及 metadata 里的 next_node 和 stop_reason。</p></div>
+      <div class="lab-step"><h4>实验 2：阅读 tracer 写入逻辑</h4><pre><code>sed -n '1,140p' jobagent/observability/tracer.py
+sed -n '35,75p' jobagent/graph/engine.py</code></pre><p>目标：确认 trace 是由 workflow 执行自然产生的，不是事后拼出来的日志。</p></div>
+      <div class="lab-step"><h4>实验 3：验证 Langfuse exporter 的 fake-client 测试</h4><pre><code>.venv/bin/python -m unittest tests.test_learning_integrations</code></pre><p>目标：学习怎样在没有真实外部账号时测试 integration contract。</p></div>
+    </div>
+
+    <h3>工程选择 Q&amp;A</h3>
+    <div class="qa-grid">
+      <div class="qa-card"><h4>Q: log、metric、trace 谁最先做？</h4><p><strong>A:</strong> agent workflow 先做 trace。因为 agent 质量问题通常是路径问题：哪个节点看到了什么、调用了什么、为什么停下。</p></div>
+      <div class="qa-card"><h4>Q: 是否记录完整 prompt 和输出？</h4><p><strong>A:</strong> 开发期很有用，生产期要经过 redaction、retention 和 access control。求职产品里可能有简历、公司、个人经历，不能随便外发。</p></div>
+      <div class="qa-card"><h4>Q: 什么时候接 Langfuse 或 OpenTelemetry？</h4><p><strong>A:</strong> 当 trace 不只是给你本地 debug，而要支持 dashboard、团队排查、eval linkage、成本/延迟分析时，就值得接。</p></div>
+      <div class="qa-card"><h4>Q: Trace 和 eval 怎么配合？</h4><p><strong>A:</strong> eval 告诉你失败了，trace 告诉你失败路径。最好的 agent regression 报告应该能从 failed case 直接跳到 trace。</p></div>
+    </div>
+  </div>
+
+  </section>
+
 
   <section class="lesson-section">
     <h2>工程选择题：什么时候这样做，什么时候不要这样做</h2>

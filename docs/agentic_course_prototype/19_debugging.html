@@ -70,7 +70,7 @@
       <p>下面的代码摘录不是为了让你背实现细节，而是训练阅读顺序。青色行表示主路径，琥珀色行表示控制、停止、安全或恢复边界。读 agent 系统时，先找这些边界，通常比先看 prompt 更有效。</p>
       <p>对应的项目文件在这里：<a href="../../jobagent/graph/engine.py"><code>jobagent/graph/engine.py</code></a>, <a href="../../jobagent/observability/tracer.py"><code>jobagent/observability/tracer.py</code></a>, <a href="../../jobagent/storage/checkpoint.py"><code>jobagent/storage/checkpoint.py</code></a>, <a href="../../tests/"><code>tests/</code></a>。</p>
     </div>
-    <div class="annotated-code" role="region" aria-label="Annotated code excerpt"><div class="code-row hot"><span class="line">32</span><span class="src">def run_job_workflow(raw_job_text: str, story_bank: list[dict], *, approved: bool = False, ...):</span><span class="comment">产品入口先创建一次 run</span></div><div class="code-row hot"><span class="line">42</span><span class="src">state = JobSearchState(run_id=run_id, user_goal=user_goal, raw_job_text=raw_job_text, ...)</span><span class="comment">把用户输入装进 typed state</span></div><div class="code-row hot"><span class="line">50</span><span class="src">graph = build_graph(JsonlTracer(state.run_id))</span><span class="comment">每次 run 都带 trace</span></div><div class="code-row hot"><span class="line">51</span><span class="src">state = graph.run(state, &quot;ingest&quot;)</span><span class="comment">从 ingest 节点进入 agent workflow</span></div><div class="code-row warn"><span class="line">52</span><span class="src">JsonCheckpointStore().save(state)</span><span class="comment">结束或暂停后都保存 checkpoint</span></div></div>
+    <div class="annotated-code" role="region" aria-label="Annotated code excerpt"><div class="code-row hot"><span class="line">1</span><span class="src">Symptom -&gt; CLI reproduce -&gt; checkpoint -&gt; trace -&gt; state -&gt; node -&gt; eval</span><span class="comment">先收证据，再改实现</span></div><div class="code-row warn"><span class="line">2</span><span class="src">If state is wrong: inspect upstream node contract</span><span class="comment">不要直接改 UI 或 prompt</span></div><div class="code-row warn"><span class="line">3</span><span class="src">If trace is missing: inspect tracer span boundary</span><span class="comment">没有轨迹就很难 debug</span></div><div class="code-row hot"><span class="line">4</span><span class="src">If eval is missing: add failing case before fixing</span><span class="comment">先锁住回归，再修 bug</span></div></div>
     <div class="split"><div class="panel"><strong><a href="../../jobagent/graph/engine.py"><code>jobagent/graph/engine.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div><div class="panel"><strong><a href="../../jobagent/observability/tracer.py"><code>jobagent/observability/tracer.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div><div class="split"><div class="panel"><strong><a href="../../jobagent/storage/checkpoint.py"><code>jobagent/storage/checkpoint.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div><div class="panel"><strong><a href="../../tests/"><code>tests/</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div>
   </section>
 
@@ -82,6 +82,53 @@
     <div class="steps"><div class="step">制造一次 resume 失败，按 playbook 定位是 checkpoint 缺失还是 pending_node 问题。</div><div class="step">制造一次 extraction 错误，先补 eval case，再修 extractor。</div><div class="step">制造一次 UI 显示错误，确认 state 与 trace 是否正确，避免误修后端。</div></div>
   </section>
 
+
+  <section class="lesson-section deep-dive-section">
+    <h2>扩展工程手册：把这一章做成可执行练习</h2>
+
+  <div class="deep-dive">
+    <h3>这章真正解决的问题</h3>
+    <p>第 19 章给你一套 debug playbook：agent 系统出错时，不要第一反应改 prompt，而是沿着 input、state、checkpoint、trace、node、eval、UI 的证据链逐步缩小范围。</p>
+    <div class="system-map">
+      <div class="map-row"><strong>Reproduce</strong><span>先用 CLI 或 web run 复现问题，固定输入和 run_id。</span></div>
+      <div class="map-row"><strong>Checkpoint</strong><span>检查 <code>.jobagent/checkpoints</code>，确认 typed state 是否已经错误。</span></div>
+      <div class="map-row"><strong>Trace</strong><span>检查 <code>.jobagent/runs</code> 的 JSONL，确认哪个 node 停下、下一步是什么、有没有异常。</span></div>
+      <div class="map-row"><strong>Node Contract</strong><span>如果 state 错，回到对应 agent 文件；如果 state 对但 UI 错，再看 template/helper。</span></div>
+      <div class="map-row"><strong>Regression</strong><span>补 eval 或 unit test，再修实现。不要只靠手动刷新页面确认。</span></div>
+    </div>
+
+    <h3>代码解读：每个文件负责什么</h3>
+    <div class="code-map">
+      <div class="code-item"><h4><code>jobagent/graph/engine.py</code></h4><p>调度证据源。预算、未知节点、stop_reason、pending_node、trace metadata 都在这里形成。</p></div>
+      <div class="code-item"><h4><code>jobagent/storage/checkpoint.py</code></h4><p>状态快照入口。它让你能判断 bug 是否已经写进 state，还是只是展示层问题。</p></div>
+      <div class="code-item"><h4><code>jobagent/observability/tracer.py</code></h4><p>时间线证据。trace 适合判断执行顺序、节点耗时、异常和暂停原因。</p></div>
+      <div class="code-item"><h4><code>jobagent/evals/runner.py</code></h4><p>回归保护。发现 bug 后，如果能写成 eval case，就应该先把失败固定下来。</p></div>
+      <div class="code-item"><h4><code>tests/</code></h4><p>更小粒度的保护网。UI bug、guardrail bug、store bug、retrieval bug 不一定都放进大 eval，很多更适合 unit test。</p></div>
+    </div>
+
+    <h3>动手实验：按顺序执行</h3>
+    <div class="lab-steps">
+      <div class="lab-step"><h4>实验 1：从 run_id 找证据</h4><pre><code>.venv/bin/python -m jobagent.cli demo --auto-approve
+ls -t .jobagent/checkpoints | head
+find .jobagent/runs -name trace.jsonl -print | sort | tail -1</code></pre><p>目标：把一次运行对应的 checkpoint 和 trace 找出来。</p></div>
+      <div class="lab-step"><h4>实验 2：读 checkpoint 和 trace</h4><pre><code>latest_checkpoint=$(ls -t .jobagent/checkpoints/*.json | head -1)
+python3 -m json.tool "$latest_checkpoint" | sed -n '1,120p'
+latest_trace=$(find .jobagent/runs -name trace.jsonl -print | sort | tail -1)
+sed -n '1,80p' "$latest_trace"</code></pre><p>目标：练习判断问题是在 state artifact、node route，还是展示层。</p></div>
+      <div class="lab-step"><h4>实验 3：用 eval 锁住失败</h4><pre><code>sed -n '1,180p' samples/eval_suite.json
+sed -n '1,220p' jobagent/evals/runner.py</code></pre><p>目标：学会在修 bug 前设计一个最小失败 case。</p></div>
+    </div>
+
+    <h3>工程选择 Q&amp;A</h3>
+    <div class="qa-grid">
+      <div class="qa-card"><h4>Q: 什么时候才改 prompt？</h4><p><strong>A:</strong> 当 input、retrieval、state、tool、guardrail、UI 都证明没问题，而语义质量仍然不足时。prompt 是候选原因，不是默认原因。</p></div>
+      <div class="qa-card"><h4>Q: trace 太多怎么办？</h4><p><strong>A:</strong> 本地学习可以保留较多；生产要按 run_id、user、时间窗口检索，并设置 retention、redaction 和采样策略。</p></div>
+      <div class="qa-card"><h4>Q: checkpoint 和 trace 哪个先看？</h4><p><strong>A:</strong> 输出内容错，先看 checkpoint；执行路径错，先看 trace。两者最终要结合。</p></div>
+      <div class="qa-card"><h4>Q: 自动 retry 是不是好事？</h4><p><strong>A:</strong> 只有幂等、低风险、可观察的失败才适合 retry。外部写入和审批动作不能随便自动重放。</p></div>
+    </div>
+  </div>
+
+  </section>
 
 
   <section class="lesson-section">
