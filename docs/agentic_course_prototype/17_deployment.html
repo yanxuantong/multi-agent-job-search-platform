@@ -71,15 +71,7 @@
       <p>对应的项目文件在这里：<a href="../../Dockerfile"><code>Dockerfile</code></a>, <a href="../../docker-compose.yml"><code>docker-compose.yml</code></a>, <a href="../../render.yaml"><code>render.yaml</code></a>, <a href="../../deploy/langfuse/README.md"><code>deploy/langfuse/README.md</code></a>。</p>
     </div>
     <div class="annotated-code" role="region" aria-label="Annotated code excerpt"><div class="code-row hot"><span class="line">1</span><span class="src">Dockerfile -&gt; uvicorn jobagent.web.app:app</span><span class="comment">部署的是 web product，不只是脚本</span></div><div class="code-row hot"><span class="line">2</span><span class="src">render.yaml -&gt; healthCheckPath: /healthz</span><span class="comment">公开 demo 需要健康检查</span></div><div class="code-row warn"><span class="line">3</span><span class="src">JOBAGENT_PUBLIC_DEMO_MODE=true</span><span class="comment">public mode 要明确边界</span></div><div class="code-row warn"><span class="line">4</span><span class="src">JOBAGENT_DATABASE_URL -&gt; Postgres run store</span><span class="comment">durable state 是生产升级点</span></div></div>
-    <div class="split"><div class="panel"><strong><a href="../../Dockerfile"><code>Dockerfile</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div><div class="panel"><strong><a href="../../docker-compose.yml"><code>docker-compose.yml</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div><div class="split"><div class="panel"><strong><a href="../../render.yaml"><code>render.yaml</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div><div class="panel"><strong><a href="../../deploy/langfuse/README.md"><code>deploy/langfuse/README.md</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div>
-  </section>
 
-  <section class="lesson-section" id="lab">
-    <h2>动手实验：把知识点落到一次操作里</h2>
-    <div class="article-prose">
-      <p>这一章不只要求你“理解”。你应该至少跑一次命令、打开一次文件、观察一次 state 或 trace。JobAgent 的教学价值在于它是可运行项目，不是架构幻灯片。</p>
-    </div>
-    <div class="steps"><div class="step">运行 web app 后访问 <code>/healthz</code>、<code>/readyz</code>、<code>/ops/status</code>。</div><div class="step">阅读 <code>render.yaml</code>，指出 health check 和 public demo mode。</div><div class="step">设计 production hardening checklist。</div></div>
   </section>
 
 
@@ -130,14 +122,6 @@ rg -n "JOBAGENT_DATABASE_URL|PUBLIC_DEMO|readyz|ops/status" jobagent/web/app.py 
 
   </section>
 
-
-  <section class="lesson-section">
-    <h2>工程选择题：什么时候这样做，什么时候不要这样做</h2>
-    <div class="article-prose">
-      <p>什么时候需要 queue？当 workflow 长、外部 API 慢、并发高或需要 retry/backoff。 什么时候需要 Postgres？当 checkpoint/run state 不能丢，或者多 instance 需要共享状态。 什么时候需要 auth？任何个人数据、真实申请、外部写入、团队使用场景。</p>
-      <p>这些问题比答案本身更重要。Multi-agent 工程的成熟度，不在于堆多少框架，而在于你能说清楚每个边界为什么存在、什么时候需要升级、升级会带来什么新复杂度。</p>
-    </div>
-  </section>
 
   <section class="lesson-section">
     <h2>行业脉搏：把本章放到 2026 AI infra 里看</h2>

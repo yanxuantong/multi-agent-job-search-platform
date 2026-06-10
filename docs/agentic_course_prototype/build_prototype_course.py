@@ -348,6 +348,10 @@ def deep_dive(slug: str) -> str:
 """
 
 
+def uses_integrated_deep_dive(chapter) -> bool:
+    return int(chapter_number(chapter)) >= 12 and chapter.slug in DEEP_DIVES
+
+
 def file_panels(chapter) -> str:
     cards = []
     for anchor in chapter.anchors:
@@ -359,6 +363,31 @@ def article(chapter) -> str:
     concept_paras = "".join(f"<p>{format_inline(p)}</p>" for p in chapter.concept)
     industry_paras = "".join(f"<p>{format_inline(p)}</p>" for p in chapter.industry)
     choices = " ".join(chapter.choices)
+    integrated_deep_dive = uses_integrated_deep_dive(chapter)
+    anchor_panels = "" if integrated_deep_dive else file_panels(chapter)
+    lab_section = "" if integrated_deep_dive else f"""  <section class="lesson-section" id="lab">
+    <h2>动手实验：把知识点落到一次操作里</h2>
+    <div class="article-prose">
+      <p>这一章不只要求你“理解”。你应该至少跑一次命令、打开一次文件、观察一次 state 或 trace。JobAgent 的教学价值在于它是可运行项目，不是架构幻灯片。</p>
+    </div>
+    {steps(chapter.labs)}
+  </section>
+"""
+    choices_section = "" if integrated_deep_dive else f"""  <section class="lesson-section">
+    <h2>工程选择题：什么时候这样做，什么时候不要这样做</h2>
+    <div class="article-prose">
+      <p>{format_inline(choices)}</p>
+      <p>这些问题比答案本身更重要。Multi-agent 工程的成熟度，不在于堆多少框架，而在于你能说清楚每个边界为什么存在、什么时候需要升级、升级会带来什么新复杂度。</p>
+    </div>
+  </section>
+"""
+    expanded_manual = deep_dive(chapter.slug)
+    if integrated_deep_dive:
+        practice_sections = expanded_manual
+    elif expanded_manual:
+        practice_sections = f"{lab_section}\n{expanded_manual}\n{choices_section}"
+    else:
+        practice_sections = f"{lab_section}\n{choices_section}"
     return f"""
 <article class="lesson">
   <section class="lesson-section">
@@ -384,26 +413,10 @@ def article(chapter) -> str:
       <p>对应的项目文件在这里：{', '.join(link_path(anchor) for anchor in chapter.anchors[:4])}。</p>
     </div>
     {annotated_code(chapter.slug)}
-    {file_panels(chapter)}
+    {anchor_panels}
   </section>
 
-  <section class="lesson-section" id="lab">
-    <h2>动手实验：把知识点落到一次操作里</h2>
-    <div class="article-prose">
-      <p>这一章不只要求你“理解”。你应该至少跑一次命令、打开一次文件、观察一次 state 或 trace。JobAgent 的教学价值在于它是可运行项目，不是架构幻灯片。</p>
-    </div>
-    {steps(chapter.labs)}
-  </section>
-
-  {deep_dive(chapter.slug)}
-
-  <section class="lesson-section">
-    <h2>工程选择题：什么时候这样做，什么时候不要这样做</h2>
-    <div class="article-prose">
-      <p>{format_inline(choices)}</p>
-      <p>这些问题比答案本身更重要。Multi-agent 工程的成熟度，不在于堆多少框架，而在于你能说清楚每个边界为什么存在、什么时候需要升级、升级会带来什么新复杂度。</p>
-    </div>
-  </section>
+{practice_sections}
 
   <section class="lesson-section">
     <h2>行业脉搏：把本章放到 2026 AI infra 里看</h2>

@@ -71,15 +71,7 @@
       <p>对应的项目文件在这里：<a href="../../jobagent/graph/engine.py"><code>jobagent/graph/engine.py</code></a>, <a href="../../jobagent/observability/tracer.py"><code>jobagent/observability/tracer.py</code></a>, <a href="../../jobagent/storage/checkpoint.py"><code>jobagent/storage/checkpoint.py</code></a>, <a href="../../tests/"><code>tests/</code></a>。</p>
     </div>
     <div class="annotated-code" role="region" aria-label="Annotated code excerpt"><div class="code-row hot"><span class="line">1</span><span class="src">Symptom -&gt; CLI reproduce -&gt; checkpoint -&gt; trace -&gt; state -&gt; node -&gt; eval</span><span class="comment">先收证据，再改实现</span></div><div class="code-row warn"><span class="line">2</span><span class="src">If state is wrong: inspect upstream node contract</span><span class="comment">不要直接改 UI 或 prompt</span></div><div class="code-row warn"><span class="line">3</span><span class="src">If trace is missing: inspect tracer span boundary</span><span class="comment">没有轨迹就很难 debug</span></div><div class="code-row hot"><span class="line">4</span><span class="src">If eval is missing: add failing case before fixing</span><span class="comment">先锁住回归，再修 bug</span></div></div>
-    <div class="split"><div class="panel"><strong><a href="../../jobagent/graph/engine.py"><code>jobagent/graph/engine.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div><div class="panel"><strong><a href="../../jobagent/observability/tracer.py"><code>jobagent/observability/tracer.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div><div class="split"><div class="panel"><strong><a href="../../jobagent/storage/checkpoint.py"><code>jobagent/storage/checkpoint.py</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div><div class="panel"><strong><a href="../../tests/"><code>tests/</code></a></strong><p>阅读这一章时，把这个文件当作项目里的实物锚点。先看它在 workflow 中的位置，再看它和 state、trace、eval 的关系。</p></div></div>
-  </section>
 
-  <section class="lesson-section" id="lab">
-    <h2>动手实验：把知识点落到一次操作里</h2>
-    <div class="article-prose">
-      <p>这一章不只要求你“理解”。你应该至少跑一次命令、打开一次文件、观察一次 state 或 trace。JobAgent 的教学价值在于它是可运行项目，不是架构幻灯片。</p>
-    </div>
-    <div class="steps"><div class="step">制造一次 resume 失败，按 playbook 定位是 checkpoint 缺失还是 pending_node 问题。</div><div class="step">制造一次 extraction 错误，先补 eval case，再修 extractor。</div><div class="step">制造一次 UI 显示错误，确认 state 与 trace 是否正确，避免误修后端。</div></div>
   </section>
 
 
@@ -130,14 +122,6 @@ sed -n '1,220p' jobagent/evals/runner.py</code></pre><p>目标：学会在修 bu
 
   </section>
 
-
-  <section class="lesson-section">
-    <h2>工程选择题：什么时候这样做，什么时候不要这样做</h2>
-    <div class="article-prose">
-      <p>什么时候改 prompt？当 state、tool、retrieval、schema、guardrail 都证明没有问题，而语义质量仍不足。 Debug 输出应该保留多久？本地学习可保留，生产要考虑 PII、retention、redaction。 失败是否要自动恢复？只有可幂等、低风险、可观察的失败才适合自动恢复。</p>
-      <p>这些问题比答案本身更重要。Multi-agent 工程的成熟度，不在于堆多少框架，而在于你能说清楚每个边界为什么存在、什么时候需要升级、升级会带来什么新复杂度。</p>
-    </div>
-  </section>
 
   <section class="lesson-section">
     <h2>行业脉搏：把本章放到 2026 AI infra 里看</h2>
