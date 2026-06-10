@@ -7,7 +7,7 @@ from pathlib import Path
 
 OUT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = OUT_DIR.parents[1]
-UPDATED = "2026-05-30"
+UPDATED = "2026-06-10"
 
 
 @dataclass(frozen=True)
@@ -984,16 +984,209 @@ section { border-bottom: 1px solid var(--line); padding: 0 0 32px; }
   padding: 14px 16px;
   color: #334155;
 }
+.deep-dive {
+  margin-top: 18px;
+}
+.deep-dive h3 {
+  margin-top: 24px;
+  padding-top: 8px;
+}
+.system-map {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+.map-row {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--paper);
+}
+.map-row strong {
+  color: var(--teal);
+}
+.code-map,
+.lab-steps,
+.qa-grid {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+.code-item,
+.lab-step,
+.qa-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  padding: 14px;
+}
+.code-item h4,
+.lab-step h4,
+.qa-card h4 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+.lab-step pre {
+  margin: 10px 0 0;
+  overflow-x: auto;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #e5e7eb;
+  padding: 12px;
+}
+.lab-step pre code {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+.qa-card {
+  border-left: 4px solid var(--blue);
+}
+.qa-card h4 {
+  color: var(--blue);
+}
 .chapter-list { columns: 2; column-gap: 28px; }
 .chapter-list li { break-inside: avoid; }
 footer { color: var(--muted); padding: 28px 0 42px; font-size: 14px; }
 @media (max-width: 860px) {
   .grid, .grid.two { grid-template-columns: 1fr; }
+  .map-row { grid-template-columns: 1fr; }
   .chapter-list { columns: 1; }
   .chapter-nav { display: block; }
   .chapter-nav a { display: block; max-width: none; margin-top: 10px; }
 }
 """
+
+
+DEEP_DIVES: dict[str, str] = {
+    "09_local_rag": """
+  <div class="deep-dive">
+    <h3>这章真正解决的问题</h3>
+    <p>第 9 章不是为了证明“用了 RAG”，而是为了让你看清楚 retrieval 在 agent workflow 里的工程位置：它决定哪些材料可以进入 downstream agent 的上下文，并且把这个决定变成可检查、可回归、可展示的证据。</p>
+    <div class="system-map">
+      <div class="map-row"><strong>Input</strong><span><code>samples/story_bank.json</code> 里的项目经历会先被转换为 <code>SourceDocument</code>。这一步给每条资料补上 <code>source_id</code>、<code>source_type</code>、<code>captured_at</code>、<code>expires_at</code>、<code>refresh_policy</code> 等治理字段。</span></div>
+      <div class="map-row"><strong>Chunk</strong><span><code>chunk_documents()</code> 调用 <code>chunk_text()</code>，把文档切成 <code>RetrievedChunk</code>。当前 story bank 很短，所以通常每条 story 只有一个 chunk，但接口已经能支持长文档。</span></div>
+      <div class="map-row"><strong>Rank</strong><span><code>rank_chunks()</code> 用 deterministic keyword score 排序；<code>hybrid_rank_chunks()</code> 预留 keyword + semantic score 的升级接口，后续可以接 pgvector 或 reranker。</span></div>
+      <div class="map-row"><strong>Context</strong><span><code>retrieve_context()</code> 产出 <code>RetrievalContext</code>，其中包含 query、query_terms、candidate_count、returned_count、selected_chunks、citations、freshness_warnings。</span></div>
+      <div class="map-row"><strong>Workflow</strong><span><code>fit_analysis</code>、<code>resume_tailor</code>、<code>interview_prep</code> 都会把 context 写入 <code>JobSearchState.retrieval_contexts</code>，所以 checkpoint、CLI summary、web run detail 都能看到证据链。</span></div>
+      <div class="map-row"><strong>Eval</strong><span><code>jobagent/retrieval/eval_runner.py</code> 先测 retrieval hit quality：expected chunk 是否命中、prohibited chunk 是否误召回、stale source 是否被挡住。</span></div>
+    </div>
+
+    <h3>代码解读：每个文件负责什么</h3>
+    <div class="code-map">
+      <div class="code-item"><h4><code>jobagent/models.py</code></h4><p>定义 RAG 的 typed contract。<code>SourceDocument</code> 是原始资料，<code>RetrievedChunk</code> 是可进入上下文的片段，<code>RetrievalCitation</code> 是 UI/报告可展示的出处，<code>RetrievalContext</code> 是一次检索的完整证据包。重点看这些 dataclass 的字段，而不是只看算法。</p></div>
+      <div class="code-item"><h4><code>jobagent/retrieval/local_rag.py</code></h4><p>实现本地 retrieval pipeline：切块、关键词排序、freshness 判断、context assembly、hybrid ranking。这里是以后替换成 embedding、pgvector、reranker 的边界。</p></div>
+      <div class="code-item"><h4><code>jobagent/memory/story_bank.py</code></h4><p>把用户项目经历从普通 JSON dict 转成 <code>SourceDocument</code>。它保留 <code>match_stories()</code> 这个旧 API，同时内部开始复用 retrieval context，避免 workflow 和旧测试断裂。</p></div>
+      <div class="code-item"><h4><code>jobagent/agents/fit_analysis.py</code></h4><p>用 retrieved story evidence 支撑 fit score。它会把 top source 和命中 chunk 数写进 evidence；如果 source stale，会进入 concerns。</p></div>
+      <div class="code-item"><h4><code>jobagent/agents/resume_tailor.py</code></h4><p>用 retrieved stories 生成 bullet rewrite。这里体现一个重要原则：RAG 不是只服务问答，也可以服务结构化产品动作，比如简历定位。</p></div>
+      <div class="code-item"><h4><code>jobagent/agents/interview_prep.py</code></h4><p>复用同一份 retrieval context 思路，为面试故事匹配提供证据。它验证了 context layer 可以被多个 bounded agent 共享。</p></div>
+      <div class="code-item"><h4><code>jobagent/retrieval/eval_runner.py</code></h4><p>实现 retrieval-first eval。它不评价最终文案好不好，而是先回答：该找的 chunk 找到了吗？不该出现的 chunk 有没有出现？过期资料有没有污染上下文？</p></div>
+      <div class="code-item"><h4><code>jobagent/web/templates/run.html</code></h4><p>把 retrieval context 展示到产品页面。你可以在 run detail 看到 query、retriever、score、freshness、top chunk text。这是从“黑盒 agent”走向“可检查 agent”的关键。</p></div>
+    </div>
+
+    <h3>动手实验：按顺序执行</h3>
+    <div class="lab-steps">
+      <div class="lab-step"><h4>实验 1：跑 retrieval eval baseline</h4><p>目标：确认当前 story bank 的 retrieval hit quality。</p><pre><code>cd "/Users/xuantongyan/Documents/jobAgent 2"
+.venv/bin/python -m jobagent.cli retrieval-eval</code></pre><p>看输出里的 <code>pass_rate</code>、<code>average_recall_at_k</code>、<code>average_precision_at_k</code>、<code>average_mrr</code>。当前重点不是 precision 必须 1.0，而是 expected chunk 在 top-k 内稳定命中。</p></div>
+      <div class="lab-step"><h4>实验 2：查看 retrieval eval case 怎么写</h4><p>目标：理解一个 retrieval case 的组成。</p><pre><code>sed -n '1,220p' samples/retrieval_eval_suite.json</code></pre><p>重点看 <code>query</code>、<code>query_terms</code>、<code>expected_chunk_ids</code>、<code>k</code>、<code>require_fresh</code>。这些字段让 retrieval eval 不依赖模型输出，因此很适合早期 CI。</p></div>
+      <div class="lab-step"><h4>实验 3：制造一个 stale source 失败</h4><p>目标：确认 freshness policy 真的能挡住过期材料。这个实验只写 <code>/tmp</code>，不会改 repo 文件。</p><pre><code>.venv/bin/python - &lt;&lt;'PY'
+import json
+from pathlib import Path
+stories = json.loads(Path("samples/story_bank.json").read_text())
+stories[0]["expires_at"] = "2024-01-01T00:00:00+00:00"
+stories[0]["refresh_policy"] = "quarterly"
+Path("/tmp/jobagent_story_bank_stale.json").write_text(json.dumps(stories), encoding="utf-8")
+PY
+.venv/bin/python -m jobagent.cli retrieval-eval --story-bank /tmp/jobagent_story_bank_stale.json || true</code></pre><p>预期你会看到 <code>stale_source_returned</code> 或 freshness warning。这里的学习点是：RAG 的质量不只是相关性，还包括时效性。</p></div>
+      <div class="lab-step"><h4>实验 4：跑一次 workflow，再查看 checkpoint 里的 context</h4><p>目标：确认 retrieval context 真的进入 workflow state。</p><pre><code>.venv/bin/python -m jobagent.cli demo --auto-approve
+.venv/bin/python - &lt;&lt;'PY'
+import json
+from pathlib import Path
+latest = max(Path(".jobagent/checkpoints").glob("*.json"), key=lambda p: p.stat().st_mtime)
+data = json.loads(latest.read_text())
+print(latest)
+for context in data["retrieval_contexts"]:
+    print("\\nQUERY:", context["query"])
+    print("CHUNKS:", context["returned_count"], "/", context["candidate_count"])
+    print("TOP:", context["citations"][0]["title"] if context["citations"] else "none")
+PY</code></pre><p>这一步会让你看到 RAG 不只是 eval runner 的孤立功能，而是 workflow state 的一部分。</p></div>
+      <div class="lab-step"><h4>实验 5：从产品 UI 观察 RAG evidence</h4><p>目标：把代码里的 context 和用户可见产品联系起来。</p><pre><code>.venv/bin/uvicorn jobagent.web.app:app --host 127.0.0.1 --port 8000</code></pre><p>打开 <code>http://127.0.0.1:8000</code>，提交 sample JD，进入 run detail，找到 <strong>RAG evidence</strong> 区块。检查 query、chunk score、freshness 是否符合你的预期。</p></div>
+    </div>
+
+    <h3>工程选择 Q&amp;A</h3>
+    <div class="qa-grid">
+      <div class="qa-card"><h4>Q: 为什么第一个 RAG eval 不直接测 final answer？</h4><p><strong>A:</strong> final answer 同时受 retrieval、prompt、LLM、写作格式影响，失败后很难定位。retrieval hit eval 更可控：给定 corpus 和 query，应该命中哪个 chunk 是明确的。先把这一层锁住，再叠加 faithfulness、citation grounding 和 answer quality。</p></div>
+      <div class="qa-card"><h4>Q: 为什么现在还不用 pgvector？</h4><p><strong>A:</strong> 当前 story bank 数据很小，关键词足以暴露 retrieval contract、freshness、eval、UI trace 这些核心问题。过早上 pgvector 会增加数据库、embedding、迁移、成本，却还没有证明语义检索是瓶颈。等出现同义词、跨文档、多来源、上百上千 chunks 时再升级。</p></div>
+      <div class="qa-card"><h4>Q: keyword retrieval 会不会太简单？</h4><p><strong>A:</strong> 简单不是问题，不可测才是问题。当前实现故意 deterministic，方便你理解和回归。真正的升级路径是保留 <code>RetrievalContext</code> contract，只替换 ranker 或 candidate generator。</p></div>
+      <div class="qa-card"><h4>Q: 如何避免 RAG 把旧信息说成新信息？</h4><p><strong>A:</strong> 每个 source 都应该带 <code>captured_at</code>、<code>published_at</code>、<code>expires_at</code>、<code>refresh_policy</code>。个人项目故事可以 manual refresh；公司新闻、岗位状态、行业报告应该更短 refresh window，并在 UI 里暴露 warning。</p></div>
+      <div class="qa-card"><h4>Q: 什么时候该加入 reranker？</h4><p><strong>A:</strong> 当 candidate recall 很高但 top-k 排序经常错时，reranker 才值得。也就是说，先用 retrieval eval 区分是“没召回”还是“排序差”，不要直接把所有问题都归因于没有 reranker。</p></div>
+    </div>
+  </div>
+""",
+    "14_offline_eval": """
+  <div class="deep-dive">
+    <h3>这章真正解决的问题</h3>
+    <p>第 14 章关注的是 agent 系统的质量控制：当你改了 extractor、workflow、RAG、prompt 或 UI 后，怎样知道系统没有退化。这里的 eval 不是 Kaggle 式 benchmark，而是工程回归套件。</p>
+    <div class="system-map">
+      <div class="map-row"><strong>Dataset</strong><span><code>samples/eval_suite.json</code> 保存固定案例。每个 case 描述输入 JD、期望 company、期望 skills、期望 stop reason、最低 fit score。</span></div>
+      <div class="map-row"><strong>Runner</strong><span><code>jobagent/evals/runner.py</code> 读取 suite，根据 <code>eval_type</code> 分派到 single-turn JD extraction 或完整 trajectory workflow。</span></div>
+      <div class="map-row"><strong>System Under Test</strong><span>single-turn case 只跑 <code>extract_jd()</code>；trajectory case 跑 <code>run_job_workflow()</code>，因此会覆盖 graph、agents、HITL、fit score、state serialization。</span></div>
+      <div class="map-row"><strong>Checks</strong><span>每个 case 产出一组 deterministic checks，例如 company 是否匹配、required skill 是否出现、stop_reason 是否正确、fit score 是否达标。</span></div>
+      <div class="map-row"><strong>Report</strong><span>runner 汇总 total、passed、failed、pass_rate、by_type、failure_categories、results。CLI 和 tests 都复用这个结构。</span></div>
+      <div class="map-row"><strong>Next Layer</strong><span>第 9 章新增 retrieval eval；未来还可以加 final-answer grounding、resume rubric、human-label calibration、LLM-as-judge。</span></div>
+    </div>
+
+    <h3>代码解读：每个文件负责什么</h3>
+    <div class="code-map">
+      <div class="code-item"><h4><code>samples/eval_suite.json</code></h4><p>这是离线 eval dataset。它应该尽量接近你真实关心的岗位类型：AI engineer、FDE、RAG backend、agent observability、MCP tooling 等。新增功能时，先补 case，再改实现。</p></div>
+      <div class="code-item"><h4><code>jobagent/evals/runner.py</code></h4><p>主 eval runner。重点看它如何读 JSON、如何按 case type 分派、如何把 check 结果汇总成 pass/fail 和 failure category。</p></div>
+      <div class="code-item"><h4><code>jobagent/evals/run_quality.py</code></h4><p>单次 workflow 的质量门。它不是 dataset eval，而是产品运行后检查本次 run 是否生成了关键 artifact，例如 JD、fit analysis、resume proposal、tool audit。</p></div>
+      <div class="code-item"><h4><code>jobagent/retrieval/eval_runner.py</code></h4><p>RAG 专属 eval runner。它补上第 14 章的一个重要分支：除了 workflow trajectory，也要评估 retrieval trajectory。</p></div>
+      <div class="code-item"><h4><code>tests/test_eval_runner.py</code></h4><p>把 eval runner 自身纳入单测。它验证 failure categories、pass rate、case parsing 等逻辑，避免 eval 工具本身悄悄坏掉。</p></div>
+      <div class="code-item"><h4><code>jobagent/cli.py</code></h4><p>把 eval 暴露成可执行命令：<code>eval</code> 跑 workflow/JD suite，<code>retrieval-eval</code> 跑 RAG suite。面试展示时，CLI 是最直接的证据。</p></div>
+    </div>
+
+    <h3>动手实验：按顺序执行</h3>
+    <div class="lab-steps">
+      <div class="lab-step"><h4>实验 1：跑主 eval suite</h4><p>目标：确认当前 workflow/JD extraction baseline。</p><pre><code>cd "/Users/xuantongyan/Documents/jobAgent 2"
+.venv/bin/python -m jobagent.cli eval</code></pre><p>看 <code>total</code>、<code>pass_rate</code>、<code>by_type</code>、<code>failure_categories</code>。如果 failed 不为 0，先看第一个失败 case，而不是直接改代码。</p></div>
+      <div class="lab-step"><h4>实验 2：定位一个 eval case</h4><p>目标：把 JSON case 和 runner check 对上。</p><pre><code>sed -n '1,120p' samples/eval_suite.json
+sed -n '1,240p' jobagent/evals/runner.py</code></pre><p>对照 case 里的 <code>expected_company</code>、<code>expected_required_skills</code>、<code>expected_stop_reason</code>，再看 runner 如何生成 checks。</p></div>
+      <div class="lab-step"><h4>实验 3：制造一个安全的失败 case</h4><p>目标：理解 failure category 怎么帮助定位。这个实验只写 <code>/tmp</code>。</p><pre><code>.venv/bin/python - &lt;&lt;'PY'
+import json
+from pathlib import Path
+case = {
+  "id": "intentional-skill-failure",
+  "eval_type": "single_turn_jd_extract",
+  "job_text": "Company: Example AI\\nRole: AI Engineer\\nBuild Python and RAG systems.",
+  "expected_company": "Example AI",
+  "expected_required_skills": ["kubernetes"],
+}
+Path("/tmp/jobagent_eval_failure.json").write_text(json.dumps([case]), encoding="utf-8")
+PY
+.venv/bin/python -m jobagent.cli eval --suite /tmp/jobagent_eval_failure.json || true</code></pre><p>预期这个 case 会失败，因为 JD 中没有 Kubernetes。重点观察输出里的 failed check 和 failure_categories。</p></div>
+      <div class="lab-step"><h4>实验 4：同时跑 workflow eval 和 retrieval eval</h4><p>目标：理解两类 eval 的边界。</p><pre><code>.venv/bin/python -m jobagent.cli eval
+.venv/bin/python -m jobagent.cli retrieval-eval</code></pre><p>主 eval 回答“workflow 有没有按预期运行”；retrieval eval 回答“RAG 是否命中正确证据”。这两个问题不要混在一个指标里。</p></div>
+      <div class="lab-step"><h4>实验 5：运行测试里的 eval 保护</h4><p>目标：确认 eval runner 自身也被回归测试保护。</p><pre><code>.venv/bin/python -m unittest tests.test_eval_runner tests.test_retrieval</code></pre><p>如果你未来修改 eval schema 或 runner，这组测试应该第一时间告诉你有没有破坏评估工具。</p></div>
+    </div>
+
+    <h3>工程选择 Q&amp;A</h3>
+    <div class="qa-grid">
+      <div class="qa-card"><h4>Q: Eval 应该覆盖最终输出还是中间轨迹？</h4><p><strong>A:</strong> 两者都要，但早期优先中间结构和 trajectory。因为它们稳定、便宜、可定位。最终输出质量要测，但最好建立在 typed artifact、retrieval context、tool audit 已经可靠的基础上。</p></div>
+      <div class="qa-card"><h4>Q: Deterministic checks 会不会太死板？</h4><p><strong>A:</strong> 对语义质量来说可能死板，但对 schema、路由、工具参数、stop reason、policy boundary 来说非常合适。AI 系统不是所有东西都要用 LLM judge。</p></div>
+      <div class="qa-card"><h4>Q: 什么时候引入 LLM-as-judge？</h4><p><strong>A:</strong> 当你要评估“答案是否充分”“语气是否适合”“是否忠实引用 retrieved context”这类开放问题时可以引入。但 judge prompt、judge model、抽样审计也要版本化，否则 judge 本身会漂。</p></div>
+      <div class="qa-card"><h4>Q: Eval suite 多大才有意义？</h4><p><strong>A:</strong> 初期 10-20 个高价值 case 就很有用，重点是覆盖真实风险：热门目标岗位、容易抽错的公司名、容易误判的技能、HITL 边界、RAG 证据命中。数量增长应该来自真实失败，而不是为了好看。</p></div>
+      <div class="qa-card"><h4>Q: Eval 是否应该进 CI？</h4><p><strong>A:</strong> 只要稳定、低成本、无外部凭证，就应该进。当前 deterministic suite 和 retrieval suite 都适合 CI；真实 LLM eval 可以先 nightly 或手动触发。</p></div>
+      <div class="qa-card"><h4>Q: Eval 失败后先改什么？</h4><p><strong>A:</strong> 先看 failure category，再看 trace/state。不要第一反应改 prompt。很多失败来自 extractor rule、state contract、retrieval source、stop reason 或 fixture 预期不清。</p></div>
+    </div>
+  </div>
+""",
+}
 
 
 def link_for(chapter: Chapter) -> str:
@@ -1027,7 +1220,13 @@ def render_sources(links: list[Link]) -> str:
     )
 
 
+def render_deep_dive(slug: str) -> str:
+    content = DEEP_DIVES.get(slug, "")
+    return f"\n{content}" if content else ""
+
+
 def render_chapter_body(chapter: Chapter, *, standalone: bool) -> str:
+    deep_dive = render_deep_dive(chapter.slug)
     return f"""
 <section id="{escape(chapter.slug)}">
   <div class="eyebrow">{escape(chapter.part)}</div>
@@ -1072,6 +1271,7 @@ def render_chapter_body(chapter: Chapter, *, standalone: bool) -> str:
       {render_sources(chapter.links)}
     </div>
   </div>
+{deep_dive}
 </section>
 """
 
@@ -1129,6 +1329,11 @@ def render_index() -> str:
     如果想看更像“工程实验手册”的新版观感，打开
     <a href="../agentic_course_prototype/index.html">docs/agentic_course_prototype/index.html</a>。
     当前 prototype 先做了第 1 章 GraphEngine 和第 2 章 Shared State。
+  </div>
+  <div class="callout">
+    <strong>本次重点更新：</strong>
+    第 9 章 <a href="09_local_rag.html">Local RAG</a> 和第 14 章 <a href="14_offline_eval.html">Offline Eval</a>
+    已扩展为更细的工程实验手册：增加系统流程图、文件功能解读、可复制命令、失败注入实验和 Q&amp;A 卡片。
   </div>
 </section>
 """

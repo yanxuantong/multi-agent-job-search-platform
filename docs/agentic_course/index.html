@@ -117,11 +117,78 @@ section { border-bottom: 1px solid var(--line); padding: 0 0 32px; }
   padding: 14px 16px;
   color: #334155;
 }
+.deep-dive {
+  margin-top: 18px;
+}
+.deep-dive h3 {
+  margin-top: 24px;
+  padding-top: 8px;
+}
+.system-map {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+.map-row {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--paper);
+}
+.map-row strong {
+  color: var(--teal);
+}
+.code-map,
+.lab-steps,
+.qa-grid {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+.code-item,
+.lab-step,
+.qa-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  padding: 14px;
+}
+.code-item h4,
+.lab-step h4,
+.qa-card h4 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+.lab-step pre {
+  margin: 10px 0 0;
+  overflow-x: auto;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #e5e7eb;
+  padding: 12px;
+}
+.lab-step pre code {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+.qa-card {
+  border-left: 4px solid var(--blue);
+}
+.qa-card h4 {
+  color: var(--blue);
+}
 .chapter-list { columns: 2; column-gap: 28px; }
 .chapter-list li { break-inside: avoid; }
 footer { color: var(--muted); padding: 28px 0 42px; font-size: 14px; }
 @media (max-width: 860px) {
   .grid, .grid.two { grid-template-columns: 1fr; }
+  .map-row { grid-template-columns: 1fr; }
   .chapter-list { columns: 1; }
   .chapter-nav { display: block; }
   .chapter-nav a { display: block; max-width: none; margin-top: 10px; }
@@ -131,7 +198,7 @@ footer { color: var(--muted); padding: 28px 0 42px; font-size: 14px; }
 <body>
   <header>
     <div class="wrap hero">
-      <div class="eyebrow">JobAgent Multi-Agent Course / Updated 2026-05-30</div>
+      <div class="eyebrow">JobAgent Multi-Agent Course / Updated 2026-06-10</div>
       <h1>JobAgent Multi-Agent 工程教程目录</h1>
       <p class="lead">面向传统 software infrastructure 背景读者的项目驱动教程：从本地 graph 到 HITL、checkpoint、MCP、observability、eval 与部署。</p>
       <div class="meta">
@@ -156,6 +223,11 @@ footer { color: var(--muted); padding: 28px 0 42px; font-size: 14px; }
     <a href="../agentic_course_prototype/index.html">docs/agentic_course_prototype/index.html</a>。
     当前 prototype 先做了第 1 章 GraphEngine 和第 2 章 Shared State。
   </div>
+  <div class="callout">
+    <strong>本次重点更新：</strong>
+    第 9 章 <a href="09_local_rag.html">Local RAG</a> 和第 14 章 <a href="14_offline_eval.html">Offline Eval</a>
+    已扩展为更细的工程实验手册：增加系统流程图、文件功能解读、可复制命令、失败注入实验和 Q&amp;A 卡片。
+  </div>
 </section>
 
 <section><h2>Part 0 / 项目入口</h2><ol class="chapter-list"><li><a href="00_overview.html">第 0 章：这不是聊天机器人，这是一个可运行的 Agentic Product</a><br><span>先把 JobAgent 当成一个可以运行、暂停、恢复、验证、部署的产品，而不是一个 prompt demo。</span></li></ol></section>
@@ -168,7 +240,7 @@ footer { color: var(--muted); padding: 28px 0 42px; font-size: 14px; }
 <section><h2>总合集</h2><p><a href="mega_agentic_course_zh.html">打开 mega HTML：完整合并版教程</a></p></section>
   </main>
   <footer class="wrap">
-    Generated from <code>docs/agentic_course/build_agentic_course.py</code>. Industry links were refreshed on 2026-05-30; fast-moving AI infra references should be reviewed periodically.
+    Generated from <code>docs/agentic_course/build_agentic_course.py</code>. Industry links were refreshed on 2026-06-10; fast-moving AI infra references should be reviewed periodically.
   </footer>
 </body>
 </html>
